@@ -166,18 +166,26 @@ class Search extends commando.Command {
                     queue.push(vidold);
                 }              
             }
-            var vid = queue[0];
-            console.log(vid);
-            message.guild.voiceConnection.playStream(ytdl(vid.ID, {filter: "audioonly"}));
-            if (this.client.provider.get(message.guild, "volume") >= 0) message.guild.voiceConnection.dispatcher.setVolume(this.client.provider.get(message.guild, "volume"));
-            else message.guild.voiceConnection.dispatcher.setVolume(0.3);
-            message.channel.send("Now playing: "+vid.title);
-            this.client.provider.set(message.guild, "queue", queue);
-            this.client.provider.set(message.guild, "nowPlaying", vid);
-            message.guild.voiceConnection.dispatcher.on("end", reason => {
-                if (reason) console.log(reason);
-                this.onEnd(message, reason);
-            });
+            if(queue.length>0){
+                var vid = queue[0];
+                console.log(vid);
+                message.guild.voiceConnection.playStream(ytdl(vid.ID, {filter: "audioonly"}));
+                if (this.client.provider.get(message.guild, "volume") >= 0) message.guild.voiceConnection.dispatcher.setVolume(this.client.provider.get(message.guild, "volume"));
+                else message.guild.voiceConnection.dispatcher.setVolume(0.3);
+                message.channel.send("Now playing: "+vid.title);
+                this.client.provider.set(message.guild, "queue", queue);
+                this.client.provider.set(message.guild, "nowPlaying", vid);
+                message.guild.voiceConnection.dispatcher.on("end", reason => {
+                    if (reason) console.log(reason);
+                    this.onEnd(message, reason);
+                });
+            }
+            else {
+                var empty = [];
+                this.client.provider.set(message.guild, "queue", empty);
+                console.log("queue is empty");
+                return;
+            }
         }
         else {
             var empty = [];

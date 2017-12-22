@@ -1,3 +1,4 @@
+const discord = require("discord.js");
 const Commando = require('discord.js-commando');
 const time = require("node-datetime");
 const path = require('path');
@@ -127,7 +128,7 @@ client.on("guildMemberUpdate", (oldMember, newMember) => {
 
 });
 client.on("guildUnavailable", guild => {
-
+    
 });
 client.on("guildUpdate", (oldGuild, newGuild) => {
 
@@ -135,7 +136,7 @@ client.on("guildUpdate", (oldGuild, newGuild) => {
 client.on("message", async message => {
     if (message.author.bot) return;
     // console.log(await client.fetchUser(message.author.id));
-    // console.log(message.member.roles);    
+    // console.log(message.member.roles);
 });
 client.on("messageDelete", async message => {
     

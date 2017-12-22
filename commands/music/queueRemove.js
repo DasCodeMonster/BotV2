@@ -3,9 +3,10 @@ const commando = require("discord.js-commando");
 class QueueRemove extends commando.Command {
     constructor(client) {
         super(client, {
-            name: "remove",
+            name: "queueremove",
+            aliases: ["remove"],
             group: "music",
-            memberName: "queue remove",
+            memberName: "queueremove",
             description: "Removes the queue",
             guildOnly: true
         });
