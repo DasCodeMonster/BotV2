@@ -137,6 +137,7 @@ client.on("message", async message => {
     if (message.author.bot) return;
     // console.log(await client.fetchUser(message.author.id));
     // console.log(message.member.roles);
+    message
 });
 client.on("messageDelete", async message => {
     

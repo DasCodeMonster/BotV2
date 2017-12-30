@@ -77,6 +77,7 @@ class Permission extends commando.Command {
     async run(message, args) {
         var command = await this.client.provider.get(message.guild, args.cmdOrGrp.name, {true:[], false:[]});
         console.log(command);
+        console.log(args);
         if(args.group.type === "user"){
             if(args.boolean == true){
                 if (command.true.length != 0){
@@ -135,6 +136,42 @@ class Permission extends commando.Command {
             }
             console.log(command);
             await this.client.provider.set(message.guild, args.cmdOrGrp.name, command);
+        }
+        if (args.group.type === "role") {
+            if(args.boolean == true){
+                if (command.true.length !== 0){
+                    var exist = [];
+                    var notExisting = [];
+                    command.true.some((id, index, array)=>{
+                        args.group.value.members.array().forEach((member, index, array) => {
+                           if(id === member.user.id){
+                               exist.push(id);
+                           }
+                           else {
+                                notExisting.push(id);
+                           }
+                           if(index === array.length-1){
+                               notExisting.forEach((val, ind, arr)=>{
+                                    command.true.push(val);
+                                    if (command.false.indexOf(val)>-1){
+                                        command.false.remove(command.false.indexOf(val));
+                                    }
+                               });
+                           }
+                        });
+                        // if(id == args.group.value.id){
+                        //     return true;
+                        // }
+
+                        // else {
+                        //     if(index == command.true.length-1){
+                        //         command.true.push(args.group.value.id);
+                        //         return true;
+                        //     }
+                        // }
+                    });
+                }
+            }
         }
         return;
         /* console.log(args);

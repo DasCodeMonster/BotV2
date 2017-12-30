@@ -135,7 +135,7 @@ class List extends commando.Command {
                                                             this.queue.push(song);
                                                         });
                                                     });
-                                                    console.log(this.queue);
+                                                    // console.log(this.queue);
                                                     if(message.guild.voiceConnection.dispatcher) return;
                                                     else this.play(message);
                                                 }

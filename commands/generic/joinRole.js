@@ -20,6 +20,7 @@ class JoinRole extends commando.Command {
         this.roles = [];
     }
     async run(message, args) {
+        console.log(args.role);
         if (this.client.provider.get(message.guild, "joinableRoles")) this.roles = this.client.provider.get(message.guild, "joinableRoles");
         if (this.roles.indexOf(args.role)>-1){
             message.member.addRole(args.role);

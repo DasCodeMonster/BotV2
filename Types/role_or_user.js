@@ -8,7 +8,7 @@ class RoleOrUserOrChannel extends ArgumentType {
     }
     validate(value, msg) {
         if (this.userValidate(value, msg)) return true;
-        else if (this.channelValidate(value, msg)) return true;
+        // else if (this.channelValidate(value, msg)) return true;
         else if (this.roleValidate(value, msg)) return true;
         else return false;
     }
@@ -20,16 +20,16 @@ class RoleOrUserOrChannel extends ArgumentType {
 			}
 			return returnUser;
 		}
-        else if (this.channelValidate(value, msg)) {
-			var returnChannel = {
-				"type": "channel",
-				"value": this.channelParse(value, msg)
-			}
-			return returnChannel;
-		}
+        // else if (this.channelValidate(value, msg)) {
+		// 	var returnChannel = {
+		// 		"type": "channel",
+		// 		"value": this.channelParse(value, msg)
+		// 	}
+		// 	return returnChannel;
+		// }
         else if (this.roleValidate(value, msg)) {
 			var returnRole = {
-				"type:": "role",
+				"type": "role",
 				"value": this.roleParse(value, msg)
 			}
 			return returnRole;
