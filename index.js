@@ -6,7 +6,7 @@ const sqlite = require('sqlite');
 const keys = require('./Token&Keys');
 const client = new Commando.Client({
     owner: keys.OwnerID,
-    unknownCommandRespond: false
+    unknownCommandResponse: false,
 });
 process.title = "MyBotV2";
 client.registry.registerGroup("music", "Music commands");
@@ -137,7 +137,6 @@ client.on("message", async message => {
     if (message.author.bot) return;
     // console.log(await client.fetchUser(message.author.id));
     // console.log(message.member.roles);
-    message
 });
 client.on("messageDelete", async message => {
     

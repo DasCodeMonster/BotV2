@@ -75,7 +75,7 @@ class Permission extends commando.Command {
      * @param {*} args 
      */
     async run(message, args) {
-        var command = await this.client.provider.get(message.guild, args.cmdOrGrp.name, {true:[], false:[]});
+        var command = await this.client.provider.get(message.guild, args.cmdOrGrp.name, {true:[], false:[], channel: {true: [], false: []}, role:{true: [], false: []}});
         console.log(command);
         console.log(args);
         if(args.group.type === "user"){
@@ -137,76 +137,107 @@ class Permission extends commando.Command {
             console.log(command);
             await this.client.provider.set(message.guild, args.cmdOrGrp.name, command);
         }
-        if (args.group.type === "role") {
-            if(args.boolean == true){
-                if (command.true.length !== 0){
-                    var exist = [];
-                    var notExisting = [];
-                    command.true.some((id, index, array)=>{
-                        args.group.value.members.array().forEach((member, index, array) => {
-                           if(id === member.user.id){
-                               exist.push(id);
-                           }
-                           else {
-                                notExisting.push(id);
-                           }
-                           if(index === array.length-1){
-                               notExisting.forEach((val, ind, arr)=>{
-                                    command.true.push(val);
-                                    if (command.false.indexOf(val)>-1){
-                                        command.false.remove(command.false.indexOf(val));
-                                    }
-                               });
-                           }
-                        });
-                        // if(id == args.group.value.id){
-                        //     return true;
-                        // }
-
-                        // else {
-                        //     if(index == command.true.length-1){
-                        //         command.true.push(args.group.value.id);
-                        //         return true;
-                        //     }
-                        // }
-                    });
+        else if (args.group.type === "role") {
+            // if(args.boolean == true){
+            //     if (command.true.length !== 0){
+            //         args.group.value.members.array().forEach((member, index, array)=>{
+            //             if(command.true.indexOf(member.user.id)>-1){
+            //                 return;
+            //             }
+            //             else {
+            //                 command.true.push(member.user.id);
+            //                 if(command.false.indexOf(member.user.id)>-1){
+            //                     command.false.splice(command.false.indexOf(member.user.id), 1);
+            //                 }
+            //             }
+            //         });
+            //     }
+            //     else {
+            //         args.group.value.members.array().forEach((member, index, array) => {
+            //             command.true.push(member.user.id);
+            //             if(command.false.indexOf(member.user.id)>-1){
+            //                 command.false.splice(command.false.indexOf(member.user.id), 1);
+            //             }
+            //         });
+            //     }
+            // }
+            // if(args.boolean === false){
+            //     if(command.false.length !== 0){
+            //         args.group.value.members.array().forEach((member, index, array)=>{
+            //             if(command.false.indexOf(member.user.id)>-1){
+            //                 return;
+            //             }
+            //             else {
+            //                 command.false.push(member.user.id);
+            //                 if(command.true.indexOf(member.user.id)>-1){
+            //                     command.true.splice(command.true.indexOf(member.user.id), 1);
+            //                 }
+            //             }
+            //         });
+            //     }
+            //     else {
+            //         args.group.value.members.array().forEach((member, index, array) => {
+            //             command.false.push(member.user.id);
+            //             if(command.true.indexOf(member.user.id)>-1){
+            //                 command.true.splice(command.true.indexOf(member.user.id), 1);
+            //             }
+            //         });
+            //     }
+            // }
+            // await this.client.provider.set(message.guild, args.cmdOrGrp.name, command);
+            // console.log(command);
+            console.log(args.group.value);
+            if(args.boolean === true){;
+                if(command.role.true.indexOf(args.group.value.id)){
+                    return;
+                }
+                else {
+                    command.role.true.push(args.group.value.id);
+                    if(command.role.false.indexOf(args.group.value.id)>-1){
+                        command.role.false.splice(command.role.false.indexOf(args.group.value.id), 1);
+                    }
                 }
             }
+            if(args.boolean === false){
+                if(command.role.false.indexOf(args.group.value.id)){
+                    return;
+                }
+                else {
+                    command.role.false.push(args.group.value.id);
+                    if(command.role.true.indexOf(args.group.value.id)>-1){
+                        command.role.true.splice(command.role.true.indexOf(args.group.value.id), 1);
+                    }
+                }
+            }
+            await this.client.provider.set(message.guild, args.cmdOrGrp.name, command);
+            console.log(command);
         }
-        return;
-        /* console.log(args);
-        var commandgroup = args.command.split(":")[0];
-        var commandname = args.command.split(":")[1];
-        if (commandname === "*") {
-            if (commandgroup === "*") {
-                if (args.group.type === "user") {
-                    this.client.registry.groups.forEach(group => {
-                        group.commands.forEach(command => {
-                            console.log(command.groupID+":"+command.name);
-                            var commandID = `${command.groupID}:${command.name}`;
-                            if (this.client.provider.get(message.guild, commandID)) {
-                                if (this.client.provider.get(message.guild, commandID).indexOf(args.group.value.id) >= 0) {
-                                    if (args.boolean === true) {
-                                        this.client.provider.get(message.guild, commandID).splice(this.client.provider.get(message.guild, commandID).indexOf(args.group.value.id), 1);
-                                        return;
-                                    }
-                                    else {
-                                        if (message.guild.member(args.group.value).hasPermission("ADMINISTRATOR")) return;
-                                        else this.client.provider.set(message.guild, commandID, this.client.provider.get(message.guild, commandID).push(args.group.value.id));
-                                    }
-                                }
-                                else {
-                                    this.client.provider.set(message.guild, commandID, args.group.value.id);                                    
-                                }
-                            }
-                            else {
-
-                            }
-                        });
-                    });
+        else if (args.group.type === "channel"){
+            if(args.boolean === true){;
+                if(command.channel.true.indexOf(args.group.value.id)){
+                    return;
+                }
+                else {
+                    command.channel.true.push(args.group.value.id);
+                    if(command.channel.false.indexOf(args.group.value.id)>-1){
+                        command.channel.false.splice(command.channel.false.indexOf(args.group.value.id), 1);
+                    }
                 }
             }
-        }*/
+            if(args.boolean === false){
+                if(command.channel.false.indexOf(args.group.value.id)){
+                    return;
+                }
+                else {
+                    command.channel.false.push(args.group.value.id);
+                    if(command.channel.true.indexOf(args.group.value.id)>-1){
+                        command.channel.true.splice(command.channel.true.indexOf(args.group.value.id), 1);
+                    }
+                }
+            }
+            await this.client.provider.set(message.guild, args.cmdOrGrp.name, command);
+            console.log(command);
+        }
     }
     /**
      * 
@@ -214,12 +245,23 @@ class Permission extends commando.Command {
      * @param {*} args 
      */
     async hasPermission(message, args){
-        if (message.member.hasPermission("ADMINISTRATOR")|| this.client.provider.get(message.guild, this.name, {true:[], false:[]}).true.indexOf(message.author.id) != -1){
+        var command = await this.client.provider.get(message.guild, this.name, {true:[], false:[], channel: {true: [], false: []}, role:{true: [], false: []}})
+        if (message.member.hasPermission("ADMINISTRATOR")|| command.true.indexOf(message.author.id) != -1 || command.channel.true.indexOf(message.channel.id) || command.role.true.indexOf(message.member.roles.array())){
             return true;
         }
         else {
             return false;
         }
     }
+}
+/**
+ * not finished yet
+ * @param {*} command 
+ */
+function role(command) {
+    message.member.roles.array().forEach((role, index, array) => {
+        command.role.true.indexOf(role.id)
+
+    })
 }
 module.exports = Permission;
