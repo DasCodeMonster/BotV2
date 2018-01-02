@@ -1,23 +1,25 @@
 const commando = require("discord.js-commando");
 
-class Pause extends commando.Command {
+class QueueRemove extends commando.Command {
     constructor(client) {
         super(client, {
-            name: "pause",
+            name: "queueremove",
+            aliases: ["remove"],
             group: "music",
-            memberName: "pause",
-            description: "Pause the song which is currently playing.",
+            memberName: "queue remove",
+            description: "Removes the queue",
             guildOnly: true
         });
+        this.queue = [];
+        this.newQueue = [];
     }
-    run(message, args) {
-        if (message.guild.voiceConnection && message.guild.voiceConnection.dispatcher) {
-            message.guild.voiceConnection.dispatcher.pause();
-            message.reply("ok I paused the music!:pause_button:");
-        }
-        else {
-            message.reply("there is nothing to pause!");
-        }
+    async run(message, args) {
+        if (this.client.provider.get(message.guild, "queue")) this.queue = this.client.provider.get(message.guild, "queue");
+        //await this.client.provider.remove(message.guild, "queue");
+        if (this.queue.length > 0) this.newQueue = this.queue.splice(0,1);
+        await this.client.provider.set(message.guild, "queue", this.newQueue);
+        console.log(this.client.provider.get(message.guild, "queue"));
+        message.reply("Removed the queue!");
     }
     /**
      * 
@@ -53,4 +55,4 @@ function role(message, command) {
     });
     return ret;
 }
-module.exports = Pause;
+module.exports = QueueRemove;

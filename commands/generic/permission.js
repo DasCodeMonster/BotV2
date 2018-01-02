@@ -33,7 +33,14 @@ class Permission extends commando.Command {
 						${groups.length > 1 ? disambiguation(groups, 'groups') : ''}
 					`;
 				},
-				parse: val => this.client.registry.findGroups(val)[0] || this.client.registry.findCommands(val)[0]
+				parse: val => {
+                    if(this.client.registry.findGroups(val)[0]){
+                        return {type: "group", value: this.client.registry.findGroups(val)[0]};
+                    }
+                    else if(this.client.registry.findCommands(val)[0]){
+                        return {type: "command", value: this.client.registry.findCommands(val)[0]};
+                    }
+                }
             }, {
                 key: "group",
                 label: "role/user",
@@ -55,121 +62,92 @@ class Permission extends commando.Command {
      * @param {*} args 
      */
     async run(message, args) {
-        var command = await this.client.provider.get(message.guild, args.cmdOrGrp.name, {true:[], false:[], channel: {true: [], false: []}, role:{true: [], false: []}});
-        console.log(command);
         console.log(args);
-        if(args.group.type === "user"){
-            if(args.boolean == true){
-                if (command.true.length != 0){
-                    command.true.some((id, index, array)=>{
-                        if(id == args.group.value.id){
-                            return true;
-                        }
-                        else {
-                            if(index == command.true.length-1){
-                                command.true.push(args.group.value.id);
-                                return true;
-                            }
-                        }
-                    });
-                }
-                else command.true.push(args.group.value.id);
-                if(command.false.length != 0){
-                    command.false.some((id, index, array)=>{
-                        if(id == args.group.value.id){
-                            command.false.splice(command.false.indexOf(id), 1);
-                            return true;
-                        }
-                        else return false;
-                    });
-                }
-            }
-            if(args.boolean == false){
-                console.log("false");
-                if(command.true.length != 0){
-                    command.true.some((id, index, array)=>{
-                        if(id == args.group.value.id){
-                            command.true.splice(command.true.indexOf(id), 1);
-                            return true;
-                        }
-                        else {
-                            return false;
-                        }
-                    });
-                }
-                if(command.false.length != 0){
-                    command.false.some((id, index, array)=>{
-                        if(id == args.group.value.id){
-                            return true;
-                        }
-                        else {
-                            if (index == command.false.length-1){
-                                command.false.push(args.group.value.id);
-                                return true;
-                            }
-                            return false;
-                        }
-                    });
-                } else {
-                    command.false.push(args.group.value.id);
-                }
-            }
-            console.log(command);
-            await this.client.provider.set(message.guild, args.cmdOrGrp.name, command);
+        if (args.cmdOrGrp.type === "command"){
+            var command = await this.client.provider.get(message.guild, args.cmdOrGrp.value.name, {true:[], false:[], channel: {true: [], false: []}, role:{true: [], false: []}});
+            var name = args.cmdOrGrp.value.name;
+            this.edit(message, args, command, name);
+            message.reply(`${args.group.value.toString()} is ${args.boolean?"now allowed to use the `"+name+"` command":"not allowed to use the `"+name+" command anymore"}`);
         }
-        else if (args.group.type === "role") {
-            console.log(args.group.value);
-            if(args.boolean === true){;
-                if(command.role.true.indexOf(args.group.value.id)>-1){
-                    
-                }
-                else {
-                    command.role.true.push(args.group.value.id);
-                    if(command.role.false.indexOf(args.group.value.id)>-1){
-                        command.role.false.splice(command.role.false.indexOf(args.group.value.id), 1);
-                    }
-                }
-            }
-            if(args.boolean === false){
-                if(command.role.false.indexOf(args.group.value.id)>-1){
-                    
-                }
-                else {
-                    command.role.false.push(args.group.value.id);
-                    if(command.role.true.indexOf(args.group.value.id)>-1){
-                        command.role.true.splice(command.role.true.indexOf(args.group.value.id), 1);
-                    }
-                }
-            }
-            await this.client.provider.set(message.guild, args.cmdOrGrp.name, command);
-            console.log(command);
+        else if(args.cmdOrGrp.type === "group"){
+            args.cmdOrGrp.value.commands.array().forEach((command, index, array)=>{
+                var permission = this.client.provider.get(message.guild, command.name, {true:[], false:[], channel: {true: [], false: []}, role:{true: [], false: []}});
+                var name = command.name;
+                this.edit(message, args, permission, name);                
+            });
+            message.reply(`${args.group.value.toString()} is ${args.boolean?"now allowed to use the commands of the `"+args.cmdOrGrp.value.name+"` group":"not allowed to use the commands of the`"+args.cmdOrGrp.value.name+"` group anymore"}`);
         }
-        else if (args.group.type === "channel"){
-            if(args.boolean === true){;
-                if(command.channel.true.indexOf(args.group.value.id) >-1){
-                    
-                }
-                else {
-                    command.channel.true.push(args.group.value.id);
-                    if(command.channel.false.indexOf(args.group.value.id)>-1){
-                        command.channel.false.splice(command.channel.false.indexOf(args.group.value.id), 1);
+    }
+    /**
+     * 
+     * @param {Message} message 
+     * @param {*} args 
+     * @param {*} command 
+     */
+    async edit(message, args, command, name) {
+        console.log(command);
+            console.log(args);
+            if(args.group.type === "user"){
+                if(args.boolean == true){
+                    if (command.true.indexOf(args.group.value.id) === -1) {
+                        command.true.push(args.group.value.id);
+                        if (command.false.indexOf(args.group.value.id)>-1){
+                            command.false.splice(command.false.indexOf(args.group.value.id), 1);
+                        }
                     }
                 }
-            }
-            if(args.boolean === false){
-                if(command.channel.false.indexOf(args.group.value.id)>-1){
-                    
-                }
-                else {
-                    command.channel.false.push(args.group.value.id);
-                    if(command.channel.true.indexOf(args.group.value.id)>-1){
-                        command.channel.true.splice(command.channel.true.indexOf(args.group.value.id), 1);
+                if(args.boolean == false){
+                    if(command.false.indexOf(args.group.value.id) === -1) {
+                        command.false.push(args.group.value.id);
+                        if(command.true.indexOf(args.group.value.id)>-1) {
+                            command.true.splice(command.true.indexOf(args.group.value.id), 1);
+                        }
                     }
                 }
+                console.log(command);
+                await this.client.provider.set(message.guild, name, command);
             }
-            await this.client.provider.set(message.guild, args.cmdOrGrp.name, command);
-            console.log(command);
-        }
+            else if (args.group.type === "role") {
+                console.log(args.group.value);
+                if(args.boolean === true){;
+                    if(command.role.true.indexOf(args.group.value.id)===-1){
+                        command.role.true.push(args.group.value.id);
+                        if(command.role.false.indexOf(args.group.value.id)>-1){
+                            command.role.false.splice(command.role.false.indexOf(args.group.value.id), 1);
+                        }
+                    }
+                }
+                if(args.boolean === false){
+                    if(command.role.false.indexOf(args.group.value.id)===-1){
+                        command.role.false.push(args.group.value.id);
+                        if(command.role.true.indexOf(args.group.value.id)>-1){
+                            command.role.true.splice(command.role.true.indexOf(args.group.value.id), 1);
+                        }
+                    }
+                }
+                await this.client.provider.set(message.guild, name, command);
+                console.log(command);
+            }
+            else if (args.group.type === "channel"){
+                if(args.boolean === true){;
+                    if(command.channel.true.indexOf(args.group.value.id) === -1){
+                        command.channel.true.push(args.group.value.id);
+                        if(command.channel.false.indexOf(args.group.value.id)>-1){
+                            command.channel.false.splice(command.channel.false.indexOf(args.group.value.id), 1);
+                        }
+                    }
+                }
+                if(args.boolean === false){
+                    if(command.channel.false.indexOf(args.group.value.id) === -1){
+                        command.channel.false.push(args.group.value.id);
+                        if(command.channel.true.indexOf(args.group.value.id)>-1){
+                            command.channel.true.splice(command.channel.true.indexOf(args.group.value.id), 1);
+                        }
+                    }
+                }
+                await this.client.provider.set(message.guild, name, command);
+                console.log(command);
+            }
     }
     /**
      * 
