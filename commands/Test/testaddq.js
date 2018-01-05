@@ -9,10 +9,10 @@ const Song = require("./Song");
 class List extends commando.Command {
     constructor(client) {
         super(client, {
-            name: "queueadd",
-            aliases: ["qa", "qadd", "add"],
+            name: "testqueueadd",
+            aliases: ["testqa", "testqadd", "testadd"],
             group: "music",
-            memberName: "queueadd",
+            memberName: "testqueueadd",
             description: "Adds a song to the queue",
             guildOnly: true,
             args: [{
