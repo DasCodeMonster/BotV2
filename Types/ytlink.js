@@ -28,7 +28,7 @@ class YTlink extends ArgumentType {
             if (this.validate(value)) {
                 ID = value.split(/(list=)+/)[2];
                 // return [ID, "list"];
-                return {"type":"single", "id":ID}
+                return {"type":"list", "id":ID}
             }
             else throw new Error("Invalid link!");
         }

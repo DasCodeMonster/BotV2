@@ -1,7 +1,8 @@
 class Song {
-    constructor(ID, title, author, length, queuedBy) {
+    constructor(ID, title, description, author, length, queuedBy) {
         this.ID = ID;
         this.title = title,
+        this.description = description,
         this.author = author;
         this.length = length;
         this.queuedBy = queuedBy;

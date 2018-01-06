@@ -1,37 +1,38 @@
 const commando = require("discord.js-commando");
-const Queue = require("./myQueue");
-
-class Shuffle extends commando.Command {
+const {Message} = require("discord.js");
+class BanCommand extends commando.Command {
     constructor(client) {
         super(client, {
-            name: "shuffle",
-            group: "music",
-            memberName: "shuffle",
-            description: "shuffle the queue.",
-            guildOnly: true
+            name: "ban",
+            group: "generic",
+            memberName: "ban",
+            description: "Bans a mentioned user. Reason must be given!",
+            args: [{
+                key: "user",
+                label: "user",
+                prompt: "Which user do you want to ban?",
+                type: "user"
+            }, {
+                key: "reason",
+                label: "reason",
+                prompt: "You need to specify why the mentioned user should be banned",
+                type: "string"
+            }, {
+                key: "days",
+                label: "days",
+                prompt: "How many days should the user be banned?",
+                type: "integer"
+            }]
         });
-        this.queue = [];
     }
     /**
      * 
-     * @param {Message} message 
+     * @param {Message} msg 
      * @param {*} args 
      */
-    async run(message, args) {
-        /**
-         * @type {Queue}
-         */
-        var queue = this.client.provider.get(message.guild, "queue", new Queue());
-        queue.shuffle();
-        message.reply("ok i shuffeled the queue!");
+    async run(msg, args){
+        msg.guild.ban(args.user, {days: args.days, reason: args.reason});
     }
-    
-    /**
-     * 
-     * @param {Message} message 
-     * @param {*} args 
-     * @returns {boolean}
-     */
     hasPermission(message, args){
         var command = this.client.provider.get(message.guild, this.name, {true:[], false:[], channel: {true: [], false: []}, role:{true: [], false: []}})
         // if (message.member.hasPermission("ADMINISTRATOR")|| command.true.indexOf(message.author.id) != -1 || command.channel.true.indexOf(message.channel.id)>-1 || role(message, command)){
@@ -60,4 +61,4 @@ function role(message, command) {
     });
     return ret;
 }
-module.exports = Shuffle;
+module.exports = BanCommand;

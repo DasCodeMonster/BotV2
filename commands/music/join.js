@@ -1,5 +1,7 @@
 const commando = require("discord.js-commando");
 const ytdl = require("ytdl-core");
+const Queue = require("./myQueue");
+const {Message} = require("discord.js");
 
 class joinVoicechannelCommand extends commando.Command {
     constructor(client) {
@@ -10,86 +12,82 @@ class joinVoicechannelCommand extends commando.Command {
             description: 'Let the Bot join your Voicechannel.',
             guildOnly: true
         });
-        this.queue = [];
     }
-
+    /**
+     * 
+     * @param {Message} message 
+     * @param {*} args 
+     */
     async run(message, args) {
         console.log("User: "+message.member.displayName+" in Guild: "+message.guild.name+" used Command: "+this.name+" in textchannel: "+message.channel.name);
         if (message.member.voiceChannel) {
             message.member.voiceChannel.join();
             console.log("Guild: "+message.guild.name+", joined voicechannel: "+message.member.voiceChannel.name);
             message.reply("ok i joined voicechannel: " + message.member.voiceChannel.name);
-            if (this.client.provider.get(message.guild, "queue") && this.client.provider.get(message.guild, "queue").length > 0){
-            this.queue = await this.client.provider.get(message.guild, "queue");
-            this.play(message);
-            }
-            else {
-                console.log("queue is empty!");
+            /**
+             * @type {Queue}
+             */
+            var queue = await this.client.provider.get(message.guild, "queue", new Queue());
+            if(!message.guild.voiceConnection.dispatcher){
+                this.play(message, queue, this);
+                this.client.provider.get(message.guild, "queue", new Queue())
             }
         }
         else {
             message.reply("you need to join a voicechannel first!");
         }
     }
-    async play(message) {
-        if (this.queue.length > 0) {
-            //var vid = this.queue.splice(0, 1)[0];
-            var vid = this.queue[0];            
-            this.client.provider.set(message.guild, "queue", this.queue);
-            this.client.provider.set(message.guild, "nowPlaying", vid);
-            message.guild.voiceConnection.playStream(ytdl(vid.ID, {filter: "audioonly"}));
-            if (this.client.provider.get(message.guild, "volume") >= 0) message.guild.voiceConnection.dispatcher.setVolume(this.client.provider.get(message.guild, "volume"));
-            else message.guild.voiceConnection.dispatcher.setVolume(0.3);
-            message.channel.send("Now playing: "+vid.title);
+    /**
+     * 
+     * @param {Message} message 
+     * @param {Queue} queue 
+     * @param {this} thisarg
+     */
+    async play(message, queue, thisarg) {
+        console.log(queue);
+        if (queue.queue.length >= 0) {
+            var vid = queue.nowPlaying;
+            console.log(vid);
+            console.log(vid.ID);
+            thisarg.client.provider.set(message.guild, "queue", queue);
+            await message.guild.voiceConnection.playStream(ytdl(vid.ID, {filter: "audioonly"}));
+            await message.guild.voiceConnection.dispatcher.setVolume(await thisarg.client.provider.get(message.guild, "volume", 0.3));
+            await message.channel.send("Now playing: "+vid.title);
             message.guild.voiceConnection.dispatcher.on("end", reason => {
-                this.onEnd(message, reason);
+                if(reason) console.log(reason);
+                thisarg.onEnd(message, queue, thisarg, reason);
             });
         }
     }
-    async onEnd(message, reason) {
-        console.log("File ended");
-        if (this.client.provider.get(message.guild, "queue") && this.client.provider.get(message.guild, "queue").length > 0) {
-            var queue = await this.client.provider.get(message.guild, "queue");
-            if (reason && reason !== "!skip") {
-                if (await this.client.provider.get(message.guild, "song", false)) {
-
-                } else {
-                    var vidold = queue.splice(0, 1)[0];
-                    if (await this.client.provider.get(message.guild, "list", false)){
-                        queue.push(vidold);
-                    }
-                }
+    /**
+     * 
+     * @param {Message} message 
+     * @param {String} reason 
+     * @param {Queue} queue
+     * @param {this} thisarg 
+     */
+    async onEnd(message, queue, thisarg, reason) {
+        console.log(queue.queue[0]);
+        if (queue.queue.length >=1) {
+            if (reason && reason === "!skip") {
+                await queue.skip();
             }
             else {
-                var vidold = queue.splice(0, 1)[0];
-                if (await this.client.provider.get(message.guild, "list", false)){
-                    queue.push(vidold);
-                }              
+                await queue.next();       
             }
-            if(queue.length>0){
-                var vid = queue[0];
-                console.log(vid);
-                message.guild.voiceConnection.playStream(ytdl(vid.ID, {filter: "audioonly"}));
-                if (this.client.provider.get(message.guild, "volume") >= 0) message.guild.voiceConnection.dispatcher.setVolume(this.client.provider.get(message.guild, "volume"));
-                else message.guild.voiceConnection.dispatcher.setVolume(0.3);
-                message.channel.send("Now playing: "+vid.title);
-                this.client.provider.set(message.guild, "queue", queue);
-                this.client.provider.set(message.guild, "nowPlaying", vid);
-                message.guild.voiceConnection.dispatcher.on("end", reason => {
-                    if (reason) console.log(reason);
-                    this.onEnd(message, reason);
-                });
-            }
-            else {
-                var empty = [];
-                this.client.provider.set(message.guild, "queue", empty);
-                console.log("queue is empty");
-                return;
-            }
+            var vid = queue.nowPlaying;
+            console.log(vid);
+            await message.guild.voiceConnection.playStream(ytdl(vid.ID, {filter: "audioonly"}));
+            await message.guild.voiceConnection.dispatcher.setVolume(await thisarg.client.provider.get(message.guild, "volume", 0.3));
+            await message.channel.send("Now playing: "+vid.title);
+            await message.guild.voiceConnection.dispatcher.on("end", reason => {
+                if (reason) console.log(reason);
+                thisarg.onEnd(message, queue, thisarg, reason);
+            });
+            await thisarg.client.provider.set(message.guild, "queue", queue);
         }
         else {
-            var empty = [];
-            this.client.provider.set(message.guild, "queue", empty);
+            thisarg.client.provider.set(message.guild, "queue", queue);
             console.log("queue is empty");
             return;
         }
