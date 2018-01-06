@@ -21,12 +21,14 @@ class YTlink extends ArgumentType {
         if(ytdl.validateURL(value)) {
             var ID = value.split(/(v=)+/)[2];
             ID = ID.split(/([&])+/)[0];
-            return [ID, "single"];
+            // return [ID, "single"];
+            return {"type":"single", "id":ID}
         } 
         else {
             if (this.validate(value)) {
                 ID = value.split(/(list=)+/)[2];
-                return [ID, "list"];
+                // return [ID, "list"];
+                return {"type":"single", "id":ID}
             }
             else throw new Error("Invalid link!");
         }
