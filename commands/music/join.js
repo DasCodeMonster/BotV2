@@ -55,7 +55,7 @@ class joinVoicechannelCommand extends commando.Command {
             await message.channel.send("Now playing: "+vid.title);
             message.guild.voiceConnection.dispatcher.on("end", reason => {
                 if(reason) console.log(reason);
-                thisarg.onEnd(message, queue, thisarg, reason);
+                thisarg.onEnd(message, thisarg, reason);
             });
         }
     }
@@ -66,8 +66,12 @@ class joinVoicechannelCommand extends commando.Command {
      * @param {Queue} queue
      * @param {this} thisarg 
      */
-    async onEnd(message, queue, thisarg, reason) {
-        console.log(queue.queue[0]);
+    async onEnd(message, thisarg, reason) {
+        /**
+         * @type {Queue}
+         */
+        var queue = await thisarg.client.provider.get(message.guild, "queue", new Queue());
+        console.log(queue);
         if (queue.queue.length >=1) {
             if (reason && reason === "!skip") {
                 await queue.skip();
@@ -81,7 +85,8 @@ class joinVoicechannelCommand extends commando.Command {
             await message.guild.voiceConnection.dispatcher.setVolume(await thisarg.client.provider.get(message.guild, "volume", 0.3));
             await message.channel.send("Now playing: "+vid.title);
             await message.guild.voiceConnection.dispatcher.on("end", reason => {
-                if (reason) console.log(reason);
+                if (!reason) return;
+                console.log(reason);
                 thisarg.onEnd(message, queue, thisarg, reason);
             });
             await thisarg.client.provider.set(message.guild, "queue", queue);

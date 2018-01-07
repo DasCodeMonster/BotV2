@@ -129,5 +129,13 @@ class Queue {
             this.queue[randomIndex] = temporaryValue;
         }
     }
+    /**
+     * 
+     * @param {number} start 
+     * @param {number} end 
+     */
+    remove(start=0, count=1){
+        this.queue.splice(start, count);
+    }
 }
 module.exports = Queue;

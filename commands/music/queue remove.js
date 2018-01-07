@@ -1,4 +1,6 @@
 const commando = require("discord.js-commando");
+const {Message} = require("discord.js");
+const Queue = require("./myQueue");
 
 class QueueRemove extends commando.Command {
     constructor(client) {
@@ -8,18 +10,33 @@ class QueueRemove extends commando.Command {
             group: "music",
             memberName: "queue remove",
             description: "Removes the queue",
-            guildOnly: true
+            guildOnly: true,
+            args: [{
+                key: "start",
+                label: "start",
+                prompt: "Where do you want to start to rempve songs?",
+                default: 1,
+                type: "integer",
+                min: 1,
+                infinite: false
+            }, {
+                key: "count",
+                label: "count",
+                prompt: "how many songs do you want to remove?",
+                default: 1,
+                type: "integer",
+                min:1,
+                infinite: false
+            }]
         });
-        this.queue = [];
-        this.newQueue = [];
     }
     async run(message, args) {
-        if (this.client.provider.get(message.guild, "queue")) this.queue = this.client.provider.get(message.guild, "queue");
-        //await this.client.provider.remove(message.guild, "queue");
-        if (this.queue.length > 0) this.newQueue = this.queue.splice(0,1);
-        await this.client.provider.set(message.guild, "queue", this.newQueue);
-        console.log(this.client.provider.get(message.guild, "queue"));
-        message.reply("Removed the queue!");
+        /**
+         * @type {Queue}
+         */
+        var queue = this.client.provider.get(message.guild, "queue", new Queue());
+        queue.remove(args.start-1, args.count);
+        message.reply("Removed some songs!");
     }
     /**
      * 
