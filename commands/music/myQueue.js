@@ -2,12 +2,14 @@ const Song = require("./Song");
 
 class Queue {
     /**
+     * @param {Song} nowPlaying
+     * @param {Song[]} queueArr
      * @param {boolean} loopSong 
      * @param {boolean} loopList 
      */
-    constructor(loopSong=false, loopList=false){
-        this.nowPlaying = null;
-        this.queue = [];
+    constructor(nowPlaying, queueArr, loopSong=false, loopList=false){
+        this.nowPlaying = nowPlaying;
+        this.queue = queueArr;
         this.loop = {song:loopSong, list:loopList};
     }
     /**

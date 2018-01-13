@@ -18,11 +18,12 @@ class YTlink extends ArgumentType {
         }
     }
     parse(value) {
-        if(ytdl.validateURL(value)) {
+        if (ytdl.validateURL(value)) {
+            var retvar = value;
             var ID = value.split(/(v=)+/)[2];
             ID = ID.split(/([&])+/)[0];
             // return [ID, "single"];
-            return {"type":"single", "id":ID}
+            return {"type":"single", "id":ID, "link":retvar}
         } 
         else {
             if (this.validate(value)) {
