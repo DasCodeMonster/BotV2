@@ -385,6 +385,8 @@ class List extends commando.Command {
         var vid = queue.nowPlaying;
         // console.log(vid);
         // console.log(vid.ID);
+        await this.client.provider.set(message.guild, "nowPlaying", queue.nowPlaying);
+        await this.client.provider.set(message.guild, "queueArr", queue.queue);
         await message.guild.voiceConnection.playStream(ytdl(vid.ID, {filter: "audioonly"}));
         await message.guild.voiceConnection.dispatcher.setVolume(await this.client.provider.get(message.guild, "volume", 0.3));
         await message.channel.send("Now playing: "+vid.title);
