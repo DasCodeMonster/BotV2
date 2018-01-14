@@ -43,7 +43,8 @@ class Skip extends commando.Command {
                 var queueConfig = await this.client.provider.get(message.guild, "queueConfig", new QueueConfig())
                 var queue = new Queue(queueConfig);
                 queue.skip();
-                this.play(message, queue);
+                // this.play(message, queue);
+                queue.play(message, queue, this.client.provider);
                 return;
             }
             message.guild.voiceConnection.dispatcher.end("!skip");

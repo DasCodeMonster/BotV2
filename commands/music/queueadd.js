@@ -75,7 +75,8 @@ class List extends commando.Command {
         var song = await getYt.Single(args.link.link, message);
         queue.addSingle(song);
         if(message.guild.voiceConnection.dispatcher) return;
-        else this.play(message,queue);
+        // else this.play(message,queue);
+        else queue.play(message, queue, this.client.provider);
     }
     /**
      * 
@@ -88,8 +89,8 @@ class List extends commando.Command {
         var songs = await getYt.Playlist(ID, message);
         queue.addList(songs);
         if(message.guild.voiceConnection.dispatcher) return;
-        else this.play(message,queue);
-        return;
+        // else this.play(message,queue);
+        else queue.play(message, queue, this.client.provider);
     }
     /**
      * 

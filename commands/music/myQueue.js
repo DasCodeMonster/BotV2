@@ -141,6 +141,21 @@ class Queue {
     /**
      * 
      * @param {Message} message 
+     * @param {Queue} queue 
+     */
+    async play(message, queue, provider) {
+        await provider.set(message.guild, "queueConfig", new QueueConfig(this.nowPlaying, this.queue, this.loop.song, this.loop.list));
+        await message.guild.voiceConnection.playStream(ytdl(this.nowPlaying.ID, {filter: "audioonly"}));
+        await message.guild.voiceConnection.dispatcher.setVolume(await provider.get(message.guild, "volume", 0.3));
+        await message.channel.send("Now playing: "+this.nowPlaying.title);
+        message.guild.voiceConnection.dispatcher.on("end", reason => {
+            if(reason) console.log(reason);
+            queue.onEnd(message, reason, provider);
+        });
+    }
+    /**
+     * 
+     * @param {Message} message 
      * @param {String} reason 
      */
     async onEnd(message, reason, provider){
