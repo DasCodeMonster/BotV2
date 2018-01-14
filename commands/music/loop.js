@@ -1,4 +1,7 @@
 const commando = require("discord.js-commando");
+const Queue = require("./myQueue");
+const QueueConfig = require("./queueConfig");
+const {Message} = require("discord.js");
 
 class Loop extends commando.Command {
     constructor(client) {
@@ -26,15 +29,25 @@ class Loop extends commando.Command {
         });
     }
     async run(message, args) {
-        console.log(args);
+        /**
+         * @type {QueueConfig}
+         */
+        var queueConfig = await this.client.provider.get(message.guild, "queueConfig", new QueueConfig())
+        var queue = new Queue(queueConfig);
         if (args.songorlist === "default" && args.boolean === "default") {
-            message.reply(`Current settings for list: ${await this.client.provider.get(message.guild, "list")?await this.client.provider.get(message.guild, "list"):false}\nCurrent settings for song: ${await this.client.provider.get(message.guild, "song")?await this.client.provider.get(message.guild, "song"):false}`);
+            message.reply(`Current settings for list: ${queue.loop.list}\nCurrent settings for song: ${queue.loop.song}`);
             
         }
         else if (args.songorlist !== "default" && args.boolean === "default") {
             message.reply(`Current settings for ${args.songorlist}: ${await this.client.provider.get(message.guild, args.songorlist)?await this.client.provider.get(message.guild, args.songorlist):false}`);
         } else if (args.songorlist !== "default" && args.boolean !== "default") {
-            this.client.provider.set(message.guild, args.songorlist, args.boolean);
+            if(args.songorlist === "song"){
+                queue.loop.song = args.boolean;
+            }
+            if(args.songorlist === "list"){
+                queue.loop.list = args.boolean;
+            }
+            await this.client.provider.set(message.guild, "queueConfig", new QueueConfig(queue.nowPlaying, queue.queue, queue.loop.song, queue.loop.list));
             message.reply(`set loop ${args.songorlist} to ${args.boolean}`);
         } else if (args.songorlist === "default" && args.boolean !== "default") {
             message.reply(`you need to be more precise! Do you want to set loop list or loop song to ${args.boolean}`);

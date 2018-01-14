@@ -1,6 +1,7 @@
 const commando = require("discord.js-commando");
 const ytdl = require("ytdl-core");
 const Queue = require("./myQueue");
+const QueueConfig = require("./queueConfig");
 
 class Queuecommand extends commando.Command {
     constructor(client) {
@@ -15,9 +16,10 @@ class Queuecommand extends commando.Command {
     }
     async run(message, args){
         /**
-         * @type {Queue}
+         * @type {QueueConfig}
          */
-        var queue = await this.client.provider.get(message.guild, "queue", new Queue());
+        var queueConfig = await this.client.provider.get(message.guild, "queueConfig", new QueueConfig())
+        var queue = new Queue(queueConfig);
         if (queue.queue.length === 0 && queue.nowPlaying === null) {
             message.reply("The queue is empty!");
             return;

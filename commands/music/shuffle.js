@@ -1,5 +1,6 @@
 const commando = require("discord.js-commando");
 const Queue = require("./myQueue");
+const QueueConfig = require("./queueConfig");
 
 class Shuffle extends commando.Command {
     constructor(client) {
@@ -19,10 +20,12 @@ class Shuffle extends commando.Command {
      */
     async run(message, args) {
         /**
-         * @type {Queue}
+         * @type {QueueConfig}
          */
-        var queue = this.client.provider.get(message.guild, "queue", new Queue());
+        var queueConfig = await this.client.provider.get(message.guild, "queueConfig", new QueueConfig())
+        var queue = new Queue(queueConfig);
         queue.shuffle();
+        await this.client.provider.set(message.guild, "queueConfig", new QueueConfig(queue.nowPlaying, queue.queue, queue.loop.song, queue.loop.list));
         message.reply("ok i shuffeled the queue!");
     }
     

@@ -8,7 +8,7 @@ const Queue = require("./myQueue");
 const {Message} = require("discord.js");
 const q = require("q");
 const getYt = require("./ytsong");
-const wait = require("wait.for");
+const QueueConfig = require("./queueConfig");
 
 class List extends commando.Command {
     constructor(client) {
@@ -35,27 +35,17 @@ class List extends commando.Command {
      * @param {Object} args 
      */
     async run(message, args) {
-        console.log(args.link);
         var ID = args.link.id;
-        // await this.client.provider.remove(message.guild, "queue");
         /**
-         * @type {Song}
+         * @type {QueueConfig}
          */
-        var nowPlaying = await this.client.provider.get(message.guild, "nowPlaying", null);
-        /**
-         * @type {Song[]}
-         */
-        var queueArr = await this.client.provider.get(message.guild, "queueArr", []);
-        var queue = new Queue(nowPlaying, queueArr);
-        // queue.addSingle(new Song(undefined, undefined, undefined, undefined, undefined, undefined));
-        console.log(queue);
+        var queueConfig = await this.client.provider.get(message.guild, "queueConfig", new QueueConfig())
+        var queue = new Queue(queueConfig);
         if (message.guild.voiceConnection) {
             if (args.link.type ==="single") {
-                //wait.launchFiber(this.addSingle.bind(this, ID, message, args, queue), ID, message, args, queue);
                 this.addSingle(ID, message, args, queue);
             }
             else {
-                // wait.launchFiber(this.addPlaylist, message, args, ID, queue, this);
                 this.addPlaylist(message, args, ID, queue);
             }
         }
@@ -63,13 +53,9 @@ class List extends commando.Command {
             if (message.member.voiceChannel) {
                 message.member.voiceChannel.join();
                 if (args.link.type === "single") {
-                wait.launchFiber(this.addSingle.bind(this, ID, message, args, queue), ID, message, args, queue);
-                // wait.launchFiber(this.addSingle.bind(this, ID, message, args, queue));
-                    // wait.launchFiber(this.addSingle,ID, message, args, queue, this);
-                    // this.addSingle(message, args, ID, queue);
+                    this.addSingle(ID, message, args, queue);
                 }
                 else {
-                    // wait.launchFiber(this.addPlaylist, message, args, ID, queue, this);
                     this.addPlaylist(message, args, ID, queue);
                 }              
             }
@@ -84,34 +70,12 @@ class List extends commando.Command {
      * @param {Message} message
      * @param {Object} args
      * @param {Queue} queue
-     * @param {this} thisarg
      */
     async addSingle(ID, message, args, queue) {
         var song = await getYt.Single(args.link.link, message);
         queue.addSingle(song);
-        this.play(message, queue);
-        // console.log(message);
-        //console.log(this);     
-        //console.log(queue);
-        //ytdl.getInfo()
-        //var data = wait.for(youtubeV3.videos.list, {
-        //    part: "snippet, contentDetails",
-        //    id: ID
-        //});
-        //// console.log(data);
-        //data.items.forEach((item, index, array)=>{
-        //    // console.log(thisarg.song(message, args, item));
-        //    queue.addSingle(this.song(message, args, item));
-        //});
-        //if(message.guild.voiceConnection.dispatcher) return;
-        //else {
-        //    /**
-        //     * @type {function(Message, Queue):void}
-        //     */
-        //    var test = this.play.bind(this, message, queue);
-        //    test(message, queue);
-        //    // this.play(message, queue);
-        //}
+        if(message.guild.voiceConnection.dispatcher) return;
+        else this.play(message,queue);
     }
     /**
      * 
@@ -119,7 +83,6 @@ class List extends commando.Command {
      * @param {Object} args 
      * @param {*} ID 
      * @param {Queue} queue 
-     * @param {this} thisarg
      */
     async addPlaylist(message, args, ID, queue) {
         var songs = await getYt.Playlist(ID, message);
@@ -127,315 +90,22 @@ class List extends commando.Command {
         if(message.guild.voiceConnection.dispatcher) return;
         else this.play(message,queue);
         return;
-        //var listId = args.link.split("list=")[1];
-        var Data = [];
-        console.log(ID);
-        var data = wait.for(youtubeV3.playlistItems.list, {
-            part: "snippet",
-            playlistId: ID,
-            maxResults: "50"
-        });
-        console.log(data);
-        // console.log(Math.floor(data.pageInfo.totalResults/data.pageInfo.resultsPerPage));
-        // console.log(data.pageInfo.totalResults%data.pageInfo.resultsPerPage);
-        var fullpages = Math.floor(data.pageInfo.totalResults/data.pageInfo.resultsPerPage);
-        var rest = data.pageInfo.totalResults%data.pageInfo.resultsPerPage;
-        if (rest) var pages = fullpages + 1;
-        else var pages = fullpages;
-        console.log(pages);
-        if(data.nextPageToken)var nextPageToken = data.nextPageToken;
-        var ids = [];
-        data.items.forEach((item, index) => {
-            if (item.snippet.resourceId.videoId){
-                ids.push(item.snippet.resourceId.videoId);
-            }
-        });
-        for (let i = 0; i < pages-1; i++) {
-            data = thisarg.fetchAllPages(ID, nextPageToken);
-            nextPageToken = data.nextPageToken;
-            data.items.forEach((item, index) => {
-                if (item.snippet.resourceId.videoId){
-                    ids.push(item.snippet.resourceId.videoId);
-                }
-            });
-        }
-        console.log(ids.length);
-        /**
-         * @type {Song[]}
-         */
-        var songs=[];
-        for (let i=0; i < pages;i++){
-            var temp = ids.splice(0, 50);
-            data = wait.for(youtubeV3.videos.list,{
-                part: "snippet, contentDetails",
-                id: temp.join(", ")
-            });
-            data.items.forEach(item => {
-                songs.push(thisarg.song(message, args, item));
-            });
-        }
-        console.log(songs.length);
-        queue.addList(songs);
-        if(message.guild.voiceConnection.dispatcher) return;
-        else thisarg.play(message, queue, thisarg);
-        return;
-        // wait.launchFiber(()=>{
-        //     data = wait.for(youtubeV3.videos.list, {
-        //         part: "snippet, contentDetails",
-        //         id: ids.join(", ")
-        //     });
-        //     console.log(data);
-        //     var songs = []
-        //     data.items.forEach((item, index, array)=>{
-        //         songs.push(thisarg.song(message, args, item));
-        //     });
-        //     console.log(songs.length);
-        // });
-        // await youtubeV3.playlistItems.list({
-        //     part: "snippet",
-        //     playlistId: ID,
-        //     maxResults: "50"
-        // }, (err, data) => {
-        //     if (err) {
-        //         console.warn(err);
-        //         message.reply("an Error occurred!");
-        //         return;
-        //     }
-        //     else {
-        //         if (!message.guild.voiceConnection){
-        //             message.member.voiceChannel.join();
-        //         }
-                
-        //         //console.log(data);
-        //         var firstPage = [];
-        //         data.items.forEach((item, index) => {
-        //             console.log(item);
-        //             if (item.snippet.resourceId.videoId) {
-        //                 firstPage.push(item.snippet.resourceId.videoId);
-        //             }
-        //             if (index === data.items.length-1) {
-        //                 console.log(firstPage.length);
-        //                 this.IDs.push(firstPage);
-        //                 console.log(firstPage);
-        //                 console.log(this.IDs);
-        //                 this.pages +=1;
-        //                 if (data.nextPageToken) {
-        //                     this.fetchAllPages(ID, data.nextPageToken, err => {
-        //                         if (err) {
-        //                             console.log(err);
-        //                         }
-        //                         else {
-        //                             console.log("playlist fetched");
-        //                             console.log(this.IDs);
-        //                             //this.IDs.reverse();
-        //                             var i = 0;
-        //                             this.IDs.forEach((page, index) => {
-        //                                 youtubeV3.videos.list({
-        //                                     part: "snippet, contentDetails",
-        //                                     id: page.join(", ")
-        //                                 }, (err, data) => {
-        //                                     if (err) console.log(err);
-        //                                     else {
-        //                                         console.log(`\n${index}\n${page}\n${page.length}\n`);
-        //                                         var songs = [];
-        //                                         data.items.forEach(item => {
-        //                                             songs.push(this.song(message, args, item));
-        //                                         });
-        //                                         Data.splice(index,0,songs);
-        //                                         i+=1;
-        //                                         console.log(i);
-        //                                         console.log(this.pages);
-        //                                         console.log(i === this.pages);
-        //                                         console.log(i == this.pages);
-        //                                         if (i === this.pages) {
-        //                                             console.log("ok");
-        //                                             Data.forEach((songs, index) => {
-        //                                                 songs.forEach((song, index) => {
-        //                                                     queue.addSingle(song);
-        //                                                 });
-        //                                             });
-        //                                             // console.log(this.queue);
-        //                                             if(message.guild.voiceConnection.dispatcher) return;
-        //                                             else this.play(message,queue);
-        //                                         }
-        //                                     }
-        //                                 });
-        //                             });
-        //                         }
-        //                     });
-        //                 }
-        //                 else {
-        //                     var i = 0;
-        //                     youtubeV3.videos.list({
-        //                         part: "snippet, contentDetails",
-        //                         id: firstPage.join(", ")
-        //                     }, (err, data) => {
-        //                         if (err) console.log(err);
-        //                         else {
-        //                             var songs = [];
-        //                             data.items.forEach(item => {
-        //                                 songs.push(this.song(message, args, item));
-        //                                 console.log(songs);
-        //                             });
-        //                             i+=1;
-        //                             if (i === this.pages) {
-        //                                 Data.forEach((songs, index) => {
-        //                                     songs.forEach((song, index) => {
-        //                                         queue.addSingle(song);
-        //                                     });
-        //                                 });
-        //                                 console.log(this.queue);
-        //                                 if(message.guild.voiceConnection.dispatcher) return;
-        //                                 else this.play(message, queue);
-        //                             }
-        //                         }
-        //                     });
-        //                 }
-        //             }
-        //         });
-        //     }
-        // });
-    }
-    /**
-     * 
-     * @param {*} listId 
-     * @param {*} PageToken 
-     * @param {Message} message
-     * @param {Object} args
-     * @param {this} thisarg 
-     * @param {*} callback 
-     */
-    fetchAllPages(listId, PageToken) {
-        var nextPageResults = wait.for(youtubeV3.playlistItems.list, {
-            part: 'snippet',
-            playlistId: listId,
-            maxResults: "50",
-            pageToken: PageToken
-        });
-        return nextPageResults;
-        return songs;
-        // await youtubeV3.playlistItems.list({
-        //     part: 'snippet',
-        //     playlistId: listId,
-        //     maxResults: "50",
-        //     pageToken: PageToken
-        // }, (err, nextPageResults) => {
-        //     if (err) {
-        //         callback(err);
-        //         return;
-        //     }
-        //     else{
-        //         console.log("test");
-        //         var page = [];
-        //         nextPageResults.items.forEach((item, index) => {
-        //             if (item.snippet.resourceId.videoId) {
-        //                 page.push(item.snippet.resourceId.videoId);
-        //             }
-        //             if (index === nextPageResults.items.length-1) {
-        //                 console.log(page.length);
-        //                 this.IDs.push(page);
-        //                 this.pages += 1;
-        //                 if (nextPageResults.nextPageToken){
-        //                     this.fetchAllPages(listId, nextPageResults.nextPageToken, callback);
-        //                 }
-        //                 else{
-        //                     callback(null);
-        //                 }
-        //             }
-        //         });
-        //     }
-        // });
-    }
-    /**
-     * 
-     * @param {Message} message 
-     * @param {*} args 
-     * @param {*} item 
-     */
-    song(message, args, item) {
-        var match = /PT((\d+)H)?((\d+)M)?((\d+)S)?/.exec(item.contentDetails.duration)
-        var tmp = ""
-        if (match[2]) {
-            tmp += match[2] + ":"
-        }
-        if (match[4]) {
-            tmp += ("00" + match[4]).slice(-2) + ":"
-        } else {
-            tmp += "00:"
-        }
-        if (match[6]) {
-            tmp += ("00" + match[6]).slice(-2)
-        } else {
-            tmp += "00"
-        }
-        var song = new Song(item.id, item.snippet.title, item.snippet.description, item.snippet.channelTitle, tmp, message.member.id);
-        return song;
     }
     /**
      * 
      * @param {Message} message 
      * @param {Queue} queue 
-     * @param {this} thisarg
      */
     async play(message, queue) {
-        // console.log(queue);
-        /**
-            * @type {Song}
-            */
         var vid = queue.nowPlaying;
-        // console.log(vid);
-        // console.log(vid.ID);
-        await this.client.provider.set(message.guild, "nowPlaying", queue.nowPlaying);
-        await this.client.provider.set(message.guild, "queueArr", queue.queue);
+        await this.client.provider.set(message.guild, "queueConfig", new QueueConfig(queue.nowPlaying, queue.queue, queue.loop.song, queue.loop.list));
         await message.guild.voiceConnection.playStream(ytdl(vid.ID, {filter: "audioonly"}));
         await message.guild.voiceConnection.dispatcher.setVolume(await this.client.provider.get(message.guild, "volume", 0.3));
         await message.channel.send("Now playing: "+vid.title);
         message.guild.voiceConnection.dispatcher.on("end", reason => {
             if(reason) console.log(reason);
-            //var test = this.onEnd.bind(this, message, reason)
-            //test(message, reason);
-             this.onEnd(message, reason);
+            queue.onEnd(message, reason, this.client.provider);
         });
-    }
-    /**
-     * 
-     * @param {Message} message 
-     * @param {String} reason 
-     * @param {Queue} queue
-     * @param {this} thisarg 
-     */
-    async onEnd(message, reason) {
-        // console.log("File ended");
-        var nowPlaying = this.client.provider.get(message.guild, "nowPlaying", null);
-        var queueArr = this.client.provider.get(message.guild, "queueArr", []);
-        var queue = new Queue(nowPlaying, queueArr);
-        if (queue.queue.length >=1) {
-            if (reason && reason !== "!skip") {
-                await queue.skip();
-            }
-            else {
-                await queue.next();       
-            }
-            var vid = queue.nowPlaying;
-            // console.log(vid);
-            await message.guild.voiceConnection.playStream(ytdl(vid.ID, {filter: "audioonly"}));
-            await message.guild.voiceConnection.dispatcher.setVolume(await this.client.provider.get(message.guild, "volume", 0.3));
-            await message.channel.send("Now playing: "+vid.title);
-            await message.guild.voiceConnection.dispatcher.on("end", reason => {
-                if (reason) console.log(reason);
-                //var test = this.onEnd.bind(this, message, reason)
-                //test(message, reason);
-                 this.onEnd(message, queue, this, reason);
-            });
-            await this.client.provider.set(message.guild, "nowPlaying", queue.nowPlaying);
-            await this.client.provider.set(message.guild, "queueArr", queue.queue);
-        }
-        else {
-            await this.client.provider.set(message.guild, "nowPlaying", queue.nowPlaying);
-            await this.client.provider.set(message.guild, "queueArr", queue.queue);
-            console.log("queue is empty");
-            return;
-        }
     }
     /**
      * 

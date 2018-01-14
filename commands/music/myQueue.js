@@ -1,16 +1,15 @@
 const Song = require("./Song");
-
+const {Message} = require("discord.js");
+const ytdl = require("ytdl-core");
+const QueueConfig = require("./queueConfig");
 class Queue {
     /**
-     * @param {Song} nowPlaying
-     * @param {Song[]} queueArr
-     * @param {boolean} loopSong 
-     * @param {boolean} loopList 
+     * @param {QueueConfig} queueConfig
      */
-    constructor(nowPlaying, queueArr, loopSong=false, loopList=false){
-        this.nowPlaying = nowPlaying;
-        this.queue = queueArr;
-        this.loop = {song:loopSong, list:loopList};
+    constructor(queueConfig){
+        this.nowPlaying = queueConfig.nowPlaying;
+        this.queue = queueConfig.queue;
+        this.loop = queueConfig.loop;
     }
     /**
      * Adds a single Song to the current queue
@@ -138,6 +137,38 @@ class Queue {
      */
     remove(start=0, count=1){
         this.queue.splice(start, count);
+    }
+    /**
+     * 
+     * @param {Message} message 
+     * @param {String} reason 
+     */
+    async onEnd(message, reason, provider){
+        /**
+         * @type {QueueConfig}
+         */
+        var queueConfig = await provider.get(message.guild, "queueConfig", new QueueConfig());
+        this.nowPlaying = queueConfig.nowPlaying;
+        this.queue = queueConfig.queue;
+        this.loop = queueConfig.loop;
+        if (reason && reason === "!skip") {
+            await this.skip();
+        }
+        else {
+            await this.next();       
+        }
+        await provider.set(message.guild, "queueConfig", new QueueConfig(this.nowPlaying, this.queue, this.loop.song, this.loop.list));
+        if (this.nowPlaying === null) {
+            console.log("queue is empty");
+            return;
+        }
+        await message.guild.voiceConnection.playStream(ytdl(this.nowPlaying.ID, {filter: "audioonly"}));
+        await message.guild.voiceConnection.dispatcher.setVolume(await provider.get(message.guild, "volume", 0.3));
+        await message.channel.send("Now playing: "+this.nowPlaying.title);
+        await message.guild.voiceConnection.dispatcher.on("end", reason => {
+            if (reason) console.log(reason);
+                this.onEnd(message, reason, provider);
+        });
     }
 }
 module.exports = Queue;

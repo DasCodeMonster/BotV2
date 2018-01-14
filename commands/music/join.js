@@ -2,6 +2,7 @@ const commando = require("discord.js-commando");
 const ytdl = require("ytdl-core");
 const Queue = require("./myQueue");
 const {Message} = require("discord.js");
+const QueueConfig = require("./queueConfig");
 
 class joinVoicechannelCommand extends commando.Command {
     constructor(client) {
@@ -19,18 +20,22 @@ class joinVoicechannelCommand extends commando.Command {
      * @param {*} args 
      */
     async run(message, args) {
-        console.log("User: "+message.member.displayName+" in Guild: "+message.guild.name+" used Command: "+this.name+" in textchannel: "+message.channel.name);
+        if (message.guild.voiceConnection && message.member.voiceChannel){
+            if (message.guild.voiceConnection.channel.equals(message.member.voiceChannel)){
+                message.reply("I am already in your voicechannel :)");
+                return;
+            }
+        }
         if (message.member.voiceChannel) {
-            message.member.voiceChannel.join();
-            console.log("Guild: "+message.guild.name+", joined voicechannel: "+message.member.voiceChannel.name);
+            await message.member.voiceChannel.join();
             message.reply("ok i joined voicechannel: " + message.member.voiceChannel.name);
-            /**
-             * @type {Queue}
-             */
-            var queue = await this.client.provider.get(message.guild, "queue", new Queue());
             if(!message.guild.voiceConnection.dispatcher){
-                this.play(message, queue, this);
-                this.client.provider.get(message.guild, "queue", new Queue())
+                /**
+                 * @type {QueueConfig}
+                 */
+                var queueConfig = await this.client.provider.get(message.guild, "queueConfig", new QueueConfig())
+                var queue = new Queue(queueConfig);
+                this.play(message, queue);
             }
         }
         else {
@@ -41,23 +46,17 @@ class joinVoicechannelCommand extends commando.Command {
      * 
      * @param {Message} message 
      * @param {Queue} queue 
-     * @param {this} thisarg
      */
-    async play(message, queue, thisarg) {
-        console.log(queue);
-        if (queue.queue.length >= 0) {
-            var vid = queue.nowPlaying;
-            console.log(vid);
-            console.log(vid.ID);
-            thisarg.client.provider.set(message.guild, "queue", queue);
-            await message.guild.voiceConnection.playStream(ytdl(vid.ID, {filter: "audioonly"}));
-            await message.guild.voiceConnection.dispatcher.setVolume(await thisarg.client.provider.get(message.guild, "volume", 0.3));
-            await message.channel.send("Now playing: "+vid.title);
-            message.guild.voiceConnection.dispatcher.on("end", reason => {
-                if(reason) console.log(reason);
-                thisarg.onEnd(message, thisarg, reason);
-            });
-        }
+    async play(message, queue) {
+        var vid = queue.nowPlaying;
+        await this.client.provider.set(message.guild, "queueConfig", new QueueConfig(queue.nowPlaying, queue.queue, queue.loop.song, queue.loop.list));
+        await message.guild.voiceConnection.playStream(ytdl(vid.ID, {filter: "audioonly"}));
+        await message.guild.voiceConnection.dispatcher.setVolume(await this.client.provider.get(message.guild, "volume", 0.3));
+        await message.channel.send("Now playing: "+vid.title);
+        message.guild.voiceConnection.dispatcher.on("end", reason => {
+            if(reason) console.log(reason);
+            queue.onEnd(message, reason, this.client.provider);
+        });
     }
     /**
      * 
