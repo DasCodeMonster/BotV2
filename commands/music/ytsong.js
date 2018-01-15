@@ -9,18 +9,19 @@ const youtubeV3 = google.youtube({ version: "v3", auth: keys.YoutubeAPIKey })
 
 class getYoutube{
     /**
-    * 
+    * Returns a Song of the Video
     * @param {*} URL 
     * @param {Message} message
      */
     static async Single(URL, message) {
-        var data = await ytdl.getInfo(URL);
+        var data = await ytdl.getInfo(URL).catch(err=>{console.error(err);return});
+        if (!data) return;
         return new Song(data.video_id, data.title, data.description, data.author, data.length_seconds, message.member.id);
     }
     /**
-     * 
-     * @param {String} playlistID 
-     * @param {Message} message 
+     * Returns an array of Songs from all available Videos in the playlist
+     * @param {String} playlistID The ID of the playlist to fetch
+     * @param {Message} message The message the command was invoked from
      */
     static async Playlist(playlistID, message) {
         /**
@@ -69,6 +70,9 @@ class getYoutube{
             });
         }
         return songs;
+    }
+    static async search(){
+        
     }
 }
 module.exports = getYoutube;

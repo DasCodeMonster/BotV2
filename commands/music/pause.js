@@ -1,4 +1,5 @@
 const commando = require("discord.js-commando");
+const {Message} = require("discord.js");
 
 class Pause extends commando.Command {
     constructor(client) {
@@ -10,6 +11,11 @@ class Pause extends commando.Command {
             guildOnly: true
         });
     }
+    /**
+     * 
+     * @param {Message} message 
+     * @param {*} args 
+     */
     run(message, args) {
         if (message.guild.voiceConnection && message.guild.voiceConnection.dispatcher) {
             message.guild.voiceConnection.dispatcher.pause();

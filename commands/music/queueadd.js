@@ -75,7 +75,6 @@ class List extends commando.Command {
         var song = await getYt.Single(args.link.link, message);
         queue.addSingle(song);
         if(message.guild.voiceConnection.dispatcher) return;
-        // else this.play(message,queue);
         else queue.play(message, queue, this.client.provider);
     }
     /**
@@ -89,24 +88,7 @@ class List extends commando.Command {
         var songs = await getYt.Playlist(ID, message);
         queue.addList(songs);
         if(message.guild.voiceConnection.dispatcher) return;
-        // else this.play(message,queue);
         else queue.play(message, queue, this.client.provider);
-    }
-    /**
-     * 
-     * @param {Message} message 
-     * @param {Queue} queue 
-     */
-    async play(message, queue) {
-        var vid = queue.nowPlaying;
-        await this.client.provider.set(message.guild, "queueConfig", new QueueConfig(queue.nowPlaying, queue.queue, queue.loop.song, queue.loop.list));
-        await message.guild.voiceConnection.playStream(ytdl(vid.ID, {filter: "audioonly"}));
-        await message.guild.voiceConnection.dispatcher.setVolume(await this.client.provider.get(message.guild, "volume", 0.3));
-        await message.channel.send("Now playing: "+vid.title);
-        message.guild.voiceConnection.dispatcher.on("end", reason => {
-            if(reason) console.log(reason);
-            queue.onEnd(message, reason, this.client.provider);
-        });
     }
     /**
      * 

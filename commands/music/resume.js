@@ -12,7 +12,7 @@ class Resume extends commando.Command {
     }
     async run(message, args) {
         if (message.guild.voiceConnection && message.guild.voiceConnection.dispatcher) {
-            message.guild.voiceConnection.dispatcher.resume();            
+            message.guild.voiceConnection.dispatcher.resume();  
             message.reply(":arrow_forward:");
         }
         else {
