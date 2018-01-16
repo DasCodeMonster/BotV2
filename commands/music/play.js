@@ -39,6 +39,7 @@ class Play extends commando.Command {
      * @param {Object} args 
      */
     async run(message, args) {
+        console.log(args);
         var ID = args.link.id;
         /**
          * @type {QueueConfig}

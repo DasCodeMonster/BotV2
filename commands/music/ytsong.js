@@ -36,6 +36,7 @@ class getYoutube{
             playlistId: playlistID,
             maxResults: "50"
         });
+        if(!ytdata) throw new Error("An error occured while fetching playlist!");
         nextPageToken = ytdata.nextPageToken;
         ytdata.items.forEach(item=>{
             ids.push(item.snippet.resourceId.videoId);
@@ -71,8 +72,59 @@ class getYoutube{
         }
         return songs;
     }
-    static async search(){
-        
+    /**
+     * 
+     * @param {Message} message 
+     * @param {*} args 
+     */
+    static async search(message, args){
+        var svidfn = await util.promisify(youtubeV3.search.list);
+        var sresult = await svidfn({
+            part: "snippet",
+            type: "video",
+            maxResults: 5,
+            q: args.search
+        });
+        if(!sresult) throw new Error("An error occured while searching gor videos!");
+        var messageBuilder = "you searched for:" + args.link + "\n```"
+            sresult.items.forEach((item, index) => {
+                messageBuilder += `${index+1} Title: ${item.snippet.title} Channel:${item.snippet.channelTitle}\n`;
+        });
+        messageBuilder += "```";
+        var response = await message.channel.awaitMessages(replymsg=>{
+            if (replymsg.author.id === message.author.id && Number.parseInt(replymsg.content) && Number.parseInt(replymsg.content)>= 1 && Number.parseInt(replymsg.content)<= 5){
+                return true;
+            }
+            else return false;
+        }, {maxMatches:1, time:30000, errors: ["time"]});
+        var value;
+        if(responses && responses.size === 1) value = Number.parseInt(responses.first().content);else commandmsg.delete(); return null;
+        if(value.toLowerCase() === 'cancel') {
+            commandmsg.delete();
+            return null;
+        }
+        commandmsg.delete();
+        youtubeV3.search.list({
+            part: "snippet",
+            type: "video",
+            maxResults: 5,
+            q: args.link
+        }, (err, data) => {
+            if (err) {
+                console.log(err);
+                message.reply("an error occured!");
+            }
+            else {
+                console.log(data);
+                var messageBuilder = "you searched for:" + args.link + "\n```"
+                data.items.forEach((item, index) => {
+                    messageBuilder += `${index+1} Title: ${item.snippet.title} Channel:${item.snippet.channelTitle}\n`;
+                });
+                messageBuilder += "```"
+                console.log(messageBuilder);
+                this.waitForMessage(message, args, messageBuilder, data)
+            }
+        });
     }
 }
 module.exports = getYoutube;
