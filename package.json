@@ -26,6 +26,8 @@
     "discord.js-commando": "^0.9.0",
     "erlpack": "github:discordapp/erlpack",
     "googleapis": "^23.0.0",
+    "moment": "^2.20.1",
+    "moment-duration-format": "^2.2.0",
     "node-datetime": "^2.0.3",
     "node-opus": "^0.2.7",
     "opusscript": "0.0.4",

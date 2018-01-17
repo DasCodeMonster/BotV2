@@ -2,6 +2,8 @@ const Song = require("./Song");
 const {Message} = require("discord.js");
 const ytdl = require("ytdl-core");
 const QueueConfig = require("./queueConfig");
+const moment = require("moment");
+var momentDurationFormatSetup = require("moment-duration-format");
 class Queue {
     /**
      * @param {QueueConfig} queueConfig
@@ -13,32 +15,38 @@ class Queue {
     }
     /**
      * Adds a single Song to the current queue
-     * Important!  
+     * Important!
+     * @param {Message} message  
      * @param {Song} song The song to add to the Queue
      * @param {number} pos Positon of the Song in the Queue of upcoming Songs. 0 is the next Song to play!
      * @returns {void}
      */
-    addSingle(song, pos=null, logLevel=1){
+    addSingle(message, song, pos=null, logLevel=1){
         if(pos!== null){
             this.queue.splice(pos-1, 0, song);
             return;
         }
         this.queue.push(song);
         if (this.nowPlaying === null) this.next();
-        if (logLevel > 0) console.log("added 1 song("+song.title+") to the queue("+this.queue.length+" titles)");
+        // else message.reply("I added "+song.title+" to the queue("+this.queue.length+" titles)");
+        if (logLevel > 0) {
+            console.log("added 1 song("+song.title+") to the queue("+this.queue.length+" titles)");
+            message.reply("I added "+song.title+" to the queue("+this.queue.length+" titles)");
+        }
     }
     /**
      * Adds a List of Songs to the current Queue in the order they are in the Array.
      * The first Song of the Array will be at the given position
+     * @param {Message} message
      * @param {Song[]} songs The Array of Songs to add
      * @param {number} pos
      * @returns {void}
      */
-    addList(songs, pos=null, logLevel=1){
+    addList(message, songs, pos=null, logLevel=1){
         if (pos !== null){
             var reversed = songs.reverse();
             reversed.forEach((song, index, array)=>{
-                this.addSingle(song, pos, 0);
+                this.addSingle(message, song, pos, 0);
             });
             if(logLevel >0) console.log("added "+songs.length+" songs to the queue("+this.queue.length+" titles)");
             return;
@@ -49,6 +57,7 @@ class Queue {
         var nq = this.queue.concat(songs);
         this.queue = nq;
         if (this.nowPlaying === null) this.next();
+        else message.reply("I added "+songs.length-1+" songs to the queue("+this.queue.length+" titles)");
         if(logLevel >0) console.log("added "+songs.length+" songs to the queue("+this.queue.length+" titles)");
     }
     /**
@@ -184,6 +193,41 @@ class Queue {
             if (reason) console.log(reason);
                 this.onEnd(message, reason, provider);
         });
+    }
+    /**
+     * 
+     * @param {Message} message 
+     */
+    async getQueue(message){
+        if (this.queue.length === 0 && this.nowPlaying === null) {
+            message.reply("The queue is empty!");
+            return;
+        }
+        if (message.guild.voiceConnection && message.guild.voiceConnection.dispatcher) {
+            var time = message.guild.voiceConnection.dispatcher.time;
+            var seconds = time/1000;
+        }
+        else var seconds = 0;
+        if (this.queue.length === 0 && this.nowPlaying !== null){
+            message.reply(`Now playing: ${this.nowPlaying.title} from: ${this.nowPlaying.author} | ${(seconds-(seconds%60))/60}:${Math.round(seconds%60)<10?"0"+Math.round(seconds%60):Math.round(seconds%60)}/${moment.duration(this.nowPlaying.length, "seconds").format()}`);
+        }
+        else {
+            var messageBuilder = "";
+            messageBuilder += `Now playing: ${this.nowPlaying.title} from: ${this.nowPlaying.author} | ${(seconds-(seconds%60))/60}:${Math.round(seconds%60)<10?"0"+Math.round(seconds%60):Math.round(seconds%60)}/${moment.duration(this.nowPlaying.length, "seconds").format()}\n`+"```"
+            await this.queue.some((element, index) => {
+                if (index === 49 || messageBuilder.length >= 1800) {
+                    if(this.queue.length-index+1 === 0) return true;
+                    messageBuilder += `...and ${this.queue.length-index+1} more!`;
+                    return true;
+                }
+                else {
+                    messageBuilder += (index+1)+" Title: "+element.title + " | Channel: "+ element.author + "\n";
+                    return false;
+                }
+            });
+            messageBuilder += "```";
+            message.reply(messageBuilder);
+        }
     }
 }
 module.exports = Queue;

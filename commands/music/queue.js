@@ -20,34 +20,7 @@ class Queuecommand extends commando.Command {
          */
         var queueConfig = await this.client.provider.get(message.guild, "queueConfig", new QueueConfig())
         var queue = new Queue(queueConfig);
-        if (queue.queue.length === 0 && queue.nowPlaying === null) {
-            message.reply("The queue is empty!");
-            return;
-        }
-        if (message.guild.voiceConnection && message.guild.voiceConnection.dispatcher) {
-            var time = message.guild.voiceConnection.dispatcher.time;
-            var seconds = time/1000;
-        }
-        else var seconds = 0;
-        if (queue.queue.length === 0 && queue.nowPlaying !== null){
-            message.reply(`Now playing: ${queue.nowPlaying.title} from: ${queue.nowPlaying.author} | ${(seconds-(seconds%60))/60}:${Math.round(seconds%60)<10?"0"+Math.round(seconds%60):Math.round(seconds%60)}/${queue.nowPlaying.length}`);
-        }
-        else {
-            var messageBuilder = "";
-            messageBuilder += `Now playing: ${queue.nowPlaying.title} from: ${queue.nowPlaying.author} | ${(seconds-(seconds%60))/60}:${Math.round(seconds%60)<10?"0"+Math.round(seconds%60):Math.round(seconds%60)}/${queue.nowPlaying.length}\n`+"```"
-            await queue.queue.some((element, index) => {
-                if (index === 49 || messageBuilder.length >= 1800) {
-                    messageBuilder += `...and ${queue.queue.length-index+1} more!`;
-                    return true;
-                }
-                else {
-                    messageBuilder += (index+1)+" Title: "+element.title + " | Channel: "+ element.author + "\n";
-                    return false;
-                }
-            });
-            messageBuilder += "```";
-            message.reply(messageBuilder);
-        }
+        queue.getQueue(message);
     }
     /**
      * 

@@ -58,7 +58,10 @@ class Search extends commando.Command {
      */
     async addSingle(message, args, queue){
         var song = await getYT.search(message, args.query);
-        queue.addSingle(song);
+        queue.addSingle(message, song);
+        if (!message.guild.voiceConnection.dispatcher){
+            queue.play(message, queue, this.client.provider);
+        }
     }
     /**
      * 

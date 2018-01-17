@@ -5,6 +5,7 @@ const Song = require("./Song");
 const {Message} = require("discord.js");
 const q = require("q");
 const util = require("util");
+const moment = require("moment");
 const youtubeV3 = google.youtube({ version: "v3", auth: keys.YoutubeAPIKey })
 
 class getYoutube{
@@ -44,7 +45,7 @@ class getYoutube{
         var vidDatafn = await util.promisify(youtubeV3.videos.list);
         var vidData = await vidDatafn({
             part: "snippet, contentDetails",
-            id: ids.join(", ")
+            id: ids.length>1?ids.join(", "):ids[0]
         });
         vidData.items.forEach(item=>{
             songs.push(song(item, message));
@@ -86,7 +87,7 @@ class getYoutube{
             q: query
         });
         if(!sresult) throw new Error("An error occured while searching gor videos!");       
-        var messageBuilder = "you searched for: `" + querry + "`\n```"
+        var messageBuilder = "you searched for: `" + query + "`\n```"
             sresult.items.forEach((item, index) => {
                 messageBuilder += `${index+1} Title: ${item.snippet.title} Channel:${item.snippet.channelTitle}\n`;
         });
@@ -124,21 +125,7 @@ module.exports = getYoutube;
  * @param {*} item 
  */
 function song(item, message) {
-    var match = /PT((\d+)H)?((\d+)M)?((\d+)S)?/.exec(item.contentDetails.duration)
-    var tmp = ""
-    if (match[2]) {
-        tmp += match[2] + ":"
-    }
-    if (match[4]) {
-        tmp += ("00" + match[4]).slice(-2) + ":"
-    } else {
-        tmp += "00:"
-    }
-    if (match[6]) {
-        tmp += ("00" + match[6]).slice(-2)
-    } else {
-        tmp += "00"
-    }
-    var song = new Song(item.id, item.snippet.title, item.snippet.description, item.snippet.channelTitle, tmp, message.member.id);
+    var duration = moment.duration(item.contentDetails.duration, moment.ISO_8601).asSeconds();
+    var song = new Song(item.id, item.snippet.title, item.snippet.description, item.snippet.channelTitle, duration, message.member.id);
     return song;
 }
