@@ -5,6 +5,8 @@ const google = require('googleapis');
 const youtubeV3 = google.youtube({version: "v3", auth: keys.YoutubeAPIKey});
 const Song = require("./Song");
 const getYt = require("./ytsong");
+const QueueConfig = require("./queueConfig");
+const Queue = require("./myQueue");
 
 class Play extends commando.Command {
     constructor(client) {
@@ -95,54 +97,6 @@ class Play extends commando.Command {
         if(message.guild.voiceConnection.dispatcher) return;
         // else this.play(message,queue);
         else queue.play(message, queue, this.client.provider);
-    }
-    async search(message, args) {
-        youtubeV3.search.list({
-            part: "snippet",
-            type: "video",
-            maxResults: 5,
-            q: args.link
-        }, (err, data) => {
-            if (err) {
-                console.log(err);
-                message.reply("an error occured!");
-            }
-            else {
-                console.log(data);
-                var messageBuilder = "you searched for:" + args.link + "\n```"
-                data.items.forEach((item, index) => {
-                    messageBuilder += `${index+1} Title: ${item.snippet.title} Channel:${item.snippet.channelTitle}\n`;
-                });
-                messageBuilder += "```"
-                console.log(messageBuilder);
-                this.waitForMessage(message, args, messageBuilder, data)
-            }
-        });
-    }
-    async waitForMessage(message, args, oneLiner, response) {
-        var commandmsg = await message.reply("type the number of the song to play:\n"+oneLiner+"Respond with ``cancel`` to cancel the command.\n"+
-            "The command will automatically be cancelled in 30 seconds, unless you respond.");
-        const responses = await message.channel.awaitMessages(msg2 => {
-            if (msg2.author.id === message.author.id) {
-                console.log(msg2.id);
-                msg2.delete();
-                return true;
-            }}, {
-            maxMatches: 1,
-            time: 30000,
-            errors: ["time"]
-        });
-        var value;
-        if(responses && responses.size === 1) value = responses.first().content; else return null;
-        if(value.toLowerCase() === 'cancel') {
-            commandmsg.delete();
-            return null;
-        }
-        commandmsg.delete();
-        console.log(value);
-        console.log(response.items[value-1].id.videoId);
-        await message.member.voiceChannel.join();
-        this.addSingle(message, args, response.items[value-1].id.videoId);
     }
     /**
      * 

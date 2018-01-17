@@ -136,7 +136,7 @@ class Queue {
      * @param {number} end 
      */
     remove(start=0, count=1){
-        this.queue.splice(start, count);
+        return this.queue.splice(start, count);
     }
     /**
      * 

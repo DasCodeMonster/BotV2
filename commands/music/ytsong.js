@@ -75,56 +75,45 @@ class getYoutube{
     /**
      * 
      * @param {Message} message 
-     * @param {*} args 
+     * @param {String} query 
      */
-    static async search(message, args){
+    static async search(message, query){
         var svidfn = await util.promisify(youtubeV3.search.list);
         var sresult = await svidfn({
             part: "snippet",
             type: "video",
             maxResults: 5,
-            q: args.search
+            q: query
         });
-        if(!sresult) throw new Error("An error occured while searching gor videos!");
-        var messageBuilder = "you searched for:" + args.link + "\n```"
+        if(!sresult) throw new Error("An error occured while searching gor videos!");       
+        var messageBuilder = "you searched for: `" + querry + "`\n```"
             sresult.items.forEach((item, index) => {
                 messageBuilder += `${index+1} Title: ${item.snippet.title} Channel:${item.snippet.channelTitle}\n`;
         });
-        messageBuilder += "```";
-        var response = await message.channel.awaitMessages(replymsg=>{
+        messageBuilder += "```type the number of the song to play\nRespond with ``cancel`` to cancel the command.\n"+
+        "The command will automatically be cancelled in 30 seconds, unless you respond.";
+        var commandmsg = await message.reply(messageBuilder);
+        var responses = await message.channel.awaitMessages(replymsg=>{
             if (replymsg.author.id === message.author.id && Number.parseInt(replymsg.content) && Number.parseInt(replymsg.content)>= 1 && Number.parseInt(replymsg.content)<= 5){
                 return true;
             }
+            if (replymsg.author.id === message.author.id && message.content.toLowerCase() === "cancel") return true;
             else return false;
         }, {maxMatches:1, time:30000, errors: ["time"]});
-        var value;
-        if(responses && responses.size === 1) value = Number.parseInt(responses.first().content);else commandmsg.delete(); return null;
-        if(value.toLowerCase() === 'cancel') {
+        if(responses.first().content.toLowerCase() === 'cancel') {
             commandmsg.delete();
             return null;
         }
-        commandmsg.delete();
-        youtubeV3.search.list({
-            part: "snippet",
-            type: "video",
-            maxResults: 5,
-            q: args.link
-        }, (err, data) => {
-            if (err) {
-                console.log(err);
-                message.reply("an error occured!");
-            }
-            else {
-                console.log(data);
-                var messageBuilder = "you searched for:" + args.link + "\n```"
-                data.items.forEach((item, index) => {
-                    messageBuilder += `${index+1} Title: ${item.snippet.title} Channel:${item.snippet.channelTitle}\n`;
-                });
-                messageBuilder += "```"
-                console.log(messageBuilder);
-                this.waitForMessage(message, args, messageBuilder, data)
-            }
-        });
+        var value;
+        if(responses && responses.size === 1){
+            value = Number.parseInt(responses.first().content)-1;
+        }
+        else {
+            commandmsg.delete();
+            return null;
+        }
+        await commandmsg.delete();
+        return await getYoutube.Single("https://www.youtube.com/watch?v="+sresult.items[value].id.videoId, message);
     }
 }
 module.exports = getYoutube;
