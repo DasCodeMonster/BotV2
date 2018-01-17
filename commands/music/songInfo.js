@@ -2,6 +2,11 @@ const commando = require("discord.js-commando");
 const keys = require('./../../Token&Keys');
 const google = require('googleapis');
 const youtubeV3 = google.youtube({version: "v3", auth: keys.YoutubeAPIKey});
+const Queue = require("./myQueue");
+const QueueConfig = require("./queueConfig");
+const {Message} = require("discord.js");
+const moment = require("moment");
+var momentDurationFormatSetup = require("moment-duration-format");
 
 class SongInfo extends commando.Command {
     constructor(client) {
@@ -25,7 +30,76 @@ class SongInfo extends commando.Command {
         });
         this.queue = [];
     }
+    /**
+     * 
+     * @param {Message} message 
+     * @param {*} args 
+     */
     async run(message, args) {
+        /**
+         * @type {QueueConfig}
+         */
+        var queueConfig = await this.client.provider.get(message.guild, "queueConfig", new QueueConfig())
+        var queue = new Queue(queueConfig);
+        var seconds = 0;
+        if (message.guild.voiceConnection && message.guild.voiceConnection.dispatcher){
+            seconds += queue.nowPlaying.length-Math.floor((message.guild.voiceConnection.dispatcher.time/1000));
+        }
+        else seconds += queue.nowPlaying.length;
+        queue.queue.some((song, index) => {
+            if (index === args.number-1) {
+                return true;
+            }
+            seconds+=song.length;
+            return false;
+        });
+        message.channel.send({embed: {
+            "author": {
+                "name": queue.queue[args.number].title,
+                "url": `https://www.youtube.com/watch?v=${queue.queue[args.number].ID}`
+            },
+            "color": 666,
+            "thumbnail": {
+                "url": queue.queue[args.number].thumbnailURL,
+                "width": queue.queue[args.number].tWidth,
+                "height": queue.queue[args.number].tHeight
+            },
+            "timestamp": new Date(),
+            "fields": [{
+                "name": "Channel",
+                "value": `[${queue.queue[args.number].author}](https://www.youtube.com/channel/${queue.queue[args.number].channelID})`,
+                "inline": true
+            },  {
+                "name": "Length",
+                "value": moment.duration(queue.queue[args.number].length, "seconds").format(),
+                "inline": true
+            }, {
+                "name": "Description",
+                "value": queue.queue[args.number].description.length > 1024 ? queue.queue[args.number].description.substring(0,1009) + "\n...<too long>" : queue.queue[args.number].description
+            }, {
+                "name": "Queued by",
+                "value": message.guild.member(queue.queue[args.number].queuedBy).user.toString(),
+                "inline": true
+            }, {
+                "name": "Queued at",
+                "value": queue.queue[args.number].queuedAt,
+                "inline": true
+            }, {
+                "name": "ETA"+name,
+                "value": newDate? estimated +"\n"+newDate:estimated,
+                "inline": true
+            }, {
+                "name": "Thumbnail",
+                "value": queue.queue[args.number].thumbnailURL
+            }],
+            "image":{
+                "url": queue.queue[args.number].thumbnailURL,
+                "width": queue.queue[args.number].tWidth,
+                "height": queue.queue[args.number].tHeight
+            }
+        }});
+
+        return;
         if (this.client.provider.get(message.guild, "queue") && this.client.provider.get(message.guild, "queue").length > 0) this.queue = await this.client.provider.get(message.guild, "queue");
         if (args.number > this.queue.length-1) return;
         youtubeV3.videos.list({

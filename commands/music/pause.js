@@ -18,6 +18,10 @@ class Pause extends commando.Command {
      */
     run(message, args) {
         if (message.guild.voiceConnection && message.guild.voiceConnection.dispatcher) {
+            if (message.guild.voiceConnection.dispatcher.paused){
+                message.reply("the stream is already paused!");
+                return;
+            }
             message.guild.voiceConnection.dispatcher.pause();
             message.reply("ok I paused the music!:pause_button:");
         }

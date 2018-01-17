@@ -1,4 +1,5 @@
 const commando = require("discord.js-commando");
+const {Message} = require("discord.js");
 
 class Resume extends commando.Command {
     constructor(client) {
@@ -10,8 +11,17 @@ class Resume extends commando.Command {
             guildOnly: true
         });
     }
+    /**
+     * 
+     * @param {Message} message 
+     * @param {*} args 
+     */
     async run(message, args) {
         if (message.guild.voiceConnection && message.guild.voiceConnection.dispatcher) {
+            if (!message.guild.voiceConnection.dispatcher.paused){
+                message.reply("i am streaming right now! No need to resume.");
+                return;
+            }
             message.guild.voiceConnection.dispatcher.resume();  
             message.reply(":arrow_forward:");
         }

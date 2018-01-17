@@ -30,7 +30,7 @@ class joinVoicechannelCommand extends commando.Command {
         }
         if (message.member.voiceChannel) {
             await message.member.voiceChannel.join();
-            if (!message.guild.voiceConnection.channel.equals(message.member.voiceChannel)){
+            if (message.guild.voiceConnection.channel.equals(message.member.voiceChannel)){
                 message.reply("ok i joined voicechannel: " + message.member.voiceChannel.name);
             }
             if(!message.guild.voiceConnection.dispatcher){
@@ -39,7 +39,7 @@ class joinVoicechannelCommand extends commando.Command {
                  */
                 var queueConfig = await this.client.provider.get(message.guild, "queueConfig", new QueueConfig())
                 var queue = new Queue(queueConfig);
-                queue.play(message, queue, this.client.provider);
+                queue.play(message, this.client.provider);
             }
         }
         else {
