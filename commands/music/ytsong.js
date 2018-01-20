@@ -18,7 +18,8 @@ class getYoutube{
         var data = await ytdl.getInfo(URL).catch(err=>{console.error(err);return});
         if (!data) return;
         // return new Song(data.video_id, data.title, data.description, data.author, data.length_seconds, message.member.id);
-        return new Song(data.video_id, data.title, data.description, data.author.name, data.author.id, data.length_seconds, data.thumbnail_url, data.player_response.thumbnails[4].width, data.player_response.thumbnails[4].height, message.author.id);
+        // return new Song(data.video_id, data.title, data.description, data.author.name, data.author.id, data.length_seconds, data.thumbnail_url, message.author.id);
+        return new Song(data.video_id, data.title, data.description, data.author.name, data.author.id, data.length_seconds, data.thumbnail_url, message.author.id);
     }
     /**
      * Returns an array of Songs from all available Videos in the playlist

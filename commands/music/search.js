@@ -60,7 +60,7 @@ class Search extends commando.Command {
         var song = await getYT.search(message, args.query);
         queue.addSingle(message, song);
         if (!message.guild.voiceConnection.dispatcher){
-            queue.play(message, queue, this.client.provider);
+            queue.play(message, this.client.provider);
         }
     }
     /**

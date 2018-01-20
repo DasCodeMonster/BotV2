@@ -8,7 +8,7 @@ class Song {
      * @param {Number} length 
      * @param {*} queuedBy 
      */
-    constructor(ID, title, description, author, channelID, length, thumbnailURL, tWidth, tHeight, queuedBy) {
+    constructor(ID, title, description, author, channelID, length, thumbnailURL, queuedBy) {
         this.ID = ID;
         this.title = title,
         this.description = description,
@@ -16,8 +16,8 @@ class Song {
         this.channelID = channelID
         this.length = length;
         this.thumbnailURL = thumbnailURL;
-        this.tWidth = tWidth;
-        this.tHeight = tHeight;
+        // this.tWidth = tWidth;
+        // this.tHeight = tHeight;
         this.queuedBy = queuedBy;
         this.queuedAt = new Date().toString();
     }

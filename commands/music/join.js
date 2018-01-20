@@ -39,7 +39,9 @@ class joinVoicechannelCommand extends commando.Command {
                  */
                 var queueConfig = await this.client.provider.get(message.guild, "queueConfig", new QueueConfig())
                 var queue = new Queue(queueConfig);
-                queue.play(message, this.client.provider);
+                if (queue.nowPlaying !== null){
+                    queue.play(message, this.client.provider);
+                }
             }
         }
         else {

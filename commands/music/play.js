@@ -80,9 +80,9 @@ class Play extends commando.Command {
      */
     async addSingle(ID, message, args, queue) {
         var song = await getYt.Single(args.link.link, message);
-        queue.addSingle(song);
+        queue.addSingle(message, song);
         if(message.guild.voiceConnection.dispatcher) return;
-        else queue.play(message, queue, this.client.provider);
+        else queue.play(message, this.client.provider);
     }
     /**
      * 
