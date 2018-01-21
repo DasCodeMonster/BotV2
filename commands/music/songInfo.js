@@ -4,7 +4,7 @@ const google = require('googleapis');
 const youtubeV3 = google.youtube({version: "v3", auth: keys.YoutubeAPIKey});
 const Queue = require("./myQueue");
 const QueueConfig = require("./queueConfig");
-const {Message} = require("discord.js");
+const {Message, RichEmbed} = require("discord.js");
 const moment = require("moment");
 var momentDurationFormatSetup = require("moment-duration-format");
 
@@ -36,11 +36,16 @@ class SongInfo extends commando.Command {
      * @param {*} args 
      */
     async run(message, args) {
+        console.log(args);
         /**
          * @type {QueueConfig}
          */
         var queueConfig = await this.client.provider.get(message.guild, "queueConfig", new QueueConfig())
         var queue = new Queue(queueConfig);
+        if (args.number > queue.queue.length){
+            message.reply("Index was to big!");
+            return;
+        }
         var seconds = 0;
         if (message.guild.voiceConnection && message.guild.voiceConnection.dispatcher){
             seconds += queue.nowPlaying.length-Math.floor((message.guild.voiceConnection.dispatcher.time/1000));
@@ -53,204 +58,38 @@ class SongInfo extends commando.Command {
             seconds+=song.length;
             return false;
         });
-        message.channel.send({embed: {
-            "author": {
-                "name": queue.queue[args.number].title,
-                "url": `https://www.youtube.com/watch?v=${queue.queue[args.number].ID}`
-            },
-            "color": 666,
-            "thumbnail": {
-                "url": queue.queue[args.number].thumbnailURL,
-                "width": queue.queue[args.number].tWidth,
-                "height": queue.queue[args.number].tHeight
-            },
-            "timestamp": new Date(),
-            "fields": [{
-                "name": "Channel",
-                "value": `[${queue.queue[args.number].author}](https://www.youtube.com/channel/${queue.queue[args.number].channelID})`,
-                "inline": true
-            },  {
-                "name": "Length",
-                "value": moment.duration(queue.queue[args.number].length, "seconds").format(),
-                "inline": true
-            }, {
-                "name": "Description",
-                "value": queue.queue[args.number].description.length > 1024 ? queue.queue[args.number].description.substring(0,1009) + "\n...<too long>" : queue.queue[args.number].description
-            }, {
-                "name": "Queued by",
-                "value": message.guild.member(queue.queue[args.number].queuedBy).user.toString(),
-                "inline": true
-            }, {
-                "name": "Queued at",
-                "value": queue.queue[args.number].queuedAt,
-                "inline": true
-            }, {
-                "name": "ETA"+name,
-                "value": newDate? estimated +"\n"+newDate:estimated,
-                "inline": true
-            }, {
-                "name": "Thumbnail",
-                "value": queue.queue[args.number].thumbnailURL
-            }],
-            "image":{
-                "url": queue.queue[args.number].thumbnailURL,
-                "width": queue.queue[args.number].tWidth,
-                "height": queue.queue[args.number].tHeight
-            }
-        }});
-
-        return;
-        if (this.client.provider.get(message.guild, "queue") && this.client.provider.get(message.guild, "queue").length > 0) this.queue = await this.client.provider.get(message.guild, "queue");
-        if (args.number > this.queue.length-1) return;
-        youtubeV3.videos.list({
-            part: "snippet, contentDetails",
-            id: this.queue[args.number].ID
-        }, (err, data) => {
-            if (err) {
-                console.log(err);
-                return;
-            }
-            else {
-                if (data.items[0].snippet.thumbnails.maxres) var img = data.items[0].snippet.thumbnails.maxres;
-                else if(data.items[0].snippet.thumbnails.high) var img = data.items[0].snippet.thumbnails.high;
-                else if(data.items[0].snippet.thumbnails.standard) var img = data.items[0].snippet.thumbnails.standard;
-                else var img = data.items[0].snippet.thumbnails.default;
-                // youtubeV3.
-                var estimated = 0;
-                var hours = 0;
-                var mins = 0;
-                var secs = 0;
-                if (args.number != 0) {
-                    var first;
-                    this.queue.some((song, index) => {
-                        if (index == 0) {
-                            first = song;
-                            return false;
-                        }
-                        if (index == args.number) {
-                            return true;
-                        }
-                        console.log(song.length.split(":"));
-                        if(song.length.split(":").length == 3) {
-                            hours += parseInt(song.length.split(":")[0]);
-                            mins += parseInt(song.length.split(":")[1]);
-                            secs += parseInt(song.length.split(":")[2]);
-                        }
-                        if (song.length.split(":").length == 2) {
-                            mins += parseInt(song.length.split(":")[0]);
-                            secs += parseInt(song.length.split(":")[1]);
-                        }
-                        return false;
-                    });
-                    if (message.guild.voiceConnection && message.guild.voiceConnection.dispatcher) {
-                        console.log(message.guild.voiceConnection.dispatcher.time);
-                        console.log(Math.floor((message.guild.voiceConnection.dispatcher.time/1000)/60));
-                        console.log(Math.floor((message.guild.voiceConnection.dispatcher.time/1000)%60));
-                        var fmins = Math.floor((message.guild.voiceConnection.dispatcher.time/1000)/60);
-                        var fsecs = Math.floor((message.guild.voiceConnection.dispatcher.time/1000)%60);
-                        var fhour = Math.floor(fmins/60);
-                        fmins = fmins%60;
-                        if(first.length.split(":").length == 3) {
-                            hours += parseInt(first.length.split(":")[0]) - fhour;
-                            mins += parseInt(first.length.split(":")[1]) - fmins;
-                            secs += parseInt(first.length.split(":")[2]) - fsecs;
-                        }
-                        if (first.length.split(":").length == 2) {
-                            mins += parseInt(first.length.split(":")[0]) - fmins;
-                            secs += parseInt(first.length.split(":")[1]) - fsecs;
-                        }
-                        
-                        // secs += Math.floor((message.guild.voiceConnection.dispatcher.time/1000));
-                    }
-                    // mins += secs / 60;
-                    mins += Math.floor(secs/60);
-                    secs = secs % 60;
-                    // hours += mins / 60;
-                    hours += Math.floor(mins/60);
-                    mins = mins % 60;
-                    if (hours == 0) {
-                        estimated = mins.toString()+":"+secs.toString();
-                        var name = " (M:S)";
-                        if(mins<10) {
-                            if (secs<10) estimated = "0"+mins.toString()+":"+"0"+secs.toString();
-                            else estimated = "0"+mins.toString()+":"+secs.toString();
-                        }
-                        if(secs<10) {
-                            if(mins<10) estimated = "0"+mins.toString()+":"+"0"+secs.toString();
-                            else estimated = mins.toString()+":"+"0"+secs.toString();
-                        }
-                        else estimated = mins.toString()+":"+secs.toString();
-                        var date = new Date();
-                        var newDate = new Date(date.setTime(date.getTime()+hours*3600000+mins*60000+secs*1000)).toString();
-                        console.log(new Date().toString());
-                        console.log(newDate);
-                        // console.log(newDate-date)
-                    } else {
-                        var name = " (H:M:S)";
-                        if(mins<10) {
-                            if (secs<10) estimated = hours.toString() + ":"+"0"+mins.toString()+":"+"0"+secs.toString();
-                            else estimated = hours.toString() + ":"+"0"+mins.toString()+":"+secs.toString();
-                        }
-                        if(secs<10) {
-                            if(mins<10) estimated = hours.toString() + ":"+"0"+mins.toString()+":"+"0"+secs.toString();
-                            else estimated = hours.toString() + ":"+mins.toString()+":"+"0"+secs.toString();
-                        }
-                        else estimated = hours.toString() + ":"+mins.toString()+":"+secs.toString();
-                        var date = new Date();
-                        var newDate = new Date(date.setTime(date.getTime()+hours*3600000+mins*60000+secs*1000)).toString();
-                    }
-                }
-                else {
-                    name = "";
-                    estimated = "Now playing";
-                }
-                message.channel.send({embed: {
-                    "author": {
-                        "name": this.queue[args.number].title,
-                        "url": `https://www.youtube.com/watch?v=${data.items[0].id}`
-                    },
-                    "color": 666,
-                    "thumbnail": {
-                        "url": img.url,
-                        "width": img.width,
-                        "height": img.height
-                    },
-                    "timestamp": new Date(),
-                    "fields": [{
-                        "name": "Channel",
-                        "value": `[${data.items[0].snippet.channelTitle}](https://www.youtube.com/channel/${data.items[0].snippet.channelId})`,
-                        "inline": true
-                    },  {
-                        "name": "Length",
-                        "value": this.queue[args.number].length,
-                        "inline": true
-                    }, {
-                        "name": "Description",
-                        "value": data.items[0].snippet.description.length > 1024 ? data.items[0].snippet.description.substring(0,1009) + "\n...<too long>" : data.items[0].snippet.description
-                    }, {
-                        "name": "Queued by",
-                        "value": message.guild.member(this.queue[args.number].queuedBy).user.toString(),
-                        "inline": true
-                    }, {
-                        "name": "Queued at",
-                        "value": this.queue[args.number].queuedAt,
-                        "inline": true
-                    }, {
-                        "name": "ETA"+name,
-                        "value": newDate? estimated +"\n"+newDate:estimated,
-                        "inline": true
-                    }, {
-                        "name": "Thumbnail",
-                        "value": img.url
-                    }],
-                    "image":{
-                        "url": img.url,
-                        "width": img.width,
-                        "height": img.height
-                    }
-                }});
-            }
-        });
+        var date = new Date();
+        var newDate = new Date(date.setTime(date.getTime()+seconds*1000)).toString();
+        if (!(args.number === 0)){
+            var embed = new RichEmbed()
+            .setAuthor(queue.queue[args.number-1].title, null, `https://www.youtube.com/watch?v=${queue.queue[args.number-1].ID}`)
+            .setColor(666)
+            .setThumbnail(queue.queue[args.number-1].thumbnailURL)
+            .setTimestamp(new Date())
+            .setImage(queue.queue[args.number-1].thumbnailURL)
+            .addField("Channel", `[${queue.queue[args.number-1].author}](https://www.youtube.com/channel/${queue.queue[args.number-1].channelID})`, true)
+            .addField("Length", moment.duration(queue.queue[args.number-1].length, "seconds").format(), true)
+            .addField("Description", queue.queue[args.number-1].description.length > 1024 ? queue.queue[args.number-1].description.substring(0,1009) + "\n...<too long>" : queue.queue[args.number-1].description, true)
+            .addField("Queued by", message.guild.member(queue.queue[args.number-1].queuedBy).user.toString(), true)
+            .addField("Queued at", queue.queue[args.number-1].queuedAt, true)
+            .addField("ETA", newDate).addField("Thumbnail", queue.queue[args.number-1].thumbnailURL);
+        }
+        else {
+            console.log(queue.nowPlaying);
+            var embed = new RichEmbed()
+            .setAuthor(queue.nowPlaying.title, null, `https://www.youtube.com/watch?v=${queue.nowPlaying.ID}`)
+            .setColor(666)
+            .setThumbnail(queue.nowPlaying.thumbnailURL)
+            .setTimestamp(new Date())
+            .setImage(queue.nowPlaying.thumbnailURL)
+            .addField("Channel", `[${queue.nowPlaying.author}](https://www.youtube.com/channel/${queue.nowPlaying.channelID})`, true)
+            .addField("Length", moment.duration(queue.nowPlaying.length, "seconds").format(), true)
+            .addField("Description", queue.nowPlaying.description.length > 1024 ? queue.nowPlaying.description.substring(0,1009) + "\n...<too long>" : queue.nowPlaying.description, true)
+            .addField("Queued by", message.guild.member(queue.nowPlaying.queuedBy).user.toString(), true)
+            .addField("Queued at", queue.nowPlaying.queuedAt, true)
+            .addField("ETA", "Now playing").addField("Thumbnail", queue.nowPlaying.thumbnailURL);
+        }
+        message.channel.send({embed: embed});
     }
     /**
      * 

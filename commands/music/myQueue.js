@@ -15,7 +15,6 @@ class Queue {
     }
     /**
      * Adds a single Song to the current queue
-     * Important!
      * @param {Message} message  
      * @param {Song} song The song to add to the Queue
      * @param {number} pos Positon of the Song in the Queue of upcoming Songs. 0 is the next Song to play!
@@ -96,11 +95,17 @@ class Queue {
      * @param {Message} message
      * @param {*} provider
      */
-    playNow(song, message, provider){
-        this.addSingle(message, song, 0, 1);
-        var next = this.next();
-        this.play(message, provider);
-        return next;
+    async playNow(song, message, provider){
+        await this.addSingle(message, song, 1, 1);
+        await provider.set(message.guild, "queueConfig", new QueueConfig(this.nowPlaying, this.queue, this.loop.song, this.loop.list));
+        if(message.guild.voiceConnection.dispatcher){
+            await message.guild.voiceConnection.dispatcher.end("playNow");
+        }
+        else {
+            await this.next();
+            this.play(message, provider);
+        }
+        return song;
     }
     /**
      * It will add the Array of Songs before all other Songs in the Queue and plays the first of it immediately
@@ -109,11 +114,17 @@ class Queue {
      * @param {*} provider
      */
     
-    playNowList(songs, message, provider){
-        this.addList(message, songs, 0, 0);
-        var next = this.next();
-        this.play(message, provider);
-        return next;
+    async playNowList(songs, message, provider){
+        await this.addList(message, songs, 1, 0);
+        await provider.set(message.guild, "queueConfig", new QueueConfig(this.nowPlaying, this.queue, this.loop.song, this.loop.list));
+        if(message.guild.voiceConnection.dispatcher){
+            await message.guild.voiceConnection.dispatcher.end("playNowList");
+        }
+        else {
+            await this.next();
+            this.play(message, provider);
+        }
+        return songs[0];
     }
     /**
      * Sets the loop settings for the Song.
@@ -165,7 +176,7 @@ class Queue {
         await message.guild.voiceConnection.playStream(ytdl(this.nowPlaying.ID, {filter: "audioonly"}));
         await message.guild.voiceConnection.dispatcher.setVolume(await provider.get(message.guild, "volume", 0.3));
         await message.channel.send("Now playing: "+this.nowPlaying.title);
-        message.guild.voiceConnection.dispatcher.on("end", reason => {
+        message.guild.voiceConnection.dispatcher.once("end", reason => {
             if(reason) console.log(reason);
             this.onEnd(message, reason, provider);
         });
@@ -197,7 +208,7 @@ class Queue {
         await message.guild.voiceConnection.playStream(ytdl(this.nowPlaying.ID, {filter: "audioonly"}));
         await message.guild.voiceConnection.dispatcher.setVolume(await provider.get(message.guild, "volume", 0.3));
         await message.channel.send("Now playing: "+this.nowPlaying.title);
-        await message.guild.voiceConnection.dispatcher.on("end", reason => {
+        await message.guild.voiceConnection.dispatcher.once("end", reason => {
             if (reason) console.log(reason);
             this.onEnd(message, reason, provider);
         });

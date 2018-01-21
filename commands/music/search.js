@@ -4,7 +4,7 @@ const keys = require('./../../Token&Keys');
 const google = require("googleapis");
 const youtubeV3 = google.youtube({version: "v3", auth: keys.YoutubeAPIKey});
 const Song = require("./Song");
-const {Message} = require("discord.js");
+const {Message, RichEmbed} = require("discord.js");
 const getYT = require("./ytsong");
 const Queue = require("./myQueue");
 const QueueConfig = require("./queueConfig");
@@ -57,11 +57,32 @@ class Search extends commando.Command {
      * @param {Queue} queue 
      */
     async addSingle(message, args, queue){
-        var song = await getYT.search(message, args.query);
-        queue.addSingle(message, song);
-        if (!message.guild.voiceConnection.dispatcher){
-            queue.play(message, this.client.provider);
+        var songs = await getYT.search(message, args.query);
+        var embed = new RichEmbed({
+            title: "Search result:"
+        }).setTimestamp(new Date()).setDescription("Type the number of the song you want to play NOW or copy the link, `cancel` the command, and add it to the queue manually")
+        .setColor(666);
+        songs.forEach((song, index)=>{
+            embed.addField(`${index+1} ${song.title}`, `Titel: [${song.title}](https://www.youtube.com/watch?v=${song.ID})\nChannel: [${song.author}](https://www.youtube.com/channel/${song.channelID})\n`);
+        });
+        var commandmsg = await message.channel.send({embed: embed});
+        var responses = await message.channel.awaitMessages(replymsg=>{
+            if (replymsg.author.id === message.author.id && replymsg.content.toLowerCase().trim() === "cancel") {
+                console.log("cancel");
+                return true;
+            }
+            if (replymsg.author.id === message.author.id && Number.parseInt(replymsg.content) && Number.parseInt(replymsg.content)>= 1 && Number.parseInt(replymsg.content)<= 5){
+                return true;
+            }
+            else return false;
+        }, {maxMatches:1, time:30000, errors: ["time"]});
+        if(responses.first().content.toLowerCase() === 'cancel') {
+            commandmsg.delete();
+            return null;
         }
+        commandmsg.delete();
+        // queue.addSingle(message, songs[Number.parseInt(responses.first().content)]);
+        await queue.playNow(songs[Number.parseInt(responses.first().content)-1], message, this.client.provider);
     }
     /**
      * 

@@ -88,45 +88,64 @@ class getYoutube{
             maxResults: 5,
             q: query
         });
-        if(!sresult) throw new Error("An error occured while searching gor videos!"); 
-        console.log(sresult.items);
-        var embed = new RichEmbed({
-            title: "Search result:"
-        }).setTimestamp(new Date()).setDescription("Type the number of the song you want to play NOW or copy the link, `cancel` the command, and add it to the manually")
-        .setColor(666);
-        sresult.items.forEach((item, index)=>{
-            embed.addField(`${index+1} ${item.snippet.title}`, `Titel: [${item.snippet.title}](https://www.youtube.com/watch?v=${item.id.videoId})\nChannel: [${item.snippet.channelTitle}](https://www.youtube.com/channel/${item.snippet.channelId})\n`);
+        if(!sresult) throw new Error("An error occured while searching for videos!"); 
+        // console.log(sresult.items);
+        var ids = [];
+        sresult.items.forEach(item=>{
+            ids.push(item.id.videoId);
         });
-        var commandmsg = await message.channel.send({embed: embed});
-        var responses = await message.channel.awaitMessages(replymsg=>{
-            if (replymsg.author.id === message.author.id && Number.parseInt(replymsg.content) && Number.parseInt(replymsg.content)>= 1 && Number.parseInt(replymsg.content)<= 5){
-                return true;
-            }
-            if (replymsg.author.id === message.author.id && message.content.toLowerCase() === "cancel") {
-                return true;
-            }
-            else return false;
-        }, {maxMatches:1, time:30000, errors: ["time"]});
-        if(responses.first().content.toLowerCase() === 'cancel') {
-            commandmsg.delete();
-            return null;
-        }
+        let vidDatafn = await util.promisify(youtubeV3.videos.list);
+        let vidData = await vidDatafn({
+            part: "snippet, contentDetails",
+            id: ids.join(", ")
+        });
+        if(!vidData) throw new Error("An error occured while searching for videos!"); 
+        /**
+         * @type {Song[]}
+         */
+        var songs = [];
+        vidData.items.forEach(item=>{
+            songs.push(song(item, message));
+        });
+        // console.log(songs);
+        return songs;
+        // var embed = new RichEmbed({
+        //     title: "Search result:"
+        // }).setTimestamp(new Date()).setDescription("Type the number of the song you want to play NOW or copy the link, `cancel` the command, and add it to the manually")
+        // .setColor(666);
+        // sresult.items.forEach((item, index)=>{
+        //     embed.addField(`${index+1} ${item.snippet.title}`, `Titel: [${item.snippet.title}](https://www.youtube.com/watch?v=${item.id.videoId})\nChannel: [${item.snippet.channelTitle}](https://www.youtube.com/channel/${item.snippet.channelId})\n`);
+        // });
+        // var commandmsg = await message.channel.send({embed: embed});
+        // var responses = await message.channel.awaitMessages(replymsg=>{
+        //     if (replymsg.author.id === message.author.id && Number.parseInt(replymsg.content) && Number.parseInt(replymsg.content)>= 1 && Number.parseInt(replymsg.content)<= 5){
+        //         return true;
+        //     }
+        //     if (replymsg.author.id === message.author.id && message.content.toLowerCase() === "cancel") {
+        //         return true;
+        //     }
+        //     else return false;
+        // }, {maxMatches:1, time:30000, errors: ["time"]});
+        // if(responses.first().content.toLowerCase() === 'cancel') {
+        //     commandmsg.delete();
+        //     return null;
+        // }
         // var set = new Set(["queueadd", "qa", "qadd"])
         // if(set.has(responses.first().content.toLowerCase()){
         //     qres = await message.channel.awaitMessages(remsg=>{
         //         if (replymsg.author.id === message.author.id && Number.parseInt(replymsg.content) && Number.parseInt(replymsg.content)>= 1 && Number.parseInt(replymsg.content)){
         //     })
         // }
-        var value;
-        if(responses && responses.size === 1){
-            value = Number.parseInt(responses.first().content)-1;
-        }
-        else {
-            commandmsg.delete();
-            return null;
-        }
-        await commandmsg.delete();
-        return await getYoutube.Single("https://www.youtube.com/watch?v="+sresult.items[value].id.videoId, message);
+    //     var value;
+    //     if(responses && responses.size === 1){
+    //         value = Number.parseInt(responses.first().content)-1;
+    //     }
+    //     else {
+    //         commandmsg.delete();
+    //         return null;
+    //     }
+    //     await commandmsg.delete();
+    //     return await getYoutube.Single("https://www.youtube.com/watch?v="+sresult.items[value].id.videoId, message);
     }
 }
 module.exports = getYoutube;
@@ -138,6 +157,13 @@ module.exports = getYoutube;
  */
 function song(item, message) {
     var duration = moment.duration(item.contentDetails.duration, moment.ISO_8601).asSeconds();
-    var song = new Song(item.id, item.snippet.title, item.snippet.description, item.snippet.channelTitle, item.snippet.channelId, duration, item.snippet.thumbnails.URL, item.snippet.thumbnails.width, item.snippet.thumbnails.height, message.member.id);
+    console.log(item.snippet.thumbnails);
+    var thumbnail;
+    if(item.snippet.thumbnails.maxres) thumbnail = item.snippet.thumbnails.maxres.url;
+    else if(item.snippet.thumbnails.standard) thumbnail = item.snippet.thumbnails.standard.url;
+    else if(item.snippet.thumbnails.high) thumbnail = item.snippet.thumbnails.high.url;
+    else if(item.snippet.thumbnails.medium) thumbnail = item.snippet.thumbnails.medium.url;
+    else if(item.snippet.thumbnails.default) thumbnail = item.snippet.thumbnails.url;
+    var song = new Song(item.id, item.snippet.title, item.snippet.description, item.snippet.channelTitle, item.snippet.channelId, duration, thumbnail, message.member.id);
     return song;
 }

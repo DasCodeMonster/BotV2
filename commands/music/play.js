@@ -84,10 +84,10 @@ class Play extends commando.Command {
      */
     async addPlaylist(message, args, ID, queue) {
         var songs = await getYt.Playlist(ID, message);
-        queue.addList(songs);
-        if(message.guild.voiceConnection.dispatcher) return;
-        // else this.play(message,queue);
-        else queue.play(message, queue, this.client.provider);
+        queue.playNowList(songs, message, this.client.provider);
+        // if(message.guild.voiceConnection.dispatcher) return;
+        // // else this.play(message,queue);
+        // else queue.play(message, queue, this.client.provider);
     }
     /**
      * 
