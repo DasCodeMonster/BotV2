@@ -93,19 +93,27 @@ class Queue {
     /**
      * It will plays the given Song directly
      * @param {Song} song 
+     * @param {Message} message
+     * @param {*} provider
      */
-    playNow(song){
-        this.addSingle(song, 0, 1);
-        return this.next();
+    playNow(song, message, provider){
+        this.addSingle(message, song, 0, 1);
+        var next = this.next();
+        this.play(message, provider);
+        return next;
     }
     /**
      * It will add the Array of Songs before all other Songs in the Queue and plays the first of it immediately
      * @param {Song[]} songs
+     * @param {Message} message
+     * @param {*} provider
      */
     
-    playNowList(songs){
-        this.addList(songs, 0, 1);
-        return this.next();
+    playNowList(songs, message, provider){
+        this.addList(message, songs, 0, 0);
+        var next = this.next();
+        this.play(message, provider);
+        return next;
     }
     /**
      * Sets the loop settings for the Song.

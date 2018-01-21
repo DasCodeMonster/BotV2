@@ -24,10 +24,16 @@ class List extends commando.Command {
                 label: "link",
                 prompt: "Which song would you like to add to the queue? Just give me the link!",
                 type: "ytlink"
+            }, {
+                key: "position",
+                label: "position",
+                prompt: "In which position do you want to place the song?",
+                type: "integer",
+                min: 1,
+                default: 1,
+                infinite: false
             }]
         });
-        this.IDs = [];
-        this.pages = 0;
     }
     /**
      * 
@@ -41,6 +47,10 @@ class List extends commando.Command {
          */
         var queueConfig = await this.client.provider.get(message.guild, "queueConfig", new QueueConfig())
         var queue = new Queue(queueConfig);
+        if(args.position > queue.queue.length) {
+            message.reply("Position is too high! I will add the Song to the end of the queue.");
+            args.position = queue.queue.length;
+        }
         if (message.guild.voiceConnection) {
             if (args.link.type ==="single") {
                 this.addSingle(ID, message, args, queue);
@@ -73,7 +83,7 @@ class List extends commando.Command {
      */
     async addSingle(ID, message, args, queue) {
         var song = await getYt.Single(args.link.link, message);
-        queue.addSingle(message, song);
+        queue.addSingle(message, song, args.position);
         if(message.guild.voiceConnection.dispatcher) return;
         else queue.play(message, queue, this.client.provider);
     }

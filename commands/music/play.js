@@ -14,21 +14,14 @@ class Play extends commando.Command {
             name: "play",
             group: "music",
             memberName: "play",
-            description: "plays a song",
+            description: "Plays the song from the given link directly",
             guildOnly: true,
             argsSingleQuotes: true,
             args: [{
                 key: "link",
                 label: "link",
-                prompt: "Which song would you like to play? Just give me the link or search for a song!",
+                prompt: "Which song would you like to play? Just give me the link!",
                 type: "ytlink"
-            }, {
-                key: "search",
-                label: "-s",
-                prompt: "invalid option! Use -s",
-                type: "search",
-                default: "default",
-                infinite: false
             }]
         });
         this.queue = [];
@@ -80,9 +73,7 @@ class Play extends commando.Command {
      */
     async addSingle(ID, message, args, queue) {
         var song = await getYt.Single(args.link.link, message);
-        queue.addSingle(message, song);
-        if(message.guild.voiceConnection.dispatcher) return;
-        else queue.play(message, this.client.provider);
+        queue.playNow(song, message, this.client.provider);
     }
     /**
      * 

@@ -2,7 +2,7 @@ const ytdl = require("ytdl-core");
 const keys = require('./../../Token&Keys');
 const google = require('googleapis');
 const Song = require("./Song");
-const {Message} = require("discord.js");
+const {Message, RichEmbed} = require("discord.js");
 const q = require("q");
 const util = require("util");
 const moment = require("moment");
@@ -88,25 +88,35 @@ class getYoutube{
             maxResults: 5,
             q: query
         });
-        if(!sresult) throw new Error("An error occured while searching gor videos!");       
-        var messageBuilder = "you searched for: `" + query + "`\n```"
-            sresult.items.forEach((item, index) => {
-                messageBuilder += `${index+1} Title: ${item.snippet.title} Channel:${item.snippet.channelTitle}\n`;
+        if(!sresult) throw new Error("An error occured while searching gor videos!"); 
+        console.log(sresult.items);
+        var embed = new RichEmbed({
+            title: "Search result:"
+        }).setTimestamp(new Date()).setDescription("Type the number of the song you want to play NOW or copy the link, `cancel` the command, and add it to the manually")
+        .setColor(666);
+        sresult.items.forEach((item, index)=>{
+            embed.addField(`${index+1} ${item.snippet.title}`, `Titel: [${item.snippet.title}](https://www.youtube.com/watch?v=${item.id.videoId})\nChannel: [${item.snippet.channelTitle}](https://www.youtube.com/channel/${item.snippet.channelId})\n`);
         });
-        messageBuilder += "```type the number of the song to play\nRespond with ``cancel`` to cancel the command.\n"+
-        "The command will automatically be cancelled in 30 seconds, unless you respond.";
-        var commandmsg = await message.reply(messageBuilder);
+        var commandmsg = await message.channel.send({embed: embed});
         var responses = await message.channel.awaitMessages(replymsg=>{
             if (replymsg.author.id === message.author.id && Number.parseInt(replymsg.content) && Number.parseInt(replymsg.content)>= 1 && Number.parseInt(replymsg.content)<= 5){
                 return true;
             }
-            if (replymsg.author.id === message.author.id && message.content.toLowerCase() === "cancel") return true;
+            if (replymsg.author.id === message.author.id && message.content.toLowerCase() === "cancel") {
+                return true;
+            }
             else return false;
         }, {maxMatches:1, time:30000, errors: ["time"]});
         if(responses.first().content.toLowerCase() === 'cancel') {
             commandmsg.delete();
             return null;
         }
+        // var set = new Set(["queueadd", "qa", "qadd"])
+        // if(set.has(responses.first().content.toLowerCase()){
+        //     qres = await message.channel.awaitMessages(remsg=>{
+        //         if (replymsg.author.id === message.author.id && Number.parseInt(replymsg.content) && Number.parseInt(replymsg.content)>= 1 && Number.parseInt(replymsg.content)){
+        //     })
+        // }
         var value;
         if(responses && responses.size === 1){
             value = Number.parseInt(responses.first().content)-1;
