@@ -4,6 +4,8 @@ const time = require("node-datetime");
 const path = require('path');
 const sqlite = require('sqlite');
 const keys = require('./Token&Keys');
+const myDB = require("./mydb");
+const Connection = require("mysql/lib/Connection");
 const client = new Commando.Client({
     owner: keys.OwnerID,
     unknownCommandResponse: false,
@@ -27,9 +29,26 @@ client.registry.registerType("ytlink");
 client.registry.registerTypesIn(path.join(__dirname, "Types"));
 client.registry.registerCommandsIn(path.join(__dirname, 'commands'));
 client.setProvider(
-	sqlite.open(path.join(__dirname, 'settings.sqlite3')).then(db => new Commando.SQLiteProvider(db))
+    sqlite.open(path.join(__dirname, 'settings.sqlite3')).then(db => new Commando.SQLiteProvider(db))
 ).catch(console.error);
-
+var con = new myDB(keys.database.host, keys.database.user, keys.database.password, keys.database.name);
+/**
+ * @type {Connection}
+ */
+async function test(){
+    client.mydb = await con.createDB();
+    var table = new Promise((resolve, reject)=>{
+        client.mydb.query("CREATE TABLE test (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255), address VARCHAR(255))", (err, data)=>{
+            if(err) reject(err);
+            resolve(data);
+            console.info("created Table");
+        });
+    });
+    await table;
+    console.log(table);
+    console.log(client.mydb);
+}
+test();
 client.on("ready", () => {
     /*process.send({
         "message":"ready"
