@@ -25,10 +25,6 @@ class Webhookcommand extends commando.Command {
      * @returns {void} 
      */
     run(message, args){
-        // curl.postJSON("https://discordapp.com/api/webhooks/397767279611346955/BpGWf11xvS1quLT2qoIpWJ5LwhJ39-oluOaXgVt_PUsmgJyFQKhN93EcqKZ7t_e7PfOz", {"content":"Test was successfull!!"},{"headers":{"Content-Type":"application/json"}} , (err, data)=>{
-        //     if(err)console.error(err);
-        //     else console.log(data);
-        // });
         curl.getJSON("https://api.twitch.tv/helix/users?login="+args.TwitchUsername, {headers:{"Client-ID":"tmd29hfnhojjqg6vuagrwru9vzn280"}}, async(err, response)=>{
             if (err) {
                 console.log(err);
@@ -65,8 +61,6 @@ class Webhookcommand extends commando.Command {
                 })
             }
         });
-        // var web = new WebhookClient("397767279611346955", "BpGWf11xvS1quLT2qoIpWJ5LwhJ39-oluOaXgVt_PUsmgJyFQKhN93EcqKZ7t_e7PfOz");
-        // web.send("second Test success!!");
     }
 }
 module.exports = Webhookcommand;

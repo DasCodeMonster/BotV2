@@ -47,9 +47,11 @@ class List extends commando.Command {
          */
         var queueConfig = await this.client.provider.get(message.guild, "queueConfig", new QueueConfig())
         var queue = new Queue(queueConfig);
-        if(args.position > queue.queue.length) {
-            message.reply("Position is too high! I will add the Song to the end of the queue.");
-            args.position = queue.queue.length;
+        if (queue.queue.length !== 0){
+            if(args.position > queue.queue.length) {
+                message.reply("Position is too high! I will add the Song to the end of the queue.");
+                args.position = queue.queue.length;
+            }
         }
         if (message.guild.voiceConnection) {
             if (args.link.type ==="single") {

@@ -24,9 +24,6 @@ class Play extends commando.Command {
                 type: "ytlink"
             }]
         });
-        this.queue = [];
-        this.IDs = [];
-        this.pages = 0;
     }
     /**
      * 
