@@ -60,7 +60,7 @@ class Search extends commando.Command {
         var songs = await getYT.search(message, args.query);
         var embed = new RichEmbed({
             title: "Search result:"
-        }).setTimestamp(new Date()).setDescription("Type the number of the song you want to play NOW or copy the link, `cancel` the command, and add it to the queue manually")
+        }).setTimestamp(new Date()).setDescription("Type the number of the song you want to play **NOW** or copy the link, `cancel` the command, and add it to the queue manually")
         .setColor(666);
         songs.forEach((song, index)=>{
             embed.addField(`${index+1} ${song.title}`, `Titel: [${song.title}](https://www.youtube.com/watch?v=${song.ID})\nChannel: [${song.author}](https://www.youtube.com/channel/${song.channelID})\n`);

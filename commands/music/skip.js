@@ -14,7 +14,7 @@ class Skip extends commando.Command {
             args: [{
                 key: "number",
                 label: "songnumber",
-                prompt: "",
+                prompt: "How many Songs do you want to skip?",
                 type: "integer",
                 default: 1,
                 infinite: false,

@@ -30,7 +30,7 @@ class List extends commando.Command {
                 prompt: "In which position do you want to place the song?",
                 type: "integer",
                 min: 1,
-                default: 1,
+                default: 0,
                 infinite: false
             }]
         });
@@ -47,10 +47,12 @@ class List extends commando.Command {
          */
         var queueConfig = await this.client.provider.get(message.guild, "queueConfig", new QueueConfig())
         var queue = new Queue(queueConfig);
-        if (queue.queue.length !== 0){
-            if(args.position > queue.queue.length) {
-                message.reply("Position is too high! I will add the Song to the end of the queue.");
-                args.position = queue.queue.length;
+        if(args.position !== 0){
+            if (queue.queue.length !== 0){
+                if(args.position > queue.queue.length) {
+                    message.reply("Position is too high! I will add the Song to the end of the queue.");
+                    args.position = queue.queue.length;
+                }
             }
         }
         if (message.guild.voiceConnection) {
@@ -84,10 +86,18 @@ class List extends commando.Command {
      * @param {Queue} queue
      */
     async addSingle(ID, message, args, queue) {
+        var pos;
+        if(args.position === 0){
+            pos = null;
+        }
+        else {
+            pos = args.position;
+        }
         var song = await getYt.Single(args.link.link, message);
-        queue.addSingle(message, song, args.position);
+        await queue.addSingle(message, song, args.position);
+        console.log(song);
         if(message.guild.voiceConnection.dispatcher) return;
-        else queue.play(message, queue, this.client.provider);
+        else queue.play(message, this.client.provider);
     }
     /**
      * 
@@ -97,8 +107,15 @@ class List extends commando.Command {
      * @param {Queue} queue 
      */
     async addPlaylist(message, args, ID, queue) {
+        var pos;
+        if(args.position === 0){
+            pos = null;
+        }
+        else {
+            pos = args.position;
+        }
         var songs = await getYt.Playlist(ID, message);
-        queue.addList(message, songs);
+        queue.addList(message, songs, pos);
         if(message.guild.voiceConnection.dispatcher) return;
         else queue.play(message, this.client.provider);
     }

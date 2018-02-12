@@ -22,22 +22,22 @@
   "homepage": "https://github.com/DasCodeMonster/BotV2#readme",
   "dependencies": {
     "curl": "^0.1.4",
-    "discord.js": "^11.2.1",
+    "discord.js": "^11.3.0",
     "discord.js-commando": "^0.9.0",
     "erlpack": "github:discordapp/erlpack",
     "googleapis": "^23.0.0",
     "moment": "^2.20.1",
-    "moment-duration-format": "^2.2.0",
+    "moment-duration-format": "^2.2.1",
     "mysql": "^2.15.0",
-    "node-datetime": "^2.0.3",
+    "node-datetime": "^2.0.6",
     "node-opus": "^0.2.7",
     "opusscript": "0.0.4",
     "prism-media": "github:hydrabolt/prism-media",
     "q": "^1.5.1",
-    "sqlite": "^2.9.0",
+    "sqlite": "^2.9.1",
     "uid-generator": "^1.0.0",
     "uws": "^9.14.0",
-    "ytdl-core": "^0.18.7",
+    "ytdl-core": "^0.20.1",
     "zlib-sync": "^0.1.3"
   }
 }

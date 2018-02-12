@@ -15,17 +15,18 @@ class Queue {
     }
     /**
      * Adds a single Song to the current queue
-     * @param {Message} message  
+     * @param {Message} message Message which invoked the Command
      * @param {Song} song The song to add to the Queue
      * @param {number} pos Positon of the Song in the Queue of upcoming Songs. 0 is the next Song to play!
+     * @param {number} logLevel LogLevel is a value of how much info output you will receive
      * @returns {void}
      */
     addSingle(message, song, pos=null, logLevel=1){
-        if(pos!== null){
+        if(pos!== null && (this.queue.length !== 0 || pos > this.queue.length+1)){
             this.queue.splice(pos-1, 0, song);
-            return;
+        } else {
+            this.queue.push(song);
         }
-        this.queue.push(song);
         if (this.nowPlaying === null) this.next();
         // else message.reply("I added "+song.title+" to the queue("+this.queue.length+" titles)");
         if (logLevel > 0) {
@@ -56,7 +57,7 @@ class Queue {
         var nq = this.queue.concat(songs);
         this.queue = nq;
         if (this.nowPlaying === null) this.next();
-        else message.reply("I added "+songs.length-1+" songs to the queue("+this.queue.length+" titles)");
+        message.reply("I added "+songs.length-1+" songs to the queue("+this.queue.length+" titles)");
         if(logLevel >0) console.log("added "+songs.length+" songs to the queue("+this.queue.length+" titles)");
     }
     /**
@@ -64,7 +65,7 @@ class Queue {
      * @returns {Song}
      */
     next(){
-        if (this.loop.song)return;
+        if (this.loop.song)return this.nowPlaying;
         if(this.loop.list){
             if(this.nowPlaying !== null) this.addSingle(this.nowPlaying);
         }
@@ -76,7 +77,8 @@ class Queue {
         return this.nowPlaying;
     }
     /**
-     * Skips a song and plays the next in the Queue
+     * Skips a song and returns the next in the Queue
+     * @param {number} amount How many songs should be skipped
      */
     skip(){
         if(this.loop.list){
@@ -96,14 +98,16 @@ class Queue {
      * @param {*} provider
      */
     async playNow(song, message, provider){
-        await this.addSingle(message, song, 1, 1);
+        await this.addSingle(message, song, 1, 0);
         await provider.set(message.guild, "queueConfig", new QueueConfig(this.nowPlaying, this.queue, this.loop.song, this.loop.list));
         if(message.guild.voiceConnection.dispatcher){
             await message.guild.voiceConnection.dispatcher.end("playNow");
         }
         else {
-            await this.next();
-            this.play(message, provider);
+            if(this.nowPlaying !== song){
+                await this.next();
+                this.play(message, provider);
+            }
         }
         return song;
     }
@@ -121,8 +125,10 @@ class Queue {
             await message.guild.voiceConnection.dispatcher.end("playNowList");
         }
         else {
-            await this.next();
-            this.play(message, provider);
+            if(this.nowPlaying !== this.queue[0]){
+                await this.next();
+                this.play(message, provider);
+            }
         }
         return songs[0];
     }
