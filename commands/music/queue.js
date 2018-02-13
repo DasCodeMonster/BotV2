@@ -2,6 +2,7 @@ const commando = require("discord.js-commando");
 const ytdl = require("ytdl-core");
 const Queue = require("./myQueue");
 const QueueConfig = require("./queueConfig");
+const {Message} = require("discord.js");
 
 class Queuecommand extends commando.Command {
     constructor(client) {
@@ -14,13 +15,19 @@ class Queuecommand extends commando.Command {
             guildOnly: true
         });
     }
+    /**
+     * Reply to the Message with the current queue
+     * @param {Message} message 
+     * @param {*} args 
+     */
     async run(message, args){
         /**
          * @type {QueueConfig}
          */
         var queueConfig = await this.client.provider.get(message.guild, "queueConfig", new QueueConfig())
         var queue = new Queue(queueConfig);
-        queue.getQueue(message);
+        var response = await queue.getQueueMessage(message);
+        await message.reply(response);
     }
     /**
      * 

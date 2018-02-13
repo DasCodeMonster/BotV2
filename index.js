@@ -7,6 +7,14 @@ const keys = require('./Token&Keys');
 const myDB = require("./mydb");
 const Connection = require("mysql/lib/Connection");
 const Lyrics = require("./lyrics");
+const colors = require("colors");
+const util = require("util");
+colors.setTheme({
+    info: "green",
+    debug: "cyan",
+    error: "red",
+    warn: "yellow"
+});
 const client = new Commando.Client({
     owner: keys.OwnerID,
     unknownCommandResponse: false,
@@ -63,14 +71,14 @@ client.on("ready", () => {
     /*process.send({
         "message":"ready"
     });*/
-    console.log("bot startet");
+    console.info(colors.info("bot startet"));
     function repeatEvery(func, interval) {
         // Check current time and calculate the delay until next interval
         var now = new Date(),
             delay = interval - now % interval;
-        console.log(now);
-        console.log(now%interval);
-        console.log(delay);
+        console.debug(colors.debug(now));
+        console.debug(colors.debug(now%interval));
+        console.debug(colors.debug(delay));
         function start() {
             // Execute function now...
             func();
@@ -81,7 +89,7 @@ client.on("ready", () => {
         setTimeout(start, delay);
     }
     repeatEvery(() => {
-        console.log(time.create().format("H:M:S"));
+        console.debug(colors.debug(time.create().format("H:M:S")));
         client.guilds.array().forEach(Guild => {
             Guild.members.array().forEach(member => {
                 if (member.user.presence.status != "online") return;
@@ -132,11 +140,11 @@ client.on("guildBanRemove", (guild, user) => {
     
 });
 client.on("guildCreate", Guild => {
-    console.log("Serving now Guild with name: "+Guild.name);
+    console.info(colors.info("Serving now Guild with name: "+Guild.name));
     
 });
 client.on("guildDelete", Guild => {
-    console.log("Not serving anymore Guild with name: "+ Guild.name);
+    console.info(colors.info("Not serving anymore Guild with name: "+ Guild.name));
 });
 client.on("guildMemberAdd", member => {
 
@@ -216,15 +224,14 @@ client.on("voiceStateUpdate", (oldMember, newMember) => {
 
 });
 client.on("warn", info => {
-    console.log("info".fontcolor("yellow"))
 
 });
-console.log("bot is logging in...");
+console.info(colors.info("bot is logging in..."));
 client.login(keys.BotToken).catch(console.error);
-console.log("bot is logged in");
+console.info(colors.info("bot is logged in"));
 
 process.once('SIGINT', () => {
-    console.log("exiting now");
+    console.info(colors.info("exiting now"));
     /*client.guilds.array().forEach(guild => {
         //console.log(client.provider.get(guild, "queue"));
         client.provider.remove(guild, "queue");
@@ -236,12 +243,15 @@ process.once('SIGINT', () => {
     process.exit(0);
 });
 process.on('unhandledRejection', (reason, p) => {
-    console.error('Unhandled Rejection at:', p, 'reason:', reason);
+    console.error("Unhandled Rejection at:".error);
+    console.error("%s".error, util.inspect(p));
+    console.error("reason:".error);
+    console.error("%s".error, util.inspect(reason));
   });
 process.on('warning', (warning) => {
-    console.warn(warning.name);    // Print the warning name
-    console.warn(warning.message); // Print the warning message
-    console.warn(warning.stack);   // Print the stack trace
+    console.warn(colors.warn(warning.name));    // Print the warning name
+    console.warn(colors.warn(warning.message)); // Print the warning message
+    console.warn(colors.warn(warning.stack));   // Print the stack trace
 });
 /*process.on("message", (message)=> {
     if (message === "stop") {

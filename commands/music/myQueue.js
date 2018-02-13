@@ -3,6 +3,13 @@ const {Message} = require("discord.js");
 const ytdl = require("ytdl-core");
 const QueueConfig = require("./queueConfig");
 const moment = require("moment");
+const colors = require("colors");
+colors.setTheme({
+    info: "green",
+    debug: "cyan",
+    error: "red",
+    warn: "yellow"
+});
 var momentDurationFormatSetup = require("moment-duration-format");
 class Queue {
     /**
@@ -30,7 +37,7 @@ class Queue {
         if (this.nowPlaying === null) this.next();
         // else message.reply("I added "+song.title+" to the queue("+this.queue.length+" titles)");
         if (logLevel > 0) {
-            console.log("added 1 song("+song.title+") to the queue("+this.queue.length+" titles)");
+            console.debug(`added 1 song(${song.title}) to the queue(${this.queue.length} titles)`.debug);
             message.reply("I added "+song.title+" to the queue("+this.queue.length+" titles)");
         }
     }
@@ -57,8 +64,8 @@ class Queue {
         var nq = this.queue.concat(songs);
         this.queue = nq;
         if (this.nowPlaying === null) this.next();
-        message.reply("I added "+songs.length-1+" songs to the queue("+this.queue.length+" titles)");
-        if(logLevel >0) console.log("added "+songs.length+" songs to the queue("+this.queue.length+" titles)");
+        message.reply(`I added ${songs.length-1} songs to the queue(${this.queue.length} titles)`);
+        if(logLevel >0)console.debug(`added 1 song(${song.title}) to the queue(${this.queue.length} titles)`.debug);
     }
     /**
      * It will move all elements in the queue forward. Additionally the new currently played song will be returned;
@@ -105,8 +112,13 @@ class Queue {
         }
         else {
             if(this.nowPlaying !== song){
-                await this.next();
+                await this.skip();
+            }
+            if(this.nowPlaying === song){
                 this.play(message, provider);
+            }
+            else {
+                console.error("An error occured in the playNow Method!".error);
             }
         }
         return song;
@@ -117,7 +129,6 @@ class Queue {
      * @param {Message} message
      * @param {*} provider
      */
-    
     async playNowList(songs, message, provider){
         await this.addList(message, songs, 1, 0);
         await provider.set(message.guild, "queueConfig", new QueueConfig(this.nowPlaying, this.queue, this.loop.song, this.loop.list));
@@ -148,6 +159,9 @@ class Queue {
     setLoopList(bool){
         this.loop.list = bool;
     }
+    /**
+     * Generates a new random order of the songs in the queue.
+     */
     shuffle(){
         var currentIndex = this.queue.length, temporaryValue, randomIndex;
         
@@ -165,17 +179,17 @@ class Queue {
         }
     }
     /**
-     * 
-     * @param {number} start 
-     * @param {number} end 
+     * Removes a number of songs
+     * @param {number} start Where to start deleting songs 
+     * @param {number} count How many songs after the start(included) should be deleted
      */
     remove(start=0, count=1){
         return this.queue.splice(start, count);
     }
     /**
-     * 
-     * @param {Message} message 
-     * @param {Queue} queue 
+     * Starts playing music. The "nowPlaying" Song will be played
+     * @param {Message} message Message which invoked the command
+     * @param {*} provider The sqlite provide were data can be stored 
      */
     async play(message, provider) {
         await provider.set(message.guild, "queueConfig", new QueueConfig(this.nowPlaying, this.queue, this.loop.song, this.loop.list));
@@ -183,14 +197,14 @@ class Queue {
         await message.guild.voiceConnection.dispatcher.setVolume(await provider.get(message.guild, "volume", 0.3));
         await message.channel.send("Now playing: "+this.nowPlaying.title);
         message.guild.voiceConnection.dispatcher.once("end", reason => {
-            if(reason) console.log(reason);
+            if(reason) console.debug("%s".debug, reason);
             this.onEnd(message, reason, provider);
         });
     }
     /**
-     * 
-     * @param {Message} message 
-     * @param {String} reason 
+     * This Method will be called everytime a song ends
+     * @param {Message} message Message which invoked the command
+     * @param {String} reason Why the stream ended
      */
     async onEnd(message, reason, provider){
         /**
@@ -200,7 +214,7 @@ class Queue {
         this.nowPlaying = queueConfig.nowPlaying;
         this.queue = queueConfig.queue;
         this.loop = queueConfig.loop;
-        if (reason && reason === "!skip") {
+        if (reason && (reason === "!skip"|| reason === "playNow")) {
             await this.skip();
         }
         else {
@@ -208,25 +222,24 @@ class Queue {
         }
         await provider.set(message.guild, "queueConfig", new QueueConfig(this.nowPlaying, this.queue, this.loop.song, this.loop.list));
         if (this.nowPlaying === null) {
-            console.log("queue is empty");
+            console.debug("queue is empty".debug);
             return;
         }
         await message.guild.voiceConnection.playStream(ytdl(this.nowPlaying.ID, {filter: "audioonly"}));
         await message.guild.voiceConnection.dispatcher.setVolume(await provider.get(message.guild, "volume", 0.3));
         await message.channel.send("Now playing: "+this.nowPlaying.title);
         await message.guild.voiceConnection.dispatcher.once("end", reason => {
-            if (reason) console.log(reason);
+            if (reason) console.debug("%s".debug, reason);
             this.onEnd(message, reason, provider);
         });
     }
     /**
-     * 
+     * Return a String representing the current queue
      * @param {Message} message 
      */
-    async getQueue(message){
+    async getQueueMessage(message){
         if (this.queue.length === 0 && this.nowPlaying === null) {
-            message.reply("The queue is empty!");
-            return;
+            return "The queue is empty!";
         }
         if (message.guild.voiceConnection && message.guild.voiceConnection.dispatcher) {
             var time = message.guild.voiceConnection.dispatcher.time;
@@ -234,7 +247,7 @@ class Queue {
         }
         else var seconds = 0;
         if (this.queue.length === 0 && this.nowPlaying !== null){
-            message.reply(`Now playing: ${this.nowPlaying.title} from: ${this.nowPlaying.author} | ${(seconds-(seconds%60))/60}:${Math.round(seconds%60)<10?"0"+Math.round(seconds%60):Math.round(seconds%60)}/${moment.duration(this.nowPlaying.length, "seconds").format()}`);
+            return `Now playing: ${this.nowPlaying.title} from: ${this.nowPlaying.author} | ${(seconds-(seconds%60))/60}:${Math.round(seconds%60)<10?"0"+Math.round(seconds%60):Math.round(seconds%60)}/${moment.duration(this.nowPlaying.length, "seconds").format()}`;
         }
         else {
             var messageBuilder = "";
@@ -251,7 +264,7 @@ class Queue {
                 }
             });
             messageBuilder += "```";
-            message.reply(messageBuilder);
+            return messageBuilder;
         }
     }
 }
