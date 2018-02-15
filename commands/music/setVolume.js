@@ -1,4 +1,6 @@
 const commando = require("discord.js-commando");
+const {Message} = require("discord.js");
+const Audioworker = require("../../audioworker");
 
 class SetVolumeCommand extends commando.Command {
     constructor(client) {
@@ -24,22 +26,27 @@ class SetVolumeCommand extends commando.Command {
             argsCount: 1
         })
     }
-
+    /**
+     * 
+     * @param {Message} message 
+     * @param {*} args 
+     */
     async run(message, args) {
-        console.log("User: "+message.member.displayName+" in Guild: "+message.guild.name+" used Command: "+this.name+" in textchannel: "+message.channel.name);  
+        /** 
+         * @type {Audioworker}
+         */
+        var audioworker = this.client.Audioworker;
+        if(!audioworker.queues.has(message.guild.id)){
+           var queue = audioworker.add(message.guild);
+        }
+        else{
+            var queue = audioworker.queues.get(message.guild.id);
+        }
         if (args.number === -1) {
-            message.reply(`current volume: ${this.client.provider.get(message.guild, "volume", 0.3)*100}`);
+            console.log(await queue.getVolume(message))
             return;
-        }
-        if (message.guild.voiceConnection && message.guild.voiceConnection.dispatcher) {
-            message.guild.voiceConnection.dispatcher.setVolume(args.number/100);
-            console.log(args.number/100);
-            this.client.provider.set(message.guild, "volume", args.number/100);
-            message.reply(`set the volume to ${args.number}.`);
-        }
-        else {
-            this.client.provider.set(message.guild, "volume", args.number/100);
-            message.reply(`set the volume to ${args.number}.`);
+        }else{
+            await queue.setVolume(message, args.number)
         }
     }
     /**

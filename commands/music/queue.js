@@ -3,6 +3,7 @@ const ytdl = require("ytdl-core");
 const Queue = require("./myQueue");
 const QueueConfig = require("./queueConfig");
 const {Message} = require("discord.js");
+const Audioworker = require("../../audioworker");
 
 class Queuecommand extends commando.Command {
     constructor(client) {
@@ -21,11 +22,16 @@ class Queuecommand extends commando.Command {
      * @param {*} args 
      */
     async run(message, args){
-        /**
-         * @type {QueueConfig}
+        /** 
+         * @type {Audioworker}
          */
-        var queueConfig = await this.client.provider.get(message.guild, "queueConfig", new QueueConfig())
-        var queue = new Queue(queueConfig);
+        var audioworker = this.client.Audioworker;
+        if(!audioworker.queues.has(message.guild.id)){
+           var queue = audioworker.add(message.guild);
+        }
+        else{
+            var queue = audioworker.queues.get(message.guild.id);
+        }
         var response = await queue.getQueueMessage(message);
         await message.reply(response);
     }

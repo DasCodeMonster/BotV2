@@ -1,6 +1,8 @@
 const commando = require("discord.js-commando");
 const Queue = require("./myQueue");
 const QueueConfig = require("./queueConfig");
+const Audioworker = require("../../audioworker");
+const {Message} = require("discord.js");
 
 class Shuffle extends commando.Command {
     constructor(client) {
@@ -19,13 +21,17 @@ class Shuffle extends commando.Command {
      * @param {*} args 
      */
     async run(message, args) {
-        /**
-         * @type {QueueConfig}
+        /** 
+         * @type {Audioworker}
          */
-        var queueConfig = await this.client.provider.get(message.guild, "queueConfig", new QueueConfig())
-        var queue = new Queue(queueConfig);
+        var audioworker = this.client.Audioworker;
+        if(!audioworker.queues.has(message.guild.id)){
+           var queue = audioworker.add(message.guild);
+        }
+        else{
+            var queue = audioworker.queues.get(message.guild.id);
+        }
         queue.shuffle();
-        await this.client.provider.set(message.guild, "queueConfig", new QueueConfig(queue.nowPlaying, queue.queue, queue.loop.song, queue.loop.list));
         message.reply("ok i shuffeled the queue!");
     }
     

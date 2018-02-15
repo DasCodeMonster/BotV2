@@ -1,4 +1,5 @@
 const discord = require("discord.js");
+const Collection = discord.Collection;
 const Commando = require('discord.js-commando');
 const time = require("node-datetime");
 const path = require('path');
@@ -9,6 +10,8 @@ const Connection = require("mysql/lib/Connection");
 const Lyrics = require("./lyrics");
 const colors = require("colors");
 const util = require("util");
+const Audioworker = require("./audioworker");
+const QueueConfig = require("./commands/music/queueConfig");
 colors.setTheme({
     info: "green",
     debug: "cyan",
@@ -25,6 +28,7 @@ client.registry.registerGroup("fun", "Fun commands");
 client.registry.registerGroup("other", "other commands");
 client.registry.registerGroup("points", "Commands related to your points");
 client.registry.registerGroup("generic", "Generic commands");
+client.registry.registerGroup("test", "only for testing");
 client.registry.registerDefaults();
 client.registry.registerType("option");
 client.registry.registerType("search");
@@ -66,11 +70,24 @@ async function test(){
     var lyrics = new Lyrics(client.mydb);
     client.lyrics = await lyrics.init();
 }
-test();
+//test();
+async function setAudioworker(){
+    /** 
+     * @type {Collection<String, QueueConfig>}
+    */
+    var savedaudioworker = await client.provider.get("global", "Audioworker", new Collection());
+    console.log(savedaudioworker);
+    client.Audioworker = new Audioworker(client, 60000, savedaudioworker);
+    setTimeout(async ()=>{
+        var savedaudioworker = await client.provider.get("global", "Audioworker", new Collection());
+        console.log(savedaudioworker);
+    }, 65000);
+}
 client.on("ready", () => {
     /*process.send({
         "message":"ready"
     });*/
+    setAudioworker();
     console.info(colors.info("bot startet"));
     function repeatEvery(func, interval) {
         // Check current time and calculate the delay until next interval
@@ -86,7 +103,6 @@ client.on("ready", () => {
             setInterval(func, interval);
         }    
         // Delay execution until it's an even interval
-        setTimeout(start, delay);
     }
     repeatEvery(() => {
         console.debug(colors.debug(time.create().format("H:M:S")));
@@ -238,7 +254,6 @@ process.once('SIGINT', () => {
         console.log(guild.name);
         console.log(client.provider.get(guild, "queue"));
     });*/
-    client.provider.db.close();
     client.destroy();
     process.exit(0);
 });

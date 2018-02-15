@@ -8,6 +8,7 @@ const {Message, RichEmbed} = require("discord.js");
 const getYT = require("./ytsong");
 const Queue = require("./myQueue");
 const QueueConfig = require("./queueConfig");
+const Audioworker = require("../../audioworker");
 
 class Search extends commando.Command {
     constructor(client) {
@@ -32,11 +33,16 @@ class Search extends commando.Command {
      * @param {*} args 
      */
     async run(message, args) {
-        /**
-         * @type {QueueConfig}
+        /** 
+         * @type {Audioworker}
          */
-        var queueConfig = await this.client.provider.get(message.guild, "queueConfig", new QueueConfig())
-        var queue = new Queue(queueConfig);
+        var audioworker = this.client.Audioworker;
+        if(!audioworker.queues.has(message.guild.id)){
+           var queue = audioworker.add(message.guild);
+        }
+        else{
+            var queue = audioworker.queues.get(message.guild.id);
+        }
         if (message.guild.voiceConnection) {
             this.addSingle(message, args, queue);
         }
@@ -82,7 +88,7 @@ class Search extends commando.Command {
         }
         commandmsg.delete();
         // queue.addSingle(message, songs[Number.parseInt(responses.first().content)]);
-        await queue.playNow(songs[Number.parseInt(responses.first().content)-1], message, this.client.provider);
+        await queue.playNow(songs[Number.parseInt(responses.first().content)-1], message);
     }
     /**
      * 

@@ -3,6 +3,8 @@ const ytdl = require("ytdl-core");
 const Queue = require("./myQueue");
 const QueueConfig = require("./queueConfig");
 const {Message} = require("discord.js");
+const Audioworker = require("../../audioworker");
+
 class Skip extends commando.Command {
     constructor(client) {
         super(client, {
@@ -38,14 +40,19 @@ class Skip extends commando.Command {
         } else if (message.member.voiceChannel) {
             await message.member.voiceChannel.join();
             if(!message.guild.voiceConnection.dispatcher){
-                /**
-                 * @type {QueueConfig}
+                /** 
+                 * @type {Audioworker}
                  */
-                var queueConfig = await this.client.provider.get(message.guild, "queueConfig", new QueueConfig())
-                var queue = new Queue(queueConfig);
+                var audioworker = this.client.Audioworker;
+                if(!audioworker.queues.has(message.guild.id)){
+                    var queue = audioworker.add(message.guild);
+                }
+                else{
+                    var queue = audioworker.queues.get(message.guild.id);
+                }
                 queue.skip();
                 // this.play(message, queue);
-                queue.play(message, this.client.provider);
+                queue.play(message);
                 return;
             }
             message.guild.voiceConnection.dispatcher.end("!skip");
@@ -62,14 +69,13 @@ class Skip extends commando.Command {
      */
     async play(message, queue) {
         var vid = queue.nowPlaying;
-        await this.client.provider.set(message.guild, "queueConfig", new QueueConfig(queue.nowPlaying, queue.queue, queue.loop.song, queue.loop.list));
         await message.guild.voiceConnection.playStream(ytdl(vid.ID, {filter: "audioonly"}));
-        await message.guild.voiceConnection.dispatcher.setVolume(await this.client.provider.get(message.guild, "volume", 0.3));
+        await message.guild.voiceConnection.dispatcher.setVolume(queue.volume/100);
         await message.channel.send("Now playing: "+vid.title);
         message.guild.voiceConnection.dispatcher.on("end", reason => {
             if(reason) console.log(reason);
             //  this.onEnd(message, reason);
-            queue.onEnd(message, reason, this.client.provider);
+            queue.onEnd(message, reason);
         });
     }
     /**

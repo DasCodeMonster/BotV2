@@ -2,6 +2,7 @@ const commando = require("discord.js-commando");
 const Queue = require("./myQueue");
 const QueueConfig = require("./queueConfig");
 const {Message} = require("discord.js");
+const Audioworker = require("../../audioworker");
 
 class Loop extends commando.Command {
     constructor(client) {
@@ -29,17 +30,27 @@ class Loop extends commando.Command {
         });
     }
     async run(message, args) {
-        /**
-         * @type {QueueConfig}
+        /** 
+         * @type {Audioworker}
          */
-        var queueConfig = await this.client.provider.get(message.guild, "queueConfig", new QueueConfig())
-        var queue = new Queue(queueConfig);
+        var audioworker = this.client.Audioworker;
+        if(!audioworker.queues.has(message.guild.id)){
+            var queue = audioworker.add(message.guild);
+        }
+        else{
+            var queue = audioworker.queues.get(message.guild.id);
+        }
         if (args.songorlist === "default" && args.boolean === "default") {
             message.reply(`Current settings for list: ${queue.loop.list}\nCurrent settings for song: ${queue.loop.song}`);
             
         }
         else if (args.songorlist !== "default" && args.boolean === "default") {
-            message.reply(`Current settings for ${args.songorlist}: ${await this.client.provider.get(message.guild, args.songorlist)?await this.client.provider.get(message.guild, args.songorlist):false}`);
+            if(args.songorlist === "song"){
+                message.reply(`Current settings for ${args.songorlist}: ${queue.loop.song}`);                
+            }
+            else if(args.songorlist === "list") {
+                message.reply(`Current settings for ${args.songorlist}: ${queue.loop.list}`);
+            }
         } else if (args.songorlist !== "default" && args.boolean !== "default") {
             if(args.songorlist === "song"){
                 queue.loop.song = args.boolean;
@@ -47,7 +58,6 @@ class Loop extends commando.Command {
             if(args.songorlist === "list"){
                 queue.loop.list = args.boolean;
             }
-            await this.client.provider.set(message.guild, "queueConfig", new QueueConfig(queue.nowPlaying, queue.queue, queue.loop.song, queue.loop.list));
             message.reply(`set loop ${args.songorlist} to ${args.boolean}`);
         } else if (args.songorlist === "default" && args.boolean !== "default") {
             message.reply(`you need to be more precise! Do you want to set loop list or loop song to ${args.boolean}`);

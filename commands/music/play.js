@@ -7,6 +7,7 @@ const Song = require("./Song");
 const getYt = require("./ytsong");
 const QueueConfig = require("./queueConfig");
 const Queue = require("./myQueue");
+const Audioworker = require("../../audioworker");
 
 class Play extends commando.Command {
     constructor(client) {
@@ -31,13 +32,17 @@ class Play extends commando.Command {
      * @param {Object} args 
      */
     async run(message, args) {
-        console.log(args);
         var ID = args.link.id;
-        /**
-         * @type {QueueConfig}
+        /** 
+         * @type {Audioworker}
          */
-        var queueConfig = await this.client.provider.get(message.guild, "queueConfig", new QueueConfig())
-        var queue = new Queue(queueConfig);
+        var audioworker = this.client.Audioworker;
+        if(!audioworker.queues.has(message.guild.id)){
+            var queue = audioworker.add(message.guild);
+        }
+        else{
+            var queue = audioworker.queues.get(message.guild.id);
+        }
         if (message.guild.voiceConnection) {
             if (args.link.type ==="single") {
                 this.addSingle(ID, message, args, queue);
@@ -70,7 +75,7 @@ class Play extends commando.Command {
      */
     async addSingle(ID, message, args, queue) {
         var song = await getYt.Single(args.link.link, message);
-        queue.playNow(song, message, this.client.provider);
+        queue.playNow(song, message);
     }
     /**
      * 
@@ -81,7 +86,7 @@ class Play extends commando.Command {
      */
     async addPlaylist(message, args, ID, queue) {
         var songs = await getYt.Playlist(ID, message);
-        queue.playNowList(songs, message, this.client.provider);
+        queue.playNowList(songs, message);
         // if(message.guild.voiceConnection.dispatcher) return;
         // // else this.play(message,queue);
         // else queue.play(message, queue, this.client.provider);

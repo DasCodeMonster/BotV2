@@ -19,6 +19,7 @@ class Queue {
         this.nowPlaying = queueConfig.nowPlaying;
         this.queue = queueConfig.queue;
         this.loop = queueConfig.loop;
+        this.volume = queueConfig.volume;
     }
     /**
      * Adds a single Song to the current queue
@@ -38,6 +39,8 @@ class Queue {
         // else message.reply("I added "+song.title+" to the queue("+this.queue.length+" titles)");
         if (logLevel > 0) {
             console.debug(`added 1 song(${song.title}) to the queue(${this.queue.length} titles)`.debug);
+        }
+        if(message){
             message.reply("I added "+song.title+" to the queue("+this.queue.length+" titles)");
         }
     }
@@ -65,7 +68,7 @@ class Queue {
         this.queue = nq;
         if (this.nowPlaying === null) this.next();
         message.reply(`I added ${songs.length-1} songs to the queue(${this.queue.length} titles)`);
-        if(logLevel >0)console.debug(`added 1 song(${song.title}) to the queue(${this.queue.length} titles)`.debug);
+        if(logLevel >0)console.debug(`I added ${songs.length-1} songs to the queue(${this.queue.length} titles)`.debug);
     }
     /**
      * It will move all elements in the queue forward. Additionally the new currently played song will be returned;
@@ -74,7 +77,7 @@ class Queue {
     next(){
         if (this.loop.song)return this.nowPlaying;
         if(this.loop.list){
-            if(this.nowPlaying !== null) this.addSingle(this.nowPlaying);
+            if(this.nowPlaying !== null) this.addSingle(null, this.nowPlaying);
         }
         if (this.queue.length === 0) {
             this.nowPlaying = null;
@@ -89,7 +92,7 @@ class Queue {
      */
     skip(){
         if(this.loop.list){
-            if(this.nowPlaying !== null) this.addSingle(this.nowPlaying);
+            if(this.nowPlaying !== null) this.addSingle(null, this.nowPlaying);
         }
         if (this.queue.length === 0) {
             this.nowPlaying = null;
@@ -102,11 +105,9 @@ class Queue {
      * It will plays the given Song directly
      * @param {Song} song 
      * @param {Message} message
-     * @param {*} provider
      */
-    async playNow(song, message, provider){
+    async playNow(song, message){
         await this.addSingle(message, song, 1, 0);
-        await provider.set(message.guild, "queueConfig", new QueueConfig(this.nowPlaying, this.queue, this.loop.song, this.loop.list));
         if(message.guild.voiceConnection.dispatcher){
             await message.guild.voiceConnection.dispatcher.end("playNow");
         }
@@ -115,7 +116,7 @@ class Queue {
                 await this.skip();
             }
             if(this.nowPlaying === song){
-                this.play(message, provider);
+                this.play(message);
             }
             else {
                 console.error("An error occured in the playNow Method!".error);
@@ -127,18 +128,16 @@ class Queue {
      * It will add the Array of Songs before all other Songs in the Queue and plays the first of it immediately
      * @param {Song[]} songs
      * @param {Message} message
-     * @param {*} provider
      */
-    async playNowList(songs, message, provider){
+    async playNowList(songs, message){
         await this.addList(message, songs, 1, 0);
-        await provider.set(message.guild, "queueConfig", new QueueConfig(this.nowPlaying, this.queue, this.loop.song, this.loop.list));
         if(message.guild.voiceConnection.dispatcher){
             await message.guild.voiceConnection.dispatcher.end("playNowList");
         }
         else {
             if(this.nowPlaying !== this.queue[0]){
                 await this.next();
-                this.play(message, provider);
+                this.play(message);
             }
         }
         return songs[0];
@@ -189,16 +188,14 @@ class Queue {
     /**
      * Starts playing music. The "nowPlaying" Song will be played
      * @param {Message} message Message which invoked the command
-     * @param {*} provider The sqlite provide were data can be stored 
      */
-    async play(message, provider) {
-        await provider.set(message.guild, "queueConfig", new QueueConfig(this.nowPlaying, this.queue, this.loop.song, this.loop.list));
+    async play(message) {
         await message.guild.voiceConnection.playStream(ytdl(this.nowPlaying.ID, {filter: "audioonly"}));
-        await message.guild.voiceConnection.dispatcher.setVolume(await provider.get(message.guild, "volume", 0.3));
+        await message.guild.voiceConnection.dispatcher.setVolume(this.volume/100);
         await message.channel.send("Now playing: "+this.nowPlaying.title);
         message.guild.voiceConnection.dispatcher.once("end", reason => {
             if(reason) console.debug("%s".debug, reason);
-            this.onEnd(message, reason, provider);
+            this.onEnd(message, reason);
         });
     }
     /**
@@ -206,31 +203,23 @@ class Queue {
      * @param {Message} message Message which invoked the command
      * @param {String} reason Why the stream ended
      */
-    async onEnd(message, reason, provider){
-        /**
-         * @type {QueueConfig}
-         */
-        var queueConfig = await provider.get(message.guild, "queueConfig", new QueueConfig());
-        this.nowPlaying = queueConfig.nowPlaying;
-        this.queue = queueConfig.queue;
-        this.loop = queueConfig.loop;
+    async onEnd(message, reason){
         if (reason && (reason === "!skip"|| reason === "playNow")) {
             await this.skip();
         }
         else {
             await this.next();       
         }
-        await provider.set(message.guild, "queueConfig", new QueueConfig(this.nowPlaying, this.queue, this.loop.song, this.loop.list));
         if (this.nowPlaying === null) {
             console.debug("queue is empty".debug);
             return;
         }
         await message.guild.voiceConnection.playStream(ytdl(this.nowPlaying.ID, {filter: "audioonly"}));
-        await message.guild.voiceConnection.dispatcher.setVolume(await provider.get(message.guild, "volume", 0.3));
+        await message.guild.voiceConnection.dispatcher.setVolume(this.volume/100);
         await message.channel.send("Now playing: "+this.nowPlaying.title);
         await message.guild.voiceConnection.dispatcher.once("end", reason => {
             if (reason) console.debug("%s".debug, reason);
-            this.onEnd(message, reason, provider);
+            this.onEnd(message, reason);
         });
     }
     /**
@@ -266,6 +255,29 @@ class Queue {
             messageBuilder += "```";
             return messageBuilder;
         }
+    }
+    /**
+     * 
+     * @param {Message} message 
+     * @param {Number} vol
+     */
+    async setVolume(message, vol){
+        if(message.guild.voiceConnection.dispatcher){
+            await message.guild.voiceConnection.dispatcher.setVolume(vol/100);
+        }
+        this.volume = vol;
+        await message.reply(`set the volume to ${this.volume}.`);
+    }
+    /**
+     * 
+     * @param {Message} message 
+     */
+    async getVolume(message){
+        await message.reply(`current volume: ${this.volume}`);
+        return this.volume;
+    }
+    save(){
+        return new QueueConfig(this.nowPlaying, this.queue, this.loop.song, this.loop.list, this.volume);
     }
 }
 module.exports = Queue;

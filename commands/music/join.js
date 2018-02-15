@@ -3,6 +3,7 @@ const ytdl = require("ytdl-core");
 const Queue = require("./myQueue");
 const {Message} = require("discord.js");
 const QueueConfig = require("./queueConfig");
+const Audioworker = require("../../audioworker");
 
 class joinVoicechannelCommand extends commando.Command {
     constructor(client) {
@@ -34,13 +35,18 @@ class joinVoicechannelCommand extends commando.Command {
                 message.reply("ok i joined voicechannel: " + message.member.voiceChannel.name);
             }
             if(!message.guild.voiceConnection.dispatcher){
-                /**
-                 * @type {QueueConfig}
-                 */
-                var queueConfig = await this.client.provider.get(message.guild, "queueConfig", new QueueConfig())
-                var queue = new Queue(queueConfig);
+                /** 
+                 * @type {Audioworker}
+                */
+                var audioworker = this.client.Audioworker;
+                if(!audioworker.queues.has(message.guild.id)){
+                    var queue = audioworker.add(message.guild);
+                }
+                else{
+                    var queue = audioworker.queues.get(message.guild.id);
+                }
                 if (queue.nowPlaying !== null){
-                    queue.play(message, this.client.provider);
+                    queue.play(message);
                 }
             }
         }

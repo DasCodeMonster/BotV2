@@ -7,6 +7,7 @@ const QueueConfig = require("./queueConfig");
 const {Message, RichEmbed} = require("discord.js");
 const moment = require("moment");
 var momentDurationFormatSetup = require("moment-duration-format");
+const Audioworker = require("../../audioworker");
 
 class SongInfo extends commando.Command {
     constructor(client) {
@@ -36,12 +37,16 @@ class SongInfo extends commando.Command {
      * @param {*} args 
      */
     async run(message, args) {
-        console.log(args);
-        /**
-         * @type {QueueConfig}
+        /** 
+         * @type {Audioworker}
          */
-        var queueConfig = await this.client.provider.get(message.guild, "queueConfig", new QueueConfig())
-        var queue = new Queue(queueConfig);
+        var audioworker = this.client.Audioworker;
+        if(!audioworker.queues.has(message.guild.id)){
+           var queue = audioworker.add(message.guild);
+        }
+        else{
+            var queue = audioworker.queues.get(message.guild.id);
+        }
         if (args.number > queue.queue.length){
             message.reply("Index was to big!");
             return;

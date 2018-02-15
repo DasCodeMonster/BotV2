@@ -4,20 +4,19 @@ const keys = require('./../../Token&Keys');
 const google = require('googleapis');
 const youtubeV3 = google.youtube({version: "v3", auth: keys.YoutubeAPIKey});
 const Song = require("./Song");
-const Queue = require("./myQueue");
-const {Message} = require("discord.js");
+const Queue = require("../music/myQueue");
+const {Message, Collection} = require("discord.js");
 const q = require("q");
-const getYt = require("./ytsong");
-const QueueConfig = require("./queueConfig");
-const Audioworker = require("../../audioworker");
+const getYt = require("../music/ytsong");
+const QueueConfig = require("../music/queueConfig");
+const Audioworker = require("./../../audioworker");
 
-class List extends commando.Command {
+class Listtest extends commando.Command {
     constructor(client) {
         super(client, {
-            name: "queueadd",
-            aliases: ["qa", "qadd", "add"],
-            group: "music",
-            memberName: "queueadd",
+            name: "test",
+            group: "test",
+            memberName: "testadd",
             description: "Adds a song to the queue",
             guildOnly: true,
             args: [{
@@ -42,47 +41,11 @@ class List extends commando.Command {
      * @param {Object} args 
      */
     async run(message, args) {
-        var ID = args.link.id;
-        /** 
-         * @type {Audioworker}
-         */
-        var audioworker = this.client.Audioworker;
-        if(!audioworker.queues.has(message.guild.id)){
-           var queue = audioworker.add(message.guild);
-        }
-        else{
-            var queue = audioworker.queues.get(message.guild.id);
-        }
-        if(args.position !== 0){
-            if (queue.queue.length !== 0){
-                if(args.position > queue.queue.length) {
-                    message.reply("Position is too high! I will add the Song to the end of the queue.");
-                    args.position = queue.queue.length;
-                }
-            }
-        }
-        if (message.guild.voiceConnection) {
-            if (args.link.type ==="single") {
-                this.addSingle(ID, message, args, queue);
-            }
-            else {
-                this.addPlaylist(message, args, ID, queue);
-            }
-        }
-        else {
-            if (message.member.voiceChannel) {
-                message.member.voiceChannel.join();
-                if (args.link.type === "single") {
-                    this.addSingle(ID, message, args, queue);
-                }
-                else {
-                    this.addPlaylist(message, args, ID, queue);
-                }              
-            }
-            else {
-                message.reply("you need to join a voicechannel first");
-            }
-        }
+        var testcol = new Collection()
+        testcol.set("1", 1);
+        testcol.set("2",2);
+        testcol.set("3", testcol.get("1")+testcol.get("2"));
+        console.log(testcol);
     }
     /**
      *  
@@ -159,4 +122,4 @@ function role(message, command) {
     });
     return ret;
 }
-module.exports = List;
+module.exports = Listtest;

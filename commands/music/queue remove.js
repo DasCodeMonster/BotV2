@@ -2,6 +2,7 @@ const commando = require("discord.js-commando");
 const {Message} = require("discord.js");
 const Queue = require("./myQueue");
 const QueueConfig = require("./queueConfig");
+const Audioworker = require("../../audioworker");
 
 class QueueRemove extends commando.Command {
     constructor(client) {
@@ -35,11 +36,16 @@ class QueueRemove extends commando.Command {
      * @param {*} args 
      */
     async run(message, args) {
-        /**
-         * @type {QueueConfig}
+        /** 
+         * @type {Audioworker}
          */
-        var queueConfig = await this.client.provider.get(message.guild, "queueConfig", new QueueConfig())
-        var queue = new Queue(queueConfig);
+        var audioworker = this.client.Audioworker;
+        if(!audioworker.queues.has(message.guild.id)){
+            var queue = audioworker.add(message.guild);
+        }
+        else{
+            var queue = audioworker.queues.get(message.guild.id);
+        }
         var del = queue.remove(args.start-1, args.count);
         if (del.length === 1) message.reply("Removed "+del[0].title+" from the queue");
         else message.reply("Removed "+del.length+" songs!");
