@@ -72,22 +72,31 @@ async function test(){
 }
 //test();
 async function setAudioworker(){
+    // /** 
+    //  * @type {Collection<String, QueueConfig>}
+    // */
+    // var savedaudioworker = await client.provider.get("global", "Audioworker", new Collection());
+    // console.log(savedaudioworker);
+    client.Audioworker = new Audioworker(client, 60000);
     /** 
-     * @type {Collection<String, QueueConfig>}
+     * @type {Promise.<Boolean>}
     */
-    var savedaudioworker = await client.provider.get("global", "Audioworker", new Collection());
-    console.log(savedaudioworker);
-    client.Audioworker = new Audioworker(client, 60000, savedaudioworker);
-    setTimeout(async ()=>{
-        var savedaudioworker = await client.provider.get("global", "Audioworker", new Collection());
-        console.log(savedaudioworker);
-    }, 65000);
+    var start = new Promise((resolve, reject)=>{
+        client.Audioworker.init((boolean)=>{
+            resolve(boolean);
+        });
+    });
+}
+function helperfunc(boolean){
+    resolve(boolean);
 }
 client.on("ready", () => {
     /*process.send({
         "message":"ready"
     });*/
-    setAudioworker();
+    // setAudioworker();
+    client.Audioworker = new Audioworker(client, 60000);
+    client.Audioworker.init();
     console.info(colors.info("bot startet"));
     function repeatEvery(func, interval) {
         // Check current time and calculate the delay until next interval
@@ -188,8 +197,6 @@ client.on("guildUpdate", (oldGuild, newGuild) => {
 });
 client.on("message", async message => {
     if (message.author.bot) return;
-    // console.log(await client.fetchUser(message.author.id));
-    // console.log(message.member.roles);
 });
 client.on("messageDelete", async message => {
     
@@ -240,7 +247,7 @@ client.on("voiceStateUpdate", (oldMember, newMember) => {
 
 });
 client.on("warn", info => {
-
+    console.warn("%s".warn, info);
 });
 console.info(colors.info("bot is logging in..."));
 client.login(keys.BotToken).catch(console.error);
@@ -248,12 +255,6 @@ console.info(colors.info("bot is logged in"));
 
 process.once('SIGINT', () => {
     console.info(colors.info("exiting now"));
-    /*client.guilds.array().forEach(guild => {
-        //console.log(client.provider.get(guild, "queue"));
-        client.provider.remove(guild, "queue");
-        console.log(guild.name);
-        console.log(client.provider.get(guild, "queue"));
-    });*/
     client.destroy();
     process.exit(0);
 });
@@ -268,22 +269,3 @@ process.on('warning', (warning) => {
     console.warn(colors.warn(warning.message)); // Print the warning message
     console.warn(colors.warn(warning.stack));   // Print the stack trace
 });
-/*process.on("message", (message)=> {
-    if (message === "stop") {
-        console.log("exeting now".fontcolor("yellow"));
-        client.provider.db.close();
-        client.destroy();
-        process.exit(0);
-
-    }else if (message === "getGuilds") {
-        var guilds = [];
-        client.guilds.forEach((guild, key)=>{
-            // console.log(guild.name);
-            guilds.push(guild);
-        });
-        process.send({
-            "message": "guilds",
-            "guilds": guilds
-        });
-    }
-});*/
