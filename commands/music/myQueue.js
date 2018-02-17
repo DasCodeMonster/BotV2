@@ -193,9 +193,12 @@ class Queue {
         await message.guild.voiceConnection.playStream(ytdl(this.nowPlaying.ID, {filter: "audioonly"}));
         await message.guild.voiceConnection.dispatcher.setVolume(this.volume/100);
         await message.channel.send("Now playing: "+this.nowPlaying.title);
-        message.guild.voiceConnection.dispatcher.once("end", reason => {
-            if(reason) console.debug("%s".debug, reason);
-            this.onEnd(message, reason);
+        if (!message.guild.voiceConnection && !message.guild.voiceConnection.dispatcher) return;
+        await message.guild.voiceConnection.dispatcher.once("end", reason => {
+            if(reason) {
+                console.debug("%s".debug, reason);
+                this.onEnd(message, reason);
+            }
         });
     }
     /**
@@ -217,9 +220,12 @@ class Queue {
         await message.guild.voiceConnection.playStream(ytdl(this.nowPlaying.ID, {filter: "audioonly"}));
         await message.guild.voiceConnection.dispatcher.setVolume(this.volume/100);
         await message.channel.send("Now playing: "+this.nowPlaying.title);
+        if (!message.guild.voiceConnection && !message.guild.voiceConnection.dispatcher) return;
         await message.guild.voiceConnection.dispatcher.once("end", reason => {
-            if (reason) console.debug("%s".debug, reason);
-            this.onEnd(message, reason);
+            if (reason) {
+                console.debug("%s".debug, reason);
+                this.onEnd(message, reason);
+            }
         });
     }
     /**
@@ -278,6 +284,54 @@ class Queue {
     }
     save(){
         return new QueueConfig(this.nowPlaying, this.queue, this.loop.song, this.loop.list, this.volume);
+    }
+    /**
+     * 
+     * @param {Message} message 
+     */
+    async join(message){
+        if (message.guild.voiceConnection && message.member.voiceChannel){
+            if (message.guild.voiceConnection.channel.equals(message.member.voiceChannel)){
+                if (message.guild.voiceConnection.dispatcher){
+                    message.reply("I am already in your voicechannel :)");
+                    return;
+                }
+            }
+        }
+        if (message.member.voiceChannel) {
+            await message.member.voiceChannel.join();
+            if (message.guild.voiceConnection.channel.equals(message.member.voiceChannel)){
+                message.reply("ok i joined voicechannel: " + message.member.voiceChannel.name);
+            }
+            if(!message.guild.voiceConnection.dispatcher){
+                if (this.nowPlaying !== null){
+                    this.play(message);
+                }
+                else if (this.queue.length !== 0){
+                    this.next();
+                    this.play(message)
+                }
+                else {
+                    message.reply("you need to add some songs to the queue first!");
+                }
+            }
+        }
+        else {
+            message.reply("you need to join a voicechannel first!");
+        }
+    }
+    /**
+     * 
+     * @param {Message} message 
+     */
+    async leave(message){
+        if (message.guild.voiceConnection) {
+            await message.guild.voiceConnection.channel.leave();
+            await message.reply("Ok, i left the channel.");
+        }
+        else {
+            message.reply("I am not in a voicechannel.");
+        }
     }
 }
 module.exports = Queue;

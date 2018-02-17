@@ -6,7 +6,14 @@ const {Message, RichEmbed} = require("discord.js");
 const q = require("q");
 const util = require("util");
 const moment = require("moment");
-const youtubeV3 = google.youtube({ version: "v3", auth: keys.YoutubeAPIKey })
+const youtubeV3 = google.youtube({ version: "v3", auth: keys.YoutubeAPIKey });
+const colors = require("colors");
+colors.setTheme({
+    info: "green",
+    debug: "cyan",
+    error: "red",
+    warn: "yellow"
+});
 
 class getYoutube{
     /**
@@ -15,7 +22,7 @@ class getYoutube{
     * @param {Message} message
      */
     static async Single(URL, message) {
-        var data = await ytdl.getInfo(URL).catch(err=>{console.error(err);return});
+        var data = await ytdl.getInfo(URL).catch(err=>{console.error("%s".error, err);return});
         if (!data) return;
         var songlength = Number.parseInt(data.length_seconds);
         return new Song(data.video_id, data.title, data.description, data.author.name, data.author.id, songlength, data.thumbnail_url, message.author.id);

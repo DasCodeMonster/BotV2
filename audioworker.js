@@ -39,8 +39,8 @@ class Audioworker {
         var db = await sqlite.open("audio.sqlite", {promise: Promise});
         await db.run('CREATE TABLE IF NOT EXISTS audio (id INTEGER PRIMARY KEY, settings TEXT)');
         var dataj = await db.all("SELECT settings FROM audio");
-        var data = JSON.parse(dataj[0].settings);
         if (dataj.length !== 0){
+            var data = JSON.parse(dataj[0].settings);
             data.forEach((arrayj, index, originalarr)=>{
                 this.queues.set(arrayj[0], new Queue(arrayj[1]));
             });

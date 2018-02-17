@@ -74,7 +74,6 @@ class Search extends commando.Command {
         var commandmsg = await message.channel.send({embed: embed});
         var responses = await message.channel.awaitMessages(replymsg=>{
             if (replymsg.author.id === message.author.id && replymsg.content.toLowerCase().trim() === "cancel") {
-                console.log("cancel");
                 return true;
             }
             if (replymsg.author.id === message.author.id && Number.parseInt(replymsg.content) && Number.parseInt(replymsg.content)>= 1 && Number.parseInt(replymsg.content)<= 5){

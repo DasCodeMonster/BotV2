@@ -21,38 +21,18 @@ class joinVoicechannelCommand extends commando.Command {
      * @param {*} args 
      */
     async run(message, args) {
-        if (message.guild.voiceConnection && message.member.voiceChannel){
-            if (message.guild.voiceConnection.channel.equals(message.member.voiceChannel)){
-                if (message.guild.voiceConnection.dispatcher){
-                    message.reply("I am already in your voicechannel :)");
-                    return;
-                }
-            }
+        var ID = args.link.id;
+        /** 
+         * @type {Audioworker}
+         */
+        var audioworker = this.client.Audioworker;
+        if(!audioworker.queues.has(message.guild.id)){
+            var queue = audioworker.add(message.guild);
         }
-        if (message.member.voiceChannel) {
-            await message.member.voiceChannel.join();
-            if (message.guild.voiceConnection.channel.equals(message.member.voiceChannel)){
-                message.reply("ok i joined voicechannel: " + message.member.voiceChannel.name);
-            }
-            if(!message.guild.voiceConnection.dispatcher){
-                /** 
-                 * @type {Audioworker}
-                */
-                var audioworker = this.client.Audioworker;
-                if(!audioworker.queues.has(message.guild.id)){
-                    var queue = audioworker.add(message.guild);
-                }
-                else{
-                    var queue = audioworker.queues.get(message.guild.id);
-                }
-                if (queue.nowPlaying !== null){
-                    queue.play(message);
-                }
-            }
+        else{
+            var queue = audioworker.queues.get(message.guild.id);
         }
-        else {
-            message.reply("you need to join a voicechannel first!");
-        }
+        queue.join(message);
     }
     /**
      * 

@@ -53,10 +53,10 @@ class Loop extends commando.Command {
             }
         } else if (args.songorlist !== "default" && args.boolean !== "default") {
             if(args.songorlist === "song"){
-                queue.loop.song = args.boolean;
+                queue.setLoopSong(args.boolean);
             }
             if(args.songorlist === "list"){
-                queue.loop.list = args.boolean;
+                queue.setLoopList(args.boolean);
             }
             message.reply(`set loop ${args.songorlist} to ${args.boolean}`);
         } else if (args.songorlist === "default" && args.boolean !== "default") {

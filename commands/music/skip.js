@@ -4,6 +4,13 @@ const Queue = require("./myQueue");
 const QueueConfig = require("./queueConfig");
 const {Message} = require("discord.js");
 const Audioworker = require("../../audioworker");
+const colors = require("colors");
+colors.setTheme({
+    info: "green",
+    debug: "cyan",
+    error: "red",
+    warn: "yellow"
+});
 
 class Skip extends commando.Command {
     constructor(client) {
@@ -60,23 +67,6 @@ class Skip extends commando.Command {
         else {
             message.reply("I don't play any Songs at the moment!");
         }
-    }
-    /**
-     * 
-     * @param {Message} message 
-     * @param {Queue} queue 
-     * @param {this} thisarg
-     */
-    async play(message, queue) {
-        var vid = queue.nowPlaying;
-        await message.guild.voiceConnection.playStream(ytdl(vid.ID, {filter: "audioonly"}));
-        await message.guild.voiceConnection.dispatcher.setVolume(queue.volume/100);
-        await message.channel.send("Now playing: "+vid.title);
-        message.guild.voiceConnection.dispatcher.on("end", reason => {
-            if(reason) console.log(reason);
-            //  this.onEnd(message, reason);
-            queue.onEnd(message, reason);
-        });
     }
     /**
      * 

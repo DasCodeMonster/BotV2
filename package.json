@@ -29,7 +29,6 @@
     "googleapis": "^23.0.0",
     "moment": "^2.20.1",
     "moment-duration-format": "^2.2.1",
-    "mysql": "^2.15.0",
     "node-datetime": "^2.0.6",
     "node-opus": "^0.2.7",
     "opusscript": "0.0.4",

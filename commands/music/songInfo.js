@@ -80,7 +80,6 @@ class SongInfo extends commando.Command {
             .addField("ETA", newDate).addField("Thumbnail", queue.queue[args.number-1].thumbnailURL);
         }
         else {
-            console.log(queue.nowPlaying);
             var embed = new RichEmbed()
             .setAuthor(queue.nowPlaying.title, null, `https://www.youtube.com/watch?v=${queue.nowPlaying.ID}`)
             .setColor(666)

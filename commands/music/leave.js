@@ -1,5 +1,6 @@
 const commando = require('discord.js-commando');
 const {Message} = require("discord.js");
+const Audioworker = require("../../audioworker");
 
 class LeaveVoiceCommand extends commando.Command {
     constructor(client) {
@@ -17,13 +18,18 @@ class LeaveVoiceCommand extends commando.Command {
      * @param {*} args 
      */
     async run(message, args) {
-        if (message.guild.voiceConnection) {
-            await message.guild.voiceConnection.channel.leave();
-            await message.reply("Ok, i left the channel.");
+        var ID = args.link.id;
+        /** 
+         * @type {Audioworker}
+         */
+        var audioworker = this.client.Audioworker;
+        if(!audioworker.queues.has(message.guild.id)){
+            var queue = audioworker.add(message.guild);
         }
-        else {
-            message.reply("I am not in a voicechannel.");
+        else{
+            var queue = audioworker.queues.get(message.guild.id);
         }
+        await queue.leave(message);
     }
     /**
      * 
