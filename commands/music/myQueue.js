@@ -58,7 +58,7 @@ class Queue {
             reversed.forEach((song, index, array)=>{
                 this.addSingle(message, song, pos, 0);
             });
-            if(logLevel >0) console.log("added "+songs.length+" songs to the queue("+this.queue.length+" titles)");
+            if(logLevel >0) console.debug(`I added ${songs.length} songs to the queue(${this.queue.length} titles)`.debug);
             return;
         }
         /**
@@ -67,8 +67,8 @@ class Queue {
         var nq = this.queue.concat(songs);
         this.queue = nq;
         if (this.nowPlaying === null) this.next();
-        message.reply(`I added ${songs.length-1} songs to the queue(${this.queue.length} titles)`);
-        if(logLevel >0)console.debug(`I added ${songs.length-1} songs to the queue(${this.queue.length} titles)`.debug);
+        message.reply(`I added ${songs.length} songs to the queue(${this.queue.length} titles)`);
+        if(logLevel >0)console.debug(`I added ${songs.length} songs to the queue(${this.queue.length} titles)`.debug);
     }
     /**
      * It will move all elements in the queue forward. Additionally the new currently played song will be returned;

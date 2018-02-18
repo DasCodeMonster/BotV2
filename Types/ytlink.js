@@ -13,7 +13,6 @@ class YTlink extends ArgumentType {
         if (ytdl.validateURL(value)) return ytdl.validateURL(value);
         else {
             var ID = value.split(/(list=)+/)[2];
-            console.log(ID);
             return tube(ID);
         }
     }

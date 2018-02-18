@@ -22,7 +22,6 @@ class Audioworker {
         this.queues = new Collection();
         this.intervall = intervall;
         this.init();
-        this.db;
     }
     /**
      * Add a queue for a guild to the audioworker
@@ -37,9 +36,9 @@ class Audioworker {
      * @param {Function} callback 
      */
     async init(){
-        this.db = await sqlite.open("audio.sqlite", {promise: Promise});
-        await this.db.run('CREATE TABLE IF NOT EXISTS audio (id INTEGER PRIMARY KEY, settings TEXT)');
-        var dataj = await this.db.all("SELECT settings FROM audio");
+        var db = await sqlite.open("audio.sqlite", {promise: Promise});
+        await db.run('CREATE TABLE IF NOT EXISTS audio (id INTEGER PRIMARY KEY, settings TEXT)');
+        var dataj = await db.all("SELECT settings FROM audio");
         if (dataj.length !== 0){
             var data = JSON.parse(dataj[0].settings);
             data.forEach((arrayj, index, originalarr)=>{
@@ -61,11 +60,7 @@ class Audioworker {
             });
             var savedataj = JSON.stringify(savedata);
             await db.run('INSERT OR REPLACE INTO audio VALUES(?, ?)', 1, savedataj);
-        }, this.intervall, this.queues, this.db);
-    }
-    async close(){
-        await this.db.close();
-        console.info("Closed audioworker db".info);
+        }, this.intervall, this.queues, db);
     }
 }
 module.exports = Audioworker;
