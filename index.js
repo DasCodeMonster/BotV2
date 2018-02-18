@@ -6,12 +6,12 @@ const path = require('path');
 const sqlite = require('sqlite');
 const keys = require('./Token&Keys');
 const myDB = require("./mydb");
-const Connection = require("mysql/lib/Connection");
 const Lyrics = require("./lyrics");
-const colors = require("colors");
 const util = require("util");
 const Audioworker = require("./audioworker");
+const LyricsAPI = require("./lyricsAPI");
 const QueueConfig = require("./commands/music/queueConfig");
+const colors = require("colors");
 colors.setTheme({
     info: "green",
     debug: "cyan",
@@ -44,7 +44,7 @@ client.registry.registerCommandsIn(path.join(__dirname, 'commands'));
 client.setProvider(
     sqlite.open(path.join(__dirname, 'settings.sqlite3')).then(db => new Commando.SQLiteProvider(db))
 ).catch(console.error);
-var con = new myDB(keys.database.host, keys.database.user, keys.database.password, keys.database.name);
+// var con = new myDB(keys.database.host, keys.database.user, keys.database.password, keys.database.name);
 /**
  * @type {Connection}
  */
@@ -71,32 +71,10 @@ async function test(){
     client.lyrics = await lyrics.init();
 }
 //test();
-async function setAudioworker(){
-    // /** 
-    //  * @type {Collection<String, QueueConfig>}
-    // */
-    // var savedaudioworker = await client.provider.get("global", "Audioworker", new Collection());
-    // console.log(savedaudioworker);
-    client.Audioworker = new Audioworker(client, 60000);
-    /** 
-     * @type {Promise.<Boolean>}
-    */
-    var start = new Promise((resolve, reject)=>{
-        client.Audioworker.init((boolean)=>{
-            resolve(boolean);
-        });
-    });
-}
-function helperfunc(boolean){
-    resolve(boolean);
-}
+
 client.on("ready", () => {
-    /*process.send({
-        "message":"ready"
-    });*/
-    // setAudioworker();
     client.Audioworker = new Audioworker(client, 60000);
-    client.Audioworker.init();
+    client.LyricsAPI = new LyricsAPI();
     console.info(colors.info("bot startet"));
     function repeatEvery(func, interval) {
         // Check current time and calculate the delay until next interval
@@ -255,6 +233,8 @@ console.info(colors.info("bot is logged in"));
 
 process.once('SIGINT', () => {
     console.info(colors.info("exiting now"));
+    client.Audioworker.close();
+    // client.LyricsAPI.close();
     client.destroy();
     process.exit(0);
 });
