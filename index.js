@@ -5,7 +5,6 @@ const time = require("node-datetime");
 const path = require('path');
 const sqlite = require('sqlite');
 const keys = require('./Token&Keys');
-const myDB = require("./mydb");
 const Lyrics = require("./lyrics");
 const util = require("util");
 const Audioworker = require("./audioworker");
@@ -44,33 +43,6 @@ client.registry.registerCommandsIn(path.join(__dirname, 'commands'));
 client.setProvider(
     sqlite.open(path.join(__dirname, 'settings.sqlite3')).then(db => new Commando.SQLiteProvider(db))
 ).catch(console.error);
-// var con = new myDB(keys.database.host, keys.database.user, keys.database.password, keys.database.name);
-/**
- * @type {Connection}
- */
-async function test(){
-    client.mydb = await con.createDB();
-    var exists = new Promise((resolve, reject)=>{
-        this.connection.query("SELECT * FROM information_schema.tables WHERE table_schema = ?? AND table_name = ?? LIMIT 1;",[client.mydb.config.database, "test"], (err, data)=>{
-            if(err) reject(err);
-            resolve(data);
-        });
-    });
-    var existsres = await exists;
-    if (existsres.length === 0) {
-        var create = new Promise((resolve, reject)=>{
-            this.connection.query("CREATE TABLE test (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255), address VARCHAR(255))", (err, data)=>{
-                if (err) reject(err);
-                resolve(data);
-            });
-        });
-        var createres = await create;
-        if (!createres) throw new Error("WTF");
-    }
-    var lyrics = new Lyrics(client.mydb);
-    client.lyrics = await lyrics.init();
-}
-//test();
 
 client.on("ready", () => {
     client.Audioworker = new Audioworker(client, 60000);
