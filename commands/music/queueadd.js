@@ -1,14 +1,7 @@
 const commando = require("discord.js-commando");
-const ytdl = require("ytdl-core");
-const keys = require('./../../Token&Keys');
-const google = require('googleapis');
-const youtubeV3 = google.youtube({version: "v3", auth: keys.YoutubeAPIKey});
-const Song = require("./Song");
 const Queue = require("./myQueue");
 const {Message} = require("discord.js");
-const q = require("q");
 const getYt = require("./ytsong");
-const QueueConfig = require("./queueConfig");
 const Audioworker = require("../../audioworker");
 
 class List extends commando.Command {

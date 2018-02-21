@@ -1,5 +1,4 @@
-const mySQL = require("mysql");
-const Connection = require("mysql/lib/Connection");
+
 
 class myDB {
     constructor(host, user, password, dbname){

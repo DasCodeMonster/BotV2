@@ -1,9 +1,4 @@
 const commando = require("discord.js-commando");
-const keys = require('./../../Token&Keys');
-const google = require('googleapis');
-const youtubeV3 = google.youtube({version: "v3", auth: keys.YoutubeAPIKey});
-const Queue = require("./myQueue");
-const QueueConfig = require("./queueConfig");
 const {Message, RichEmbed} = require("discord.js");
 const moment = require("moment");
 var momentDurationFormatSetup = require("moment-duration-format");

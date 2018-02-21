@@ -1,7 +1,7 @@
 const ArgumentType = require("../node_modules/discord.js-commando/src/types/base");
 const ytdl = require("ytdl-core");
 const keys = require('./../Token&Keys');
-const google = require('googleapis');
+const {google} = require('googleapis');
 const youtubeV3 = google.youtube({version: "v3", auth: keys.YoutubeAPIKey});
 const Q = require("q")
 

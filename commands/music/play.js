@@ -1,11 +1,5 @@
 const commando = require("discord.js-commando");
-const ytdl = require("ytdl-core");
-const keys = require('./../../Token&Keys');
-const google = require('googleapis');
-const youtubeV3 = google.youtube({version: "v3", auth: keys.YoutubeAPIKey});
-const Song = require("./Song");
 const getYt = require("./ytsong");
-const QueueConfig = require("./queueConfig");
 const Queue = require("./myQueue");
 const Audioworker = require("../../audioworker");
 

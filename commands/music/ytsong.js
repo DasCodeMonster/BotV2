@@ -1,12 +1,12 @@
 const ytdl = require("ytdl-core");
 const keys = require('./../../Token&Keys');
-const google = require('googleapis');
+const {google} = require('googleapis');
 const Song = require("./Song");
 const {Message, RichEmbed} = require("discord.js");
 const q = require("q");
 const util = require("util");
 const moment = require("moment");
-const youtubeV3 = google.youtube({ version: "v3", auth: keys.YoutubeAPIKey });
+const youtubeV3 = google.youtube({version: "v3", auth: "AIzaSyApX2CuRu1pG87gypEUcmG2gQyPAsC3bns"});
 const colors = require("colors");
 colors.setTheme({
     info: "green",
@@ -96,7 +96,7 @@ class getYoutube{
         });
         if(!sresult) throw new Error("An error occured while searching for videos!"); 
         var ids = [];
-        sresult.items.forEach(item=>{
+        sresult.data.items.forEach(item=>{
             ids.push(item.id.videoId);
         });
         let vidDatafn = await util.promisify(youtubeV3.videos.list);
@@ -109,7 +109,7 @@ class getYoutube{
          * @type {Song[]}
          */
         var songs = [];
-        vidData.items.forEach(item=>{
+        vidData.data.items.forEach(item=>{
             songs.push(song(item, message));
         });
         return songs;
