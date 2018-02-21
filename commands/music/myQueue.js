@@ -1,5 +1,5 @@
 const Song = require("./Song");
-const {Message} = require("discord.js");
+const {Message, Util} = require("discord.js");
 const ytdl = require("ytdl-core");
 const QueueConfig = require("./queueConfig");
 const moment = require("moment");
@@ -245,21 +245,20 @@ class Queue {
             return `Now playing: ${this.nowPlaying.title} from: ${this.nowPlaying.author} | ${(seconds-(seconds%60))/60}:${Math.round(seconds%60)<10?"0"+Math.round(seconds%60):Math.round(seconds%60)}/${moment.duration(this.nowPlaying.length, "seconds").format()}`;
         }
         else {
-            var messageBuilder = "";
-            messageBuilder += `Now playing: ${this.nowPlaying.title} from: ${this.nowPlaying.author} | ${(seconds-(seconds%60))/60}:${Math.round(seconds%60)<10?"0"+Math.round(seconds%60):Math.round(seconds%60)}/${moment.duration(this.nowPlaying.length, "seconds").format()}\n`+"```"
-            await this.queue.some((element, index) => {
-                if (index === 49 || messageBuilder.length >= 1800) {
-                    if(this.queue.length-index+1 === 0) return true;
-                    messageBuilder += `...and ${this.queue.length-index+1} more!`;
-                    return true;
-                }
-                else {
+            var firstLine = `Now playing: ${this.nowPlaying.title} from: ${this.nowPlaying.author} | ${(seconds-(seconds%60))/60}:${Math.round(seconds%60)<10?"0"+Math.round(seconds%60):Math.round(seconds%60)}/${moment.duration(this.nowPlaying.length, "seconds").format()}\n`;
+            var prom = new Promise((resolve, reject)=>{
+                var messageBuilder = "";
+                this.queue.forEach((element, index) => {
                     messageBuilder += (index+1)+" Title: "+element.title + " | Channel: "+ element.author + "\n";
-                    return false;
-                }
+                });
+                resolve(messageBuilder);
             });
-            messageBuilder += "```";
-            return messageBuilder;
+            var builder = await prom;
+            var built = Util.splitMessage(builder, {maxLength: 1800, char: "\n", prepend: "```", append: "```"});
+            if (built.length && built.length !== 0){
+                return firstLine+"```"+built[0];
+            }
+            else return firstLine+built;
         }
     }
     /**
