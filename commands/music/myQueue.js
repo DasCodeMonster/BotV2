@@ -196,8 +196,10 @@ class Queue {
         if (!message.guild.voiceConnection && !message.guild.voiceConnection.dispatcher) return;
         await message.guild.voiceConnection.dispatcher.once("end", reason => {
             if(reason) {
-                console.debug("%s".debug, reason);
-                this.onEnd(message, reason);
+                setTimeout(()=>{
+                    console.debug("%s".debug, reason);
+                    this.onEnd(message, reason);
+                }, 300);
             }
         });
     }
@@ -223,8 +225,10 @@ class Queue {
         if (!message.guild.voiceConnection && !message.guild.voiceConnection.dispatcher) return;
         await message.guild.voiceConnection.dispatcher.once("end", reason => {
             if (reason) {
-                console.debug("%s".debug, reason);
-                this.onEnd(message, reason);
+                setTimeout(()=>{
+                    console.debug("%s".debug, reason);
+                    this.onEnd(message, reason);
+                }, 300);
             }
         });
     }
