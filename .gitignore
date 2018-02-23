@@ -3,3 +3,4 @@ Token&Keys.json
 audio.sqlite
 lyrics.sqlite
 settings.sqlite3
+localToken.json
