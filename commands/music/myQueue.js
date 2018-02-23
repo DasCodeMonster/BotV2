@@ -5,6 +5,7 @@ const QueueConfig = require("./queueConfig");
 const moment = require("moment");
 const colors = require("colors");
 const util = require("util");
+const {EventEmitter} = require("events");
 colors.setTheme({
     info: "green",
     debug: "cyan",
@@ -21,6 +22,7 @@ class Queue {
         this.queue = queueConfig.queue;
         this.loop = queueConfig.loop;
         this.volume = queueConfig.volume;
+        this.events = new EventEmitter();
     }
     /**
      * Adds a single Song to the current queue
