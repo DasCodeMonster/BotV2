@@ -196,8 +196,10 @@ class Queue {
         if (!message.guild.voiceConnection && !message.guild.voiceConnection.dispatcher) return;
         await message.guild.voiceConnection.dispatcher.once("end", reason => {
             if(reason) {
-                console.debug("%s".debug, reason);
-                this.onEnd(message, reason);
+                setTimeout(()=>{
+                    console.debug("%s".debug, reason);
+                    this.onEnd(message, reason);
+                }, 300);
             }
         });
     }
@@ -223,8 +225,10 @@ class Queue {
         if (!message.guild.voiceConnection && !message.guild.voiceConnection.dispatcher) return;
         await message.guild.voiceConnection.dispatcher.once("end", reason => {
             if (reason) {
-                console.debug("%s".debug, reason);
-                this.onEnd(message, reason);
+                setTimeout(()=>{
+                    console.debug("%s".debug, reason);
+                    this.onEnd(message, reason);
+                }, 300);
             }
         });
     }
@@ -246,6 +250,7 @@ class Queue {
         }
         else {
             var firstLine = `Now playing: ${this.nowPlaying.title} from: ${this.nowPlaying.author} | ${(seconds-(seconds%60))/60}:${Math.round(seconds%60)<10?"0"+Math.round(seconds%60):Math.round(seconds%60)}/${moment.duration(this.nowPlaying.length, "seconds").format()}\n`;
+            firstLine += "```";
             var prom = new Promise((resolve, reject)=>{
                 var messageBuilder = "";
                 this.queue.forEach((element, index) => {
@@ -254,9 +259,10 @@ class Queue {
                 resolve(messageBuilder);
             });
             var builder = await prom;
+            builder += "```";
             var built = Util.splitMessage(builder, {maxLength: 1800, char: "\n", prepend: "```", append: "```"});
             if (built.length && built.length !== 0){
-                return firstLine+"```"+built[0];
+                return firstLine+built[0];
             }
             else return firstLine+built;
         }
