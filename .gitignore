@@ -1,2 +1,5 @@
 node_modules/
 Token&Keys.json
+audio.sqlite
+lyrics.sqlite
+settings.sqlite3

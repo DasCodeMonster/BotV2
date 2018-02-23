@@ -4,6 +4,7 @@ const ytdl = require("ytdl-core");
 const QueueConfig = require("./queueConfig");
 const moment = require("moment");
 const colors = require("colors");
+const util = require("util");
 colors.setTheme({
     info: "green",
     debug: "cyan",
@@ -247,6 +248,9 @@ class Queue {
         else {
             var firstLine = `Now playing: ${this.nowPlaying.title} from: ${this.nowPlaying.author} | ${(seconds-(seconds%60))/60}:${Math.round(seconds%60)<10?"0"+Math.round(seconds%60):Math.round(seconds%60)}/${moment.duration(this.nowPlaying.length, "seconds").format()}\n`;
             firstLine += "```";
+            /** 
+             * @type {Promise<String>}
+            */
             var prom = new Promise((resolve, reject)=>{
                 var messageBuilder = "";
                 this.queue.forEach((element, index) => {
@@ -255,12 +259,13 @@ class Queue {
                 resolve(messageBuilder);
             });
             var builder = await prom;
-            builder += "```";
-            var built = Util.splitMessage(builder, {maxLength: 1800, char: "\n", prepend: "```", append: "```"});
-            if (built.length && built.length !== 0){
-                return firstLine+built[0];
+            firstLine += builder;
+            firstLine += "```";
+            var built = Util.splitMessage(firstLine, {maxLength: 1800, char: "\n", prepend: "```", append: "```"});
+            if (util.isArray(built)){
+                return built[0];
             }
-            else return firstLine+built;
+            else return built;
         }
     }
     /**
