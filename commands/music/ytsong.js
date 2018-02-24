@@ -46,8 +46,8 @@ class getYoutube{
             maxResults: "50"
         });
         if(!ytdata) throw new Error("An error occured while fetching playlist!");
-        nextPageToken = ytdata.nextPageToken;
-        ytdata.items.forEach(item=>{
+        nextPageToken = ytdata.data.nextPageToken;
+        ytdata.data.items.forEach(item=>{
             ids.push(item.snippet.resourceId.videoId);
         });
         var vidDatafn = await util.promisify(youtubeV3.videos.list);
@@ -55,7 +55,7 @@ class getYoutube{
             part: "snippet, contentDetails",
             id: ids.length>1?ids.join(", "):ids[0]
         });
-        vidData.items.forEach(item=>{
+        vidData.data.items.forEach(item=>{
             songs.push(song(item, message));
         });
         while(nextPageToken){
@@ -66,8 +66,8 @@ class getYoutube{
                 maxResults: "50",
                 pageToken: nextPageToken
             });
-            nextPageToken = ytdata.nextPageToken;
-            ytdata.items.forEach(item=>{
+            nextPageToken = ytdata.data.nextPageToken;
+            ytdata.data.items.forEach(item=>{
                 ids.push(item.snippet.resourceId.videoId);
             });
             let vidDatafn = await util.promisify(youtubeV3.videos.list);
@@ -75,7 +75,7 @@ class getYoutube{
                 part: "snippet, contentDetails",
                 id: ids.join(", ")
             });
-            vidData.items.forEach(item=>{
+            vidData.data.items.forEach(item=>{
                 songs.push(song(item, message));
             });
         }
