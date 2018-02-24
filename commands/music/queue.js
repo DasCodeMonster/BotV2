@@ -32,8 +32,7 @@ class Queuecommand extends commando.Command {
         else{
             var queue = audioworker.queues.get(message.guild.id);
         }
-        var response = await queue.getQueueMessage(message);
-        await message.reply(response);
+        await message.reply(queue.getQueue(0));
     }
     /**
      * 

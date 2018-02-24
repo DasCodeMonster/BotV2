@@ -1,5 +1,5 @@
 const Song = require("./Song");
-const {Message, Util} = require("discord.js");
+const {Message, Util, Collection} = require("discord.js");
 const ytdl = require("ytdl-core");
 const QueueConfig = require("./queueConfig");
 const moment = require("moment");
@@ -13,16 +13,36 @@ colors.setTheme({
     warn: "yellow"
 });
 var momentDurationFormatSetup = require("moment-duration-format");
-class Queue {
+class Queue extends EventEmitter {
     /**
      * @param {QueueConfig} queueConfig
      */
     constructor(queueConfig){
+        super();
         this.nowPlaying = queueConfig.nowPlaying;
         this.queue = queueConfig.queue;
         this.loop = queueConfig.loop;
         this.volume = queueConfig.volume;
-        this.events = new EventEmitter();
+        this.events = {skip: "skip", play: "play", volumeChange: "volumeChange", addedSong: "addedSong", remove: "remove", join: "join", leave: "leave", end:"end", loopChange: "loopChange", shuffle: "shuffle"};
+        /**
+         * @type {Collection<Number, String}
+         */
+        this.queueMessage = new Collection();
+        this.emit("ready");
+        this.on(this.events.end, async (reason, message)=>{
+            if(reason){
+                this.queueMessage.clear();
+                let q = await this.getQueueMessage(message);
+                if(util.isArray(q)){
+                    q.forEach((page, index, array)=>{
+                        this.queueMessage.set(index, page);
+                    });
+                }
+                else{
+                    this.queueMessage.set(0, q);
+                }
+            }
+        })
     }
     /**
      * Adds a single Song to the current queue
@@ -40,6 +60,7 @@ class Queue {
         }
         if (this.nowPlaying === null) this.next();
         // else message.reply("I added "+song.title+" to the queue("+this.queue.length+" titles)");
+        this.emit(this.events.addedSong, message, song, pos);
         if (logLevel > 0) {
             console.debug(`added 1 song(${song.title}) to the queue(${this.queue.length} titles)`.debug);
         }
@@ -70,6 +91,7 @@ class Queue {
         var nq = this.queue.concat(songs);
         this.queue = nq;
         if (this.nowPlaying === null) this.next();
+        this.emit(this.events.addedSong, message, songs, pos);
         message.reply(`I added ${songs.length} songs to the queue(${this.queue.length} titles)`);
         if(logLevel >0)console.debug(`I added ${songs.length} songs to the queue(${this.queue.length} titles)`.debug);
     }
@@ -102,6 +124,7 @@ class Queue {
             return null;
         }
         this.nowPlaying = this.queue.shift();
+        this.emit(this.events.skip, this.nowPlaying);
         return this.nowPlaying;
     }
     /**
@@ -151,7 +174,10 @@ class Queue {
      * @param {boolean} bool 
      */
     setLoopSong(bool){
+        let before = this.loop;
         this.loop.song = bool;
+        let after = this.loop;
+        this.emit(this.events.loopChange, before, after);
     }
     /**
      * Sets the loop settings for the whole queue.
@@ -159,12 +185,16 @@ class Queue {
      * @param {boolean} bool 
      */
     setLoopList(bool){
+        let before = this.loop;
         this.loop.list = bool;
+        let after = this.loop;
+        this.emit(this.events.loopChange, before, after);
     }
     /**
      * Generates a new random order of the songs in the queue.
      */
     shuffle(){
+        let before = this.queue;
         var currentIndex = this.queue.length, temporaryValue, randomIndex;
         
           // While there remain elements to shuffle...
@@ -179,6 +209,8 @@ class Queue {
             this.queue[currentIndex] = this.queue[randomIndex];
             this.queue[randomIndex] = temporaryValue;
         }
+        let after = this.queue;
+        this.emit(this.events.shuffle, before, after);
     }
     /**
      * Removes a number of songs
@@ -186,7 +218,9 @@ class Queue {
      * @param {number} count How many songs after the start(included) should be deleted
      */
     remove(start=0, count=1){
-        return this.queue.splice(start, count);
+        let removed = this.queue.splice(start, count);
+        this.emit(this.events.remove, removed);
+        return removed;
     }
     /**
      * Starts playing music. The "nowPlaying" Song will be played
@@ -196,8 +230,10 @@ class Queue {
         await message.guild.voiceConnection.playStream(ytdl(this.nowPlaying.ID, {filter: "audioonly"}));
         await message.guild.voiceConnection.dispatcher.setVolume(this.volume/100);
         await message.channel.send("Now playing: "+this.nowPlaying.title);
+        this.emit(this.events.play, this.nowPlaying);
         if (!message.guild.voiceConnection && !message.guild.voiceConnection.dispatcher) return;
         await message.guild.voiceConnection.dispatcher.once("end", reason => {
+            this.emit(this.events.end, reason, message);
             if(reason) {
                 console.debug("%s".debug, reason);
                 this.onEnd(message, reason);
@@ -225,6 +261,7 @@ class Queue {
         await message.channel.send("Now playing: "+this.nowPlaying.title);
         if (!message.guild.voiceConnection && !message.guild.voiceConnection.dispatcher) return;
         await message.guild.voiceConnection.dispatcher.once("end", reason => {
+            this.emit(this.events.end, reason, message);
             if (reason) {
                 console.debug("%s".debug, reason);
                 this.onEnd(message, reason);
@@ -264,10 +301,23 @@ class Queue {
             firstLine += builder;
             firstLine += "```";
             var built = Util.splitMessage(firstLine, {maxLength: 1800, char: "\n", prepend: "```", append: "```"});
-            if (util.isArray(built)){
-                return built[0];
-            }
-            else return built;
+            return built;
+            // if (util.isArray(built)){
+            //     return built[0];
+            // }
+            // else return built;
+        }
+    }
+    /**
+     * 
+     * @param {Number} page 
+     */
+    getQueue(page){
+        if(page<this.queueMessage.size){
+            return this.queueMessage.get(page);
+        }
+        else{
+            return "Your index was higher than the number of pages existing";
         }
     }
     /**
@@ -276,10 +326,12 @@ class Queue {
      * @param {Number} vol
      */
     async setVolume(message, vol){
+        let before = this.volume;
         if(message.guild.voiceConnection.dispatcher){
             await message.guild.voiceConnection.dispatcher.setVolume(vol/100);
         }
         this.volume = vol;
+        this.emit(this.events.volumeChange, before, this.volume);
         await message.reply(`set the volume to ${this.volume}.`);
     }
     /**
@@ -301,6 +353,7 @@ class Queue {
         if (message.guild.voiceConnection && message.member.voiceChannel){
             if (message.guild.voiceConnection.channel.equals(message.member.voiceChannel)){
                 if (message.guild.voiceConnection.dispatcher){
+                    this.emit(this.events.join, "already in voicechannel", message.guild.voiceConnection.channel);
                     message.reply("I am already in your voicechannel :)");
                     return;
                 }
@@ -309,6 +362,7 @@ class Queue {
         if (message.member.voiceChannel) {
             await message.member.voiceChannel.join();
             if (message.guild.voiceConnection.channel.equals(message.member.voiceChannel)){
+                this.emit(this.events.join, "joined", message.guild.voiceConnection.channel);
                 message.reply("ok i joined voicechannel: " + message.member.voiceChannel.name);
             }
             if(!message.guild.voiceConnection.dispatcher){
@@ -325,6 +379,7 @@ class Queue {
             }
         }
         else {
+            this.emit(this.events.join, "member not in voice");
             message.reply("you need to join a voicechannel first!");
         }
     }
@@ -334,11 +389,14 @@ class Queue {
      */
     async leave(message){
         if (message.guild.voiceConnection) {
+            let channel = message.guild.voiceConnection.channel;
             await message.guild.voiceConnection.channel.leave();
             await message.reply("Ok, i left the channel.");
+            this.emit(this.events.leave, "left", channel);
         }
         else {
             message.reply("I am not in a voicechannel.");
+            this.emit(this.events.leave, "not in voice");
         }
     }
 }
