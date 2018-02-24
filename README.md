@@ -1,6 +1,7 @@
 # BotV2
 ## Info
-This is a Discord-Bot mainly for playing music. This Bot is built with [Discord.js](https://github.com/discordjs/discord.js) (see also [npm](https://www.npmjs.com/package/discord.js) and [docs](https://discord.js.org/#/docs/main/stable/general/welcome))
+This is a Discord-Bot mainly for playing music. This Bot is built with [Discord.js](https://github.com/discordjs/discord.js) (see also [npm](https://www.npmjs.com/package/discord.js) and [docs](https://discord.js.org/#/docs/main/stable/general/welcome))  
+**Not everything will work at the moment. This bot is in an early state of development**
 
 ## Installing
 1. Dowload or clone the repo with:
@@ -24,5 +25,4 @@ If you find any bugs or having errors just open an Issue.
 
 ## About me
 Hi I am a student from Germany and this is my first "big" project and my first JavaScript project at all.
-Feel free to clone my repo and test the bot. I am happy about every feedback.  
-**Not everything will work at the moment. This bot is in an early state of development**
+Feel free to clone my repo and test the bot. I am happy about every feedback.
