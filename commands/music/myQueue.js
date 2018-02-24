@@ -23,16 +23,33 @@ class Queue extends EventEmitter {
         this.queue = queueConfig.queue;
         this.loop = queueConfig.loop;
         this.volume = queueConfig.volume;
-        this.events = {skip: "skip", play: "play", volumeChange: "volumeChange", addedSong: "addedSong", remove: "remove", join: "join", leave: "leave", end:"end", loopChange: "loopChange", shuffle: "shuffle"};
+        this.voiceConnection = null;
+        this.events = {skip: "skip", play: "play", volumeChange: "volumeChange", addedSong: "addedSong", remove: "remove", join: "join", leave: "leave", end:"qend", loopChange: "loopChange", shuffle: "shuffle", ready: "qready"};
         /**
          * @type {Collection<Number, String}
          */
         this.queueMessage = new Collection();
-        this.emit("ready");
-        this.on(this.events.end, async (reason, message)=>{
+        this.once(this.events.ready, (queueMessage, queue)=>{
+            console.log(this.nowPlaying);
+            console.log(this.queue);
+            console.log(queueMessage);
+            console.log(queue);
+            return;
+            this.queueMessage.clear();
+            let q = this.getQueueMessage();
+            if(util.isArray(q)){
+                q.forEach((page, index, array)=>{
+                    this.queueMessage.set(index, page);
+                });
+            }
+            else{
+                this.queueMessage.set(0, q);
+            }
+        });
+        this.on(this.events.end, (reason, message)=>{
             if(reason){
                 this.queueMessage.clear();
-                let q = await this.getQueueMessage(message);
+                let q = this.getQueueMessage();
                 if(util.isArray(q)){
                     q.forEach((page, index, array)=>{
                         this.queueMessage.set(index, page);
@@ -42,7 +59,8 @@ class Queue extends EventEmitter {
                     this.queueMessage.set(0, q);
                 }
             }
-        })
+        });
+        this.emit(this.events.ready, this.queueMessage, this.queue);
     }
     /**
      * Adds a single Song to the current queue
@@ -227,6 +245,7 @@ class Queue extends EventEmitter {
      * @param {Message} message Message which invoked the command
      */
     async play(message) {
+        this.voiceConnection = message.guild.voiceConnection;
         await message.guild.voiceConnection.playStream(ytdl(this.nowPlaying.ID, {filter: "audioonly"}));
         await message.guild.voiceConnection.dispatcher.setVolume(this.volume/100);
         await message.channel.send("Now playing: "+this.nowPlaying.title);
@@ -256,6 +275,7 @@ class Queue extends EventEmitter {
             console.debug("queue is empty".debug);
             return;
         }
+        this.voiceConnection = message.guild.voiceConnection;
         await message.guild.voiceConnection.playStream(ytdl(this.nowPlaying.ID, {filter: "audioonly"}));
         await message.guild.voiceConnection.dispatcher.setVolume(this.volume/100);
         await message.channel.send("Now playing: "+this.nowPlaying.title);
@@ -272,11 +292,11 @@ class Queue extends EventEmitter {
      * Return a String representing the current queue
      * @param {Message} message 
      */
-    async getQueueMessage(message){
+    getQueueMessage(){
         if (this.queue.length === 0 && this.nowPlaying === null) {
             return "The queue is empty!";
         }
-        if (message.guild.voiceConnection && message.guild.voiceConnection.dispatcher) {
+        if (this.voiceConnection && this.voiceConnection.dispatcher) {
             var time = message.guild.voiceConnection.dispatcher.time;
             var seconds = time/1000;
         }
@@ -287,25 +307,14 @@ class Queue extends EventEmitter {
         else {
             var firstLine = `Now playing: ${this.nowPlaying.title} from: ${this.nowPlaying.author} | ${(seconds-(seconds%60))/60}:${Math.round(seconds%60)<10?"0"+Math.round(seconds%60):Math.round(seconds%60)}/${moment.duration(this.nowPlaying.length, "seconds").format()}\n`;
             firstLine += "```";
-            /** 
-             * @type {Promise<String>}
-            */
-            var prom = new Promise((resolve, reject)=>{
-                var messageBuilder = "";
-                this.queue.forEach((element, index) => {
-                    messageBuilder += (index+1)+" Title: "+element.title + " | Channel: "+ element.author + "\n";
-                });
-                resolve(messageBuilder);
+            var messageBuilder = "";
+            this.queue.forEach((element, index) => {
+                messageBuilder += (index+1)+" Title: "+element.title + " | Channel: "+ element.author + "\n";
             });
-            var builder = await prom;
-            firstLine += builder;
+            firstLine += messageBuilder;
             firstLine += "```";
             var built = Util.splitMessage(firstLine, {maxLength: 1800, char: "\n", prepend: "```", append: "```"});
             return built;
-            // if (util.isArray(built)){
-            //     return built[0];
-            // }
-            // else return built;
         }
     }
     /**
@@ -313,7 +322,10 @@ class Queue extends EventEmitter {
      * @param {Number} page 
      */
     getQueue(page){
-        if(page<this.queueMessage.size){
+        if (this.queueMessage.size === 0){
+            return "the queue is empty. You need to add some songs first.";
+        }
+        else if(page<this.queueMessage.size){
             return this.queueMessage.get(page);
         }
         else{
@@ -351,6 +363,7 @@ class Queue extends EventEmitter {
      */
     async join(message){
         if (message.guild.voiceConnection && message.member.voiceChannel){
+            this.voiceConnection = message.guild.voiceConnection;
             if (message.guild.voiceConnection.channel.equals(message.member.voiceChannel)){
                 if (message.guild.voiceConnection.dispatcher){
                     this.emit(this.events.join, "already in voicechannel", message.guild.voiceConnection.channel);
@@ -361,6 +374,7 @@ class Queue extends EventEmitter {
         }
         if (message.member.voiceChannel) {
             await message.member.voiceChannel.join();
+            this.voiceConnection = message.guild.voiceConnection;
             if (message.guild.voiceConnection.channel.equals(message.member.voiceChannel)){
                 this.emit(this.events.join, "joined", message.guild.voiceConnection.channel);
                 message.reply("ok i joined voicechannel: " + message.member.voiceChannel.name);
@@ -379,6 +393,7 @@ class Queue extends EventEmitter {
             }
         }
         else {
+            this.voiceConnection = null;
             this.emit(this.events.join, "member not in voice");
             message.reply("you need to join a voicechannel first!");
         }
@@ -391,10 +406,12 @@ class Queue extends EventEmitter {
         if (message.guild.voiceConnection) {
             let channel = message.guild.voiceConnection.channel;
             await message.guild.voiceConnection.channel.leave();
+            this.voiceConnection = null;
             await message.reply("Ok, i left the channel.");
             this.emit(this.events.leave, "left", channel);
         }
         else {
+            this.voiceConnection = null;
             message.reply("I am not in a voicechannel.");
             this.emit(this.events.leave, "not in voice");
         }

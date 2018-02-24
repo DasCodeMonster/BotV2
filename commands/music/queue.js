@@ -13,7 +13,15 @@ class Queuecommand extends commando.Command {
             group: "music",
             memberName: "queue",
             description: "This command shows you all the queued songs!",
-            guildOnly: true
+            guildOnly: true,
+            args: [{
+                key: "page",
+                label: "page",
+                prompt: "Which page of the queue do you want to see?",
+                type: "integer",
+                min: 1,
+                default: 1
+            }]
         });
     }
     /**
@@ -32,7 +40,7 @@ class Queuecommand extends commando.Command {
         else{
             var queue = audioworker.queues.get(message.guild.id);
         }
-        await message.reply(queue.getQueue(0));
+        await message.reply(queue.getQueue(args.page-1));
     }
     /**
      * 
