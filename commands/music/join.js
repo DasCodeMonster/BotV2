@@ -1,8 +1,5 @@
 const commando = require("discord.js-commando");
-const ytdl = require("ytdl-core");
-const Queue = require("./myQueue");
 const {Message} = require("discord.js");
-const QueueConfig = require("./queueConfig");
 const Audioworker = require("../../audioworker");
 
 class joinVoicechannelCommand extends commando.Command {

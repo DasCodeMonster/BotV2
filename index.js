@@ -9,7 +9,6 @@ const Lyrics = require("./lyrics");
 const util = require("util");
 const Audioworker = require("./audioworker");
 const LyricsAPI = require("./lyricsAPI");
-const QueueConfig = require("./commands/music/queueConfig");
 const colors = require("colors");
 colors.setTheme({
     info: "green",
