@@ -1,7 +1,5 @@
 const commando = require("discord.js-commando");
 const {Message} = require("discord.js");
-const Queue = require("./myQueue");
-const QueueConfig = require("./queueConfig");
 const Audioworker = require("../../audioworker");
 
 class QueueRemove extends commando.Command {

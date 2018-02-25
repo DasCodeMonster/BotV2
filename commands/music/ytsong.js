@@ -1,12 +1,11 @@
 const ytdl = require("ytdl-core");
 const keys = require('./../../Token&Keys');
 const {google} = require('googleapis');
-const Song = require("./Song");
+const Song = require("../../Song");
 const {Message, RichEmbed} = require("discord.js");
-const q = require("q");
 const util = require("util");
 const moment = require("moment");
-const youtubeV3 = google.youtube({version: "v3", auth: "AIzaSyApX2CuRu1pG87gypEUcmG2gQyPAsC3bns"});
+const youtubeV3 = google.youtube({version: "v3", auth: keys.YoutubeAPIKey});
 const colors = require("colors");
 colors.setTheme({
     info: "green",

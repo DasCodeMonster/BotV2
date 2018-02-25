@@ -24,7 +24,6 @@ class SongInfo extends commando.Command {
             }],
             argsPromptLimit: 0
         });
-        this.queue = [];
     }
     /**
      * 

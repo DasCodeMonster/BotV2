@@ -30,11 +30,6 @@ class Queue extends EventEmitter {
          */
         this.queueMessage = new Collection();
         this.once(this.events.ready, (queueMessage, queue)=>{
-            console.log(this.nowPlaying);
-            console.log(this.queue);
-            console.log(queueMessage);
-            console.log(queue);
-            return;
             this.queueMessage.clear();
             let q = this.getQueueMessage();
             if(util.isArray(q)){
@@ -47,6 +42,7 @@ class Queue extends EventEmitter {
             }
         });
         this.on(this.events.end, (reason, message)=>{
+            console.log(reason);
             if(reason){
                 this.queueMessage.clear();
                 let q = this.getQueueMessage();
@@ -59,6 +55,18 @@ class Queue extends EventEmitter {
                     this.queueMessage.set(0, q);
                 }
             }
+        });
+        this.on(this.events.skip, (song)=>{
+            this.queueMessage.clear();
+                let q = this.getQueueMessage();
+                if(util.isArray(q)){
+                    q.forEach((page, index, array)=>{
+                        this.queueMessage.set(index, page);
+                    });
+                }
+                else{
+                    this.queueMessage.set(0, q);
+                }
         });
         this.emit(this.events.ready, this.queueMessage, this.queue);
     }
@@ -252,7 +260,6 @@ class Queue extends EventEmitter {
         this.emit(this.events.play, this.nowPlaying);
         if (!message.guild.voiceConnection && !message.guild.voiceConnection.dispatcher) return;
         await message.guild.voiceConnection.dispatcher.once("end", reason => {
-            this.emit(this.events.end, reason, message);
             if(reason) {
                 console.debug("%s".debug, reason);
                 this.onEnd(message, reason);
@@ -275,13 +282,13 @@ class Queue extends EventEmitter {
             console.debug("queue is empty".debug);
             return;
         }
+        this.emit(this.events.end, reason, message);
         this.voiceConnection = message.guild.voiceConnection;
         await message.guild.voiceConnection.playStream(ytdl(this.nowPlaying.ID, {filter: "audioonly"}));
         await message.guild.voiceConnection.dispatcher.setVolume(this.volume/100);
         await message.channel.send("Now playing: "+this.nowPlaying.title);
         if (!message.guild.voiceConnection && !message.guild.voiceConnection.dispatcher) return;
         await message.guild.voiceConnection.dispatcher.once("end", reason => {
-            this.emit(this.events.end, reason, message);
             if (reason) {
                 console.debug("%s".debug, reason);
                 this.onEnd(message, reason);
@@ -294,19 +301,10 @@ class Queue extends EventEmitter {
      */
     getQueueMessage(){
         if (this.queue.length === 0 && this.nowPlaying === null) {
-            return "The queue is empty!";
-        }
-        if (this.voiceConnection && this.voiceConnection.dispatcher) {
-            var time = message.guild.voiceConnection.dispatcher.time;
-            var seconds = time/1000;
-        }
-        else var seconds = 0;
-        if (this.queue.length === 0 && this.nowPlaying !== null){
-            return `Now playing: ${this.nowPlaying.title} from: ${this.nowPlaying.author} | ${(seconds-(seconds%60))/60}:${Math.round(seconds%60)<10?"0"+Math.round(seconds%60):Math.round(seconds%60)}/${moment.duration(this.nowPlaying.length, "seconds").format()}`;
+            return "the queue is empty. You need to add some songs first.";
         }
         else {
-            var firstLine = `Now playing: ${this.nowPlaying.title} from: ${this.nowPlaying.author} | ${(seconds-(seconds%60))/60}:${Math.round(seconds%60)<10?"0"+Math.round(seconds%60):Math.round(seconds%60)}/${moment.duration(this.nowPlaying.length, "seconds").format()}\n`;
-            firstLine += "```";
+            var firstLine = "```";
             var messageBuilder = "";
             this.queue.forEach((element, index) => {
                 messageBuilder += (index+1)+" Title: "+element.title + " | Channel: "+ element.author + "\n";
@@ -326,7 +324,16 @@ class Queue extends EventEmitter {
             return "the queue is empty. You need to add some songs first.";
         }
         else if(page<this.queueMessage.size){
-            return this.queueMessage.get(page);
+            if (this.voiceConnection && this.voiceConnection.dispatcher) {
+                var time = this.voiceConnection.dispatcher.time;
+                var seconds = time/1000;
+            }
+            else var seconds = 0;
+            if (this.nowPlaying !== null){
+                var retmsg = `Now playing: ${this.nowPlaying.title} from: ${this.nowPlaying.author} | ${(seconds-(seconds%60))/60}:${Math.round(seconds%60)<10?"0"+Math.round(seconds%60):Math.round(seconds%60)}/${moment.duration(this.nowPlaying.length, "seconds").format()}`;
+            }
+            retmsg += this.queueMessage.get(page);
+            return retmsg;
         }
         else{
             return "Your index was higher than the number of pages existing";

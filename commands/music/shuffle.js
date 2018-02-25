@@ -1,6 +1,4 @@
 const commando = require("discord.js-commando");
-const Queue = require("./myQueue");
-const QueueConfig = require("./queueConfig");
 const Audioworker = require("../../audioworker");
 const {Message} = require("discord.js");
 
@@ -13,7 +11,6 @@ class Shuffle extends commando.Command {
             description: "shuffle the queue.",
             guildOnly: true
         });
-        this.queue = [];
     }
     /**
      * 
