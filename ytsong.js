@@ -1,7 +1,7 @@
 const ytdl = require("ytdl-core");
-const keys = require('./../../Token&Keys');
+const keys = require('./Token&Keys');
 const {google} = require('googleapis');
-const Song = require("../../Song");
+const Song = require("./Song");
 const {Message, RichEmbed} = require("discord.js");
 const util = require("util");
 const moment = require("moment");
