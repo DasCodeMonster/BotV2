@@ -1,6 +1,6 @@
 const commando = require("discord.js-commando");
 const {Message, RichEmbed} = require("discord.js");
-const getYT = require("./ytsong");
+const getYT = require("../../ytsong");
 const Queue = require("../../myQueue");
 const Audioworker = require("../../audioworker");
 

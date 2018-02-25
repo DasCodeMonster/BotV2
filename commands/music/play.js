@@ -1,5 +1,5 @@
 const commando = require("discord.js-commando");
-const getYt = require("./ytsong");
+const getYt = require("../../ytsong");
 const Queue = require("../../myQueue");
 const Audioworker = require("../../audioworker");
 

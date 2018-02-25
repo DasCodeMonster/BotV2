@@ -1,5 +1,4 @@
 const commando = require("discord.js-commando");
-const ytdl = require("ytdl-core");
 const {Message} = require("discord.js");
 const Audioworker = require("../../audioworker");
 
