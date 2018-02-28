@@ -23,13 +23,14 @@ class Audioworker {
         this.intervall = intervall;
         this.init();
         this.db;
+        this.client = client;
     }
     /**
      * Add a queue for a guild to the audioworker
      * @param {Guild} guild 
      */
     add(guild){
-        var coll = this.queues.set(guild.id, new Queue(new QueueConfig()));
+        var coll = this.queues.set(guild.id, new Queue(new QueueConfig(guild.id)));
         return coll.get(guild.id);
     }
     /**
@@ -43,7 +44,7 @@ class Audioworker {
         if (dataj.length !== 0){
             var data = JSON.parse(dataj[0].settings);
             data.forEach((arrayj, index, originalarr)=>{
-                this.queues.set(arrayj[0], new Queue(arrayj[1]));
+                this.queues.set(arrayj[0], new Queue(arrayj[1], this.client));
             });
         }
         setInterval(async (queues, db)=>{

@@ -1,5 +1,6 @@
 const Song = require("./Song");
-const {Message, Util, Collection, RichEmbed} = require("discord.js");
+const {Message, Util, Collection, RichEmbed, Client} = require("discord.js");
+// const {Client} = require("discord.js-commando");
 const ytdl = require("ytdl-core");
 const QueueConfig = require("./queueConfig");
 const moment = require("moment");
@@ -16,16 +17,17 @@ var momentDurationFormatSetup = require("moment-duration-format");
 class Queue extends EventEmitter {
     /**
      * @param {QueueConfig} queueConfig
+     * @param {Client} client
      */
-    constructor(queueConfig){
+    constructor(queueConfig, client){
         super();
         this.nowPlaying = queueConfig.nowPlaying;
         this.queue = queueConfig.queue;
         this.loop = queueConfig.loop;
         this.volume = queueConfig.volume;
         this.voiceConnection = null;
-        this.client;
-        this.guild;
+        this.client = client;
+        this.guildID = queueConfig.guildID;
         this.events = {skip: "skip", play: "play", volumeChange: "volumeChange", addedSong: "addedSong", remove: "remove", join: "join", leave: "leave", end:"qend", loopChange: "loopChange", shuffle: "shuffle", ready: "qready"};
         /**
          * @type {Collection<Number, String}
@@ -297,41 +299,37 @@ class Queue extends EventEmitter {
             });
             firstLine += messageBuilder;
             firstLine += "```";
-            var built = Util.splitMessage(firstLine, {maxLength: 1800, char: "\n", prepend: "```", append: "```"});
+            var built = Util.splitMessage(firstLine, {maxLength: 1000, char: "\n", prepend: "```", append: "```"});
             return built;
         }
     }
     /**
      * 
-     * @param {Number} page 
+     * @param {Number} page
+     * @param {Message} message 
      */
-    getQueue(page){
+    getQueue(page, message=null){
+        if (page >= this.queueMessage.size) page = this.queueMessage.size-1;
         if (this.queueMessage.size === 0 && this.nowPlaying === null){
-            return "the queue is empty. You need to add some songs first.";
+            return new RichEmbed().setTitle("Queue").setDescription("**The queue is empty!**").setTimestamp(new Date()).setColor(666);
         }
         else if((page<this.queueMessage.size) || (this.queueMessage.size === 0 && this.nowPlaying !== null)){
-            if (this.voiceConnection && this.voiceConnection.dispatcher) {
-                var time = this.voiceConnection.dispatcher.time;
-                var seconds = time/1000;
-            }
-            else var seconds = 0;
             if (this.nowPlaying !== null){
-                var retmsg = `Now playing: ${this.nowPlaying.title} from: ${this.nowPlaying.author} | ${(seconds-(seconds%60))/60}:${Math.round(seconds%60)<10?"0"+Math.round(seconds%60):Math.round(seconds%60)}/${moment.duration(this.nowPlaying.length, "seconds").format()}`;
                 var embed = new RichEmbed().setTitle("Queue").setColor(666).addField("Now Playing:", this.nowPlaying.title, true).addField("Channel:", this.nowPlaying.author, true);
                 if (this.voiceConnection && this.voiceConnection.dispatcher) {
                     embed.addField("Songlength:", `${moment.duration(this.voiceConnection.dispatcher.time, "milliseconds").format()}/${moment.duration(this.nowPlaying.length, "seconds").format()}`).setTimestamp(new Date());
                 }else{
-                    embed.addField("Songlength:", `0:00/${moment.duration(this.nowPlaying.length, "seconds").format()}`);
+                    embed.addField("Songlength:", `0:00/${moment.duration(this.nowPlaying.length, "seconds").format()}`, true);
                 }
-                // embed.addField("Queued by:", )
+                if(message !== null){
+                    embed.addField("Queued by:", message.guild.member(message.author.id).toString(), true);
+                }
             }
             if(this.queueMessage.size !== 0){
-                retmsg += this.queueMessage.get(page);
                 embed.addField(`Queue (Page: ${page+1})`, this.queueMessage.get(page), false)
                 .addField("Total pages:", this.queueMessage.size, true)
                 .addField("Total songs in queue:", this.queue.length, true);
             }
-            if(!retmsg) throw new Error("Queuemessage unavailable");
             if(!embed) throw new Error("Queuemessage unavailable");
             return embed;
         }
@@ -375,7 +373,7 @@ class Queue extends EventEmitter {
         return this.volume;
     }
     save(){
-        return new QueueConfig(this.nowPlaying, this.queue, this.loop.song, this.loop.list, this.volume);
+        return new QueueConfig(this.guildID, this.nowPlaying, this.queue, this.loop.song, this.loop.list, this.volume);
     }
     /**
      * 
