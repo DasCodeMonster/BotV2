@@ -1,7 +1,4 @@
 const commando = require("discord.js-commando");
-const ytdl = require("ytdl-core");
-const Queue = require("./myQueue");
-const QueueConfig = require("./queueConfig");
 const {Message} = require("discord.js");
 const Audioworker = require("../../audioworker");
 const colors = require("colors");
@@ -31,7 +28,6 @@ class Skip extends commando.Command {
             }],
             argsPromptLimit: 0
         });
-        this.queue = [];
     }
     /**
      * 

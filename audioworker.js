@@ -1,6 +1,6 @@
 const {Collection, Message, Guild} = require("discord.js");
-const QueueConfig = require("./commands/music/queueConfig");
-const Queue = require("./commands/music/myQueue");
+const QueueConfig = require("./queueConfig");
+const Queue = require("./myQueue");
 const colors = require("colors");
 const sqlite = require("sqlite");
 

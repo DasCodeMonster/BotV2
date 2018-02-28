@@ -1,7 +1,4 @@
 const commando = require("discord.js-commando");
-const ytdl = require("ytdl-core");
-const Queue = require("./myQueue");
-const QueueConfig = require("./queueConfig");
 const {Message} = require("discord.js");
 const Audioworker = require("../../audioworker");
 
@@ -13,7 +10,15 @@ class Queuecommand extends commando.Command {
             group: "music",
             memberName: "queue",
             description: "This command shows you all the queued songs!",
-            guildOnly: true
+            guildOnly: true,
+            args: [{
+                key: "page",
+                label: "page",
+                prompt: "Which page of the queue do you want to see?",
+                type: "integer",
+                min: 1,
+                default: 1
+            }]
         });
     }
     /**
@@ -32,8 +37,7 @@ class Queuecommand extends commando.Command {
         else{
             var queue = audioworker.queues.get(message.guild.id);
         }
-        var response = await queue.getQueueMessage(message);
-        await message.reply(response);
+        await message.reply(queue.getQueue(args.page-1));
     }
     /**
      * 

@@ -1,6 +1,6 @@
 const commando = require("discord.js-commando");
-const getYt = require("./ytsong");
-const Queue = require("./myQueue");
+const getYt = require("../../ytsong");
+const Queue = require("../../myQueue");
 const Audioworker = require("../../audioworker");
 
 class Play extends commando.Command {
