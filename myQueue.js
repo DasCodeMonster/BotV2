@@ -317,7 +317,7 @@ class Queue extends EventEmitter {
             if (this.nowPlaying !== null){
                 var embed = new RichEmbed().setTitle("Queue").setColor(666).addField("Now Playing:", this.nowPlaying.title, true).addField("Channel:", this.nowPlaying.author, true);
                 if (this.voiceConnection && this.voiceConnection.dispatcher) {
-                    embed.addField("Songlength:", `${moment.duration(this.voiceConnection.dispatcher.time, "milliseconds").format()}/${moment.duration(this.nowPlaying.length, "seconds").format()}`).setTimestamp(new Date());
+                    embed.addField("Songlength:", `${moment.duration(this.voiceConnection.dispatcher.time, "milliseconds").format()}/${moment.duration(this.nowPlaying.length, "seconds").format()}`, true).setTimestamp(new Date());
                 }else{
                     embed.addField("Songlength:", `0:00/${moment.duration(this.nowPlaying.length, "seconds").format()}`, true);
                 }

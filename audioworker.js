@@ -47,24 +47,28 @@ class Audioworker {
                 this.queues.set(arrayj[0], new Queue(arrayj[1], this.client));
             });
         }
-        setInterval(async (queues, db)=>{
-            /** 
-             * @type {Collection<String, QueueConfig>}
-             */
-            var saveCollection = new Collection();
-            queues.forEach((queue, key, map)=>{
-               let save = queue.save();
-               saveCollection.set(key, save);
-            });
-            var savedata = [];
-            saveCollection.forEach((config, key, map)=>{
-                savedata.push([key, config]);
-            });
-            var savedataj = JSON.stringify(savedata);
-            await db.run('INSERT OR REPLACE INTO audio VALUES(?, ?)', 1, savedataj);
+        setInterval((queues, db)=>{
+            this.save(queues, db);
         }, this.intervall, this.queues, this.db);
     }
+    async save(queues, db){
+        /** 
+         * @type {Collection<String, QueueConfig>}
+         */
+        var saveCollection = new Collection();
+        queues.forEach((queue, key, map)=>{
+            let save = queue.save();
+            saveCollection.set(key, save);
+        });
+        var savedata = [];
+        saveCollection.forEach((config, key, map)=>{
+            savedata.push([key, config]);
+        });
+        var savedataj = JSON.stringify(savedata);
+        await db.run('INSERT OR REPLACE INTO audio VALUES(?, ?)', 1, savedataj);
+    }
     async close(){
+        await this.save();
         await this.db.close();
         console.info("Closed audioworker db".info);
     }
