@@ -1,6 +1,7 @@
 const commando = require("discord.js-commando");
 const {Message} = require("discord.js");
 const Audioworker = require("../../audioworker");
+const util = require("util");
 
 class Queuecommand extends commando.Command {
     constructor(client) {
@@ -37,7 +38,45 @@ class Queuecommand extends commando.Command {
         else{
             var queue = audioworker.queues.get(message.guild.id);
         }
-        await message.channel.send({embed: queue.getQueue(args.page-1, message)});
+        var embed = queue.getQueue(args.page-1, message).embed;
+        var reactions = queue.getQueue(args.page-1, message).reactions;
+        var reply = await message.channel.send({embed: queue.getQueue(args.page-1, message).embed});
+        if(reactions.length !== 0){
+            var React = new Promise((resolve, reject)=>{
+                reactions.forEach(async (emoji, index, array)=>{
+                    if (!util.isArray(reply)){
+                        await reply.react(emoji);
+                    }
+                    if(index === reactions.length-1){
+                        resolve(true);
+                    }
+                });
+            });
+            var nothing = await React;
+        }
+        if (!util.isArray(reply)){
+            var coll = await reply.awaitReactions((reaction, user)=>{
+                if (!util.isArray(reply)){
+                    if(this.client.user.id === user.id) return false;
+                    reply.reactions.get(reaction.emoji.name).remove(user);
+                    var name = reaction.emoji.name;
+                    if(name === "🔁"){
+                        if (queue.loop.list) queue.setLoopList(false);
+                        else queue.setLoopList(true);
+                        reply.edit(null, {embed: queue.getQueue(args.page-1, message).embed});
+                    }
+                    if(name === "🔂"){
+                        if(queue.loop.song) queue.setLoopSong(false);
+                        else queue.setLoopSong(true);
+                        reply.edit(null, queue.getQueue(args.page-1, message).embed);
+                    }
+                    return true;
+                }
+            }, {time: 60000});
+            reply.reactions.forEach((reaction, key, map)=>{
+                reaction.remove(this.client.user);
+            });
+        }
     }
     /**
      * 

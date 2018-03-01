@@ -309,13 +309,19 @@ class Queue extends EventEmitter {
      * @param {Message} message 
      */
     getQueue(page, message=null){
+        var reactions = [];
+        reactions.push("🔁");
+        reactions.push("🔂");
         if (page >= this.queueMessage.size) page = this.queueMessage.size-1;
         if (this.queueMessage.size === 0 && this.nowPlaying === null){
-            return new RichEmbed().setTitle("Queue").setDescription("**The queue is empty!**").setTimestamp(new Date()).setColor(666);
+            return {
+                embed: new RichEmbed().setTitle("Queue").setDescription("**The queue is empty!**").setTimestamp(new Date()).setColor(666),
+                reactions: reactions
+            }
         }
         else if((page<this.queueMessage.size) || (this.queueMessage.size === 0 && this.nowPlaying !== null)){
             if (this.nowPlaying !== null){
-                var embed = new RichEmbed().setTitle("Queue").setColor(666).addField("Now Playing:", this.nowPlaying.title, true).addField("Channel:", this.nowPlaying.author, true);
+                var embed = new RichEmbed().setTitle("Queue").setColor(666).addField("Now Playing:", this.nowPlaying.title, false).addField("Channel:", this.nowPlaying.author, true);
                 if (this.voiceConnection && this.voiceConnection.dispatcher) {
                     embed.addField("Songlength:", `${moment.duration(this.voiceConnection.dispatcher.time, "milliseconds").format()}/${moment.duration(this.nowPlaying.length, "seconds").format()}`, true).setTimestamp(new Date());
                 }else{
@@ -331,10 +337,11 @@ class Queue extends EventEmitter {
                 .addField("Total songs in queue:", this.queue.length, true);
             }
             if(!embed) throw new Error("Queuemessage unavailable");
-            return embed;
-        }
-        else{
-            return "Your index was higher than the number of pages existing";
+            embed.addField("Loop mode:", ""+(this.loop.list?"🔁":"")+(this.loop.song?"🔂":""));
+            return {
+                embed: embed,
+                reactions: reactions
+            }
         }
     }
     updateQueueMessage(){
