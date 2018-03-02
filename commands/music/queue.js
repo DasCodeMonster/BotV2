@@ -38,9 +38,9 @@ class Queuecommand extends commando.Command {
         else{
             var queue = audioworker.queues.get(message.guild.id);
         }
-        var embed = queue.getQueue(args.page-1, message).embed;
+        await queue.updateQueueMessage();
         var reactions = queue.getQueue(args.page-1, message).reactions;
-        var reply = await message.channel.send({embed: queue.getQueue(args.page-1, message).embed});
+        var reply = await message.channel.send({embed: await queue.getQueue(args.page-1, message).embed});
         if(reactions.length !== 0){
             var React = new Promise((resolve, reject)=>{
                 reactions.forEach(async (emoji, index, array)=>{
@@ -63,12 +63,12 @@ class Queuecommand extends commando.Command {
                     if(name === "🔁"){
                         if (queue.loop.list) queue.setLoopList(false);
                         else queue.setLoopList(true);
-                        reply.edit(null, {embed: queue.getQueue(args.page-1, message).embed});
+                        reply.edit({embed: queue.getQueue(args.page-1, message).embed});
                     }
                     if(name === "🔂"){
                         if(queue.loop.song) queue.setLoopSong(false);
                         else queue.setLoopSong(true);
-                        reply.edit(null, queue.getQueue(args.page-1, message).embed);
+                        reply.edit({embed: queue.getQueue(args.page-1, message).embed});
                     }
                     return true;
                 }
