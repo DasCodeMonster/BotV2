@@ -328,7 +328,7 @@ class Queue extends EventEmitter {
                     embed.addField("Songlength:", `0:00/${moment.duration(this.nowPlaying.length, "seconds").format()}`, true);
                 }
                 if(message !== null){
-                    embed.addField("Queued by:", message.guild.member(message.author.id).toString(), true);
+                    embed.addField("Queued by:", message.guild.member(this.nowPlaying.queuedBy).user.toString(), true);
                 }
             }
             if(this.queueMessage.size !== 0){
@@ -337,7 +337,11 @@ class Queue extends EventEmitter {
                 .addField("Total songs in queue:", this.queue.length, true);
             }
             if(!embed) throw new Error("Queuemessage unavailable");
-            embed.addField("Loop mode:", ""+(this.loop.list?"🔁":"")+(this.loop.song?"🔂":""));
+            if(this.loop.list && this.loop.song) embed.addField("Loop mode:", "🔁🔂");
+            else {
+                if(this.loop.list) embed.addField("Loop mode:", "🔁");
+                if(this.loop.song) embed.addField("Loop mode:", "🔂");
+            }
             return {
                 embed: embed,
                 reactions: reactions
