@@ -335,6 +335,7 @@ class Queue extends EventEmitter {
                 embed.addField(`Queue (Page: ${page+1})`, this.queueMessage.get(page), false)
                 .addField("Total pages:", this.queueMessage.size, true)
                 .addField("Total songs in queue:", this.queue.length, true);
+                if(this.queue.length > 1) reactions.push("🔀");
             }
             if(!embed) throw new Error("Queuemessage unavailable");
             if(this.loop.list && this.loop.song) embed.addField("Loop mode:", "🔁🔂");

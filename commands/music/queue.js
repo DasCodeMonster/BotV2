@@ -42,17 +42,7 @@ class Queuecommand extends commando.Command {
         var reactions = queue.getQueue(args.page-1, message).reactions;
         var reply = await message.channel.send({embed: await queue.getQueue(args.page-1, message).embed});
         if(reactions.length !== 0){
-            var React = new Promise((resolve, reject)=>{
-                reactions.forEach(async (emoji, index, array)=>{
-                    if (!util.isArray(reply)){
-                        await reply.react(emoji);
-                    }
-                    if(index === reactions.length-1){
-                        resolve(true);
-                    }
-                });
-            });
-            var nothing = await React;
+            await this.react(reactions, reply);
         }
         if (!util.isArray(reply)){
             var coll = await reply.awaitReactions((reaction, user)=>{
@@ -60,6 +50,7 @@ class Queuecommand extends commando.Command {
                     if(this.client.user.id === user.id) return false;
                     reply.reactions.get(reaction.emoji.name).remove(user);
                     var name = reaction.emoji.name;
+                    if(!reply.reactions.has(name)) return false;
                     if(name === "🔁"){
                         if (queue.loop.list) queue.setLoopList(false);
                         else queue.setLoopList(true);
@@ -70,12 +61,26 @@ class Queuecommand extends commando.Command {
                         else queue.setLoopSong(true);
                         reply.edit({embed: queue.getQueue(args.page-1, message).embed});
                     }
+                    if(name === "🔀"){
+                        queue.shuffle();
+                        reply.edit({embed: queue.getQueue(args.page-1, message).embed});
+                    }
                     return true;
                 }
             }, {time: 60000});
             reply.reactions.forEach((reaction, key, map)=>{
                 reaction.remove(this.client.user);
             });
+        }
+    }
+    /**
+     * 
+     * @param {Array} reactions 
+     * @param {Message} message 
+     */
+    async react(reactions, message){
+        for(var i=0;i<reactions.length;i++){
+            await message.react(reactions[i]);
         }
     }
     /**
