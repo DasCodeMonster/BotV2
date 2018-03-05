@@ -27,6 +27,7 @@ class Queue extends EventEmitter {
         this.loop = queueConfig.loop;
         this.volume = queueConfig.volume;
         this.voiceConnection = null;
+        this.channel = null;
         this.client = client;
         this.guildID = queueConfig.guildID;
         this.events = {skip: "skip", play: "play", volumeChange: "volumeChange", addedSong: "addedSong", remove: "remove", join: "join", leave: "leave", end:"qend", loopChange: "loopChange", shuffle: "shuffle", ready: "qready"};
@@ -75,6 +76,9 @@ class Queue extends EventEmitter {
      * @returns {void}
      */
     addSingle(message, song, pos=null, logLevel=1){
+        if(message !== null){
+            this.channel = message.channel;
+        }
         if(pos!== null && (this.queue.length !== 0 || pos > this.queue.length+1)){
             this.queue.splice(pos-1, 0, song);
         } else {
@@ -99,6 +103,9 @@ class Queue extends EventEmitter {
      * @returns {void}
      */
     addList(message, songs, pos=null, logLevel=1){
+        if(message !== null){
+            this.channel = message.channel;
+        }
         if (pos !== null){
             var reversed = songs.reverse();
             reversed.forEach((song, index, array)=>{
@@ -155,6 +162,9 @@ class Queue extends EventEmitter {
      * @param {Message} message
      */
     async playNow(song, message){
+        if(message !== null){
+            this.channel = message.channel;
+        }
         await this.addSingle(message, song, 1, 0);
         if(message.guild.voiceConnection.dispatcher){
             await message.guild.voiceConnection.dispatcher.end("playNow");
@@ -178,6 +188,9 @@ class Queue extends EventEmitter {
      * @param {Message} message
      */
     async playNowList(songs, message){
+        if(message !== null){
+            this.channel = message.channel;
+        }
         await this.addList(message, songs, 1, 0);
         if(message.guild.voiceConnection.dispatcher){
             await message.guild.voiceConnection.dispatcher.end("playNowList");
@@ -249,7 +262,10 @@ class Queue extends EventEmitter {
      * @param {Message} message Message which invoked the command
      */
     async play(message) {
-        this.voiceConnection = message.guild.voiceConnection;
+        if(message !== null){
+            this.channel = message.channel;
+            this.voiceConnection = message.guild.voiceConnection;
+        }
         await message.guild.voiceConnection.playStream(ytdl(this.nowPlaying.ID, {filter: "audioonly"}));
         await message.guild.voiceConnection.dispatcher.setVolume(this.volume/100);
         await message.channel.send("Now playing: "+this.nowPlaying.title);
@@ -282,7 +298,7 @@ class Queue extends EventEmitter {
         this.voiceConnection = message.guild.voiceConnection;
         await message.guild.voiceConnection.playStream(ytdl(this.nowPlaying.ID, {filter: "audioonly"}));
         await message.guild.voiceConnection.dispatcher.setVolume(this.volume/100);
-        await message.channel.send("Now playing: "+this.nowPlaying.title);
+        await this.channel.send("Now playing: "+this.nowPlaying.title);
         if (!message.guild.voiceConnection && !message.guild.voiceConnection.dispatcher) return;
         await message.guild.voiceConnection.dispatcher.once("end", reason => {
             if (reason) {
@@ -376,6 +392,9 @@ class Queue extends EventEmitter {
      * @param {Number} vol
      */
     async setVolume(message, vol){
+        if(message !== null){
+            this.channel = message.channel;
+        }
         let before = this.volume;
         if(message.guild.voiceConnection && message.guild.voiceConnection.dispatcher){
             await message.guild.voiceConnection.dispatcher.setVolume(vol/100);
@@ -389,6 +408,9 @@ class Queue extends EventEmitter {
      * @param {Message} message 
      */
     async getVolume(message){
+        if(message !== null){
+            this.channel = message.channel;
+        }
         await message.reply(`current volume: ${this.volume}`);
         return this.volume;
     }
@@ -400,6 +422,9 @@ class Queue extends EventEmitter {
      * @param {Message} message 
      */
     async join(message){
+        if(message !== null){
+            this.channel = message.channel;
+        }
         if (message.guild.voiceConnection && message.member.voiceChannel){
             this.voiceConnection = message.guild.voiceConnection;
             if (message.guild.voiceConnection.channel.equals(message.member.voiceChannel)){
