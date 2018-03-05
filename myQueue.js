@@ -377,7 +377,7 @@ class Queue extends EventEmitter {
      */
     async setVolume(message, vol){
         let before = this.volume;
-        if(message.guild.voiceConnection.dispatcher){
+        if(message.guild.voiceConnection && message.guild.voiceConnection.dispatcher){
             await message.guild.voiceConnection.dispatcher.setVolume(vol/100);
         }
         this.volume = vol;
