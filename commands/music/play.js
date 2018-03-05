@@ -2,6 +2,7 @@ const commando = require("discord.js-commando");
 const getYt = require("../../ytsong");
 const Queue = require("../../myQueue");
 const Audioworker = require("../../audioworker");
+const {Message} = require("discord.js");
 
 class Play extends commando.Command {
     constructor(client) {
@@ -37,6 +38,7 @@ class Play extends commando.Command {
         else{
             var queue = audioworker.queues.get(message.guild.id);
         }
+        queue.channel = message.channel;
         if (message.guild.voiceConnection) {
             if (args.link.type ==="single") {
                 this.addSingle(ID, message, args, queue);

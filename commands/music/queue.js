@@ -39,6 +39,7 @@ class Queuecommand extends commando.Command {
             var queue = audioworker.queues.get(message.guild.id);
         }
         await queue.updateQueueMessage();
+        queue.channel = message.channel;
         var reactions = queue.getQueue(args.page-1, message).reactions;
         var reply = await message.channel.send({embed: await queue.getQueue(args.page-1).embed});
         if(reactions.length !== 0){

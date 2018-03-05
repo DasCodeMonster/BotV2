@@ -27,6 +27,11 @@ class Loop extends commando.Command {
             }]
         });
     }
+    /**
+     * 
+     * @param {Message} message 
+     * @param {*} args 
+     */
     async run(message, args) {
         /** 
          * @type {Audioworker}
@@ -38,6 +43,7 @@ class Loop extends commando.Command {
         else{
             var queue = audioworker.queues.get(message.guild.id);
         }
+        queue.channel = message.channel;
         if (args.songorlist === "default" && args.boolean === "default") {
             message.reply(`Current settings for list: ${queue.loop.list}\nCurrent settings for song: ${queue.loop.song}`);
             

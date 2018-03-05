@@ -42,6 +42,7 @@ class SetVolumeCommand extends commando.Command {
         else{
             var queue = audioworker.queues.get(message.guild.id);
         }
+        queue.channel = message.channel;
         if (args.number === -1) {
             await queue.getVolume(message);
             return;

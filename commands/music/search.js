@@ -37,6 +37,7 @@ class Search extends commando.Command {
         else{
             var queue = audioworker.queues.get(message.guild.id);
         }
+        queue.channel = message.channel;
         if (message.guild.voiceConnection) {
             this.addSingle(message, args, queue);
         }

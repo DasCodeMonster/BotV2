@@ -41,6 +41,7 @@ class SongInfo extends commando.Command {
         else{
             var queue = audioworker.queues.get(message.guild.id);
         }
+        queue.channel = message.channel;
         if (args.number > queue.queue.length){
             message.reply("Index was to big!");
             return;

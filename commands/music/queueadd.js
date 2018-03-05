@@ -46,6 +46,7 @@ class List extends commando.Command {
         else{
             var queue = audioworker.queues.get(message.guild.id);
         }
+        queue.channel = message.channel;
         if(args.position !== 0){
             if (queue.queue.length !== 0){
                 if(args.position > queue.queue.length) {
