@@ -23,6 +23,7 @@ class Queue extends EventEmitter {
         super();
         this.nowPlaying = queueConfig.nowPlaying;
         this.queue = queueConfig.queue;
+        this.length = 0;
         this.loop = queueConfig.loop;
         this.volume = queueConfig.volume;
         this.voiceConnection = null;
@@ -35,26 +36,33 @@ class Queue extends EventEmitter {
         this.queueMessage = new Collection();
         this.once(this.events.ready, (queueMessage, queue)=>{
             this.updateQueueMessage();
+            this.updateLength();
         });
         this.on(this.events.end, (reason, message)=>{
             if(reason){
                 this.updateQueueMessage();
+                this.updateLength();
             }
         });
         this.on(this.events.skip, (song)=>{
             this.updateQueueMessage();
+            this.updateLength();
         });
         this.on(this.events.addedSong, ()=>{
             this.updateQueueMessage();
+            this.updateLength();
         });
         this.on(this.events.remove, ()=>{
             this.updateQueueMessage();
+            this.updateLength();
         });
         this.on(this.events.shuffle, ()=>{
             this.updateQueueMessage();
+            this.updateLength();
         });
         this.on(this.events.play, ()=>{
             this.updateQueueMessage();
+            this.updateLength();
         });
         this.emit(this.events.ready, this.queueMessage, this.queue);
     }
@@ -308,7 +316,7 @@ class Queue extends EventEmitter {
      * @param {Number} page
      * @param {Message} message 
      */
-    getQueue(page, message=null){
+    getQueue(page){
         var reactions = [];
         reactions.push("🔁");
         reactions.push("🔂");
@@ -327,14 +335,14 @@ class Queue extends EventEmitter {
                 }else{
                     embed.addField("Songlength:", `0:00/${moment.duration(this.nowPlaying.length, "seconds").format()}`, true);
                 }
-                if(message !== null){
-                    embed.addField("Queued by:", message.guild.member(this.nowPlaying.queuedBy).user.toString(), true);
-                }
+                embed.addField("Queued by:", this.client.guilds.get(this.guildID).member(this.nowPlaying.queuedBy).user.toString(), true);
             }
             if(this.queueMessage.size !== 0){
+                this.updateLength();
                 embed.addField(`Queue (Page: ${page+1})`, this.queueMessage.get(page), false)
                 .addField("Total pages:", this.queueMessage.size, true)
-                .addField("Total songs in queue:", this.queue.length, true);
+                .addField("Total songs in queue:", this.queue.length, true)
+                .addField("Total queue length:", moment.duration(this.length, "seconds").format() , true);
                 if(this.queue.length > 1) reactions.push("🔀");
             }
             if(!embed) throw new Error("Queuemessage unavailable");
@@ -445,6 +453,13 @@ class Queue extends EventEmitter {
             message.reply("I am not in a voicechannel.");
             this.emit(this.events.leave, "not in voice");
         }
+    }
+    updateLength(){
+        var length = 0;
+        this.queue.forEach((song, index, array)=>{
+            length += song.length;
+        });
+        this.length = length;
     }
 }
 module.exports = Queue;

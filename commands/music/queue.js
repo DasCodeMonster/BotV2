@@ -40,7 +40,7 @@ class Queuecommand extends commando.Command {
         }
         await queue.updateQueueMessage();
         var reactions = queue.getQueue(args.page-1, message).reactions;
-        var reply = await message.channel.send({embed: await queue.getQueue(args.page-1, message).embed});
+        var reply = await message.channel.send({embed: await queue.getQueue(args.page-1).embed});
         if(reactions.length !== 0){
             await this.react(reactions, reply);
         }
@@ -54,23 +54,27 @@ class Queuecommand extends commando.Command {
                     if(name === "🔁"){
                         if (queue.loop.list) queue.setLoopList(false);
                         else queue.setLoopList(true);
-                        reply.edit({embed: queue.getQueue(args.page-1, message).embed});
+                        reply.edit({embed: queue.getQueue(args.page-1).embed});
+                        reply.reactions.clear();
+                        this.react(queue.getQueue(args.page-1).reactions, reply);
                     }
                     if(name === "🔂"){
                         if(queue.loop.song) queue.setLoopSong(false);
                         else queue.setLoopSong(true);
-                        reply.edit({embed: queue.getQueue(args.page-1, message).embed});
+                        reply.edit({embed: queue.getQueue(args.page-1).embed});
+                        reply.reactions.clear();
+                        this.react(queue.getQueue(args.page-1).reactions, reply);
                     }
                     if(name === "🔀"){
                         queue.shuffle();
-                        reply.edit({embed: queue.getQueue(args.page-1, message).embed});
+                        reply.edit({embed: queue.getQueue(args.page-1).embed});
+                        reply.reactions.clear();
+                        this.react(queue.getQueue(args.page-1).reactions, reply);
                     }
-                    return true;
+                    return false;
                 }
             }, {time: 60000});
-            reply.reactions.forEach((reaction, key, map)=>{
-                reaction.remove(this.client.user);
-            });
+            await reply.clearReactions();
         }
     }
     /**
