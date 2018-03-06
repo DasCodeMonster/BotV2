@@ -128,7 +128,10 @@ class Queue extends EventEmitter {
      * It will move all elements in the queue forward. Additionally the new currently played song will be returned;
      * @returns {Song}
      */
-    next(){
+    next(message=null){
+        if(message !== null){
+            this.channel = message.channel;
+        }
         if (this.loop.song)return this.nowPlaying;
         if(this.loop.list){
             if(this.nowPlaying !== null) this.addSingle(null, this.nowPlaying);
@@ -144,7 +147,10 @@ class Queue extends EventEmitter {
      * Skips a song and returns the next in the Queue
      * @param {number} amount How many songs should be skipped
      */
-    skip(){
+    skip(message=null){
+        if(message !== null){
+            this.channel = message.channel;
+        }
         if(this.loop.list){
             if(this.nowPlaying !== null) this.addSingle(null, this.nowPlaying);
         }
@@ -208,27 +214,38 @@ class Queue extends EventEmitter {
      * If true the current Song will be repeated.
      * @param {boolean} bool 
      */
-    setLoopSong(bool){
+    setLoopSong(bool, message=null){
+        if(message !== null){
+            this.channel = message.channel;
+        }
         let before = this.loop;
         this.loop.song = bool;
         let after = this.loop;
         this.emit(this.events.loopChange, before, after);
+        return this.loop;
     }
     /**
      * Sets the loop settings for the whole queue.
      * If true the current Song will be added to the end of the queue again after it finished.
      * @param {boolean} bool 
      */
-    setLoopList(bool){
+    setLoopList(bool, message=null){
+        if(message !== null){
+            this.channel = message.channel;
+        }
         let before = this.loop;
         this.loop.list = bool;
         let after = this.loop;
         this.emit(this.events.loopChange, before, after);
+        return this.loop;
     }
     /**
      * Generates a new random order of the songs in the queue.
      */
-    shuffle(){
+    shuffle(message=null){
+        if(message !== null){
+            this.channel = message.channel;
+        }
         let before = this.queue;
         var currentIndex = this.queue.length, temporaryValue, randomIndex;
         
@@ -252,7 +269,10 @@ class Queue extends EventEmitter {
      * @param {number} start Where to start deleting songs 
      * @param {number} count How many songs after the start(included) should be deleted
      */
-    remove(start=0, count=1){
+    remove(start=0, count=1, message=null){
+        if(message !== null){
+            this.channel = message.channel;
+        }
         let removed = this.queue.splice(start, count);
         this.emit(this.events.remove, removed);
         return removed;
@@ -328,11 +348,14 @@ class Queue extends EventEmitter {
         }
     }
     /**
-     * 
+     * Returns an embed representing the current queue
      * @param {Number} page
      * @param {Message} message 
      */
-    getQueue(page){
+    getQueue(page, message=null){
+        if(message !== null){
+            this.channel = message.channel;
+        }
         var reactions = [];
         reactions.push("🔁");
         reactions.push("🔂");
@@ -407,12 +430,13 @@ class Queue extends EventEmitter {
      * 
      * @param {Message} message 
      */
-    async getVolume(message){
+    getVolume(message=null){
         if(message !== null){
             this.channel = message.channel;
         }
-        await message.reply(`current volume: ${this.volume}`);
-        return this.volume;
+        return {embed: new RichEmbed().setTitle("Current volume").setColor(666).setDescription(this.volume).setTimestamp(new Date()),
+            volume: this.volume
+        }
     }
     save(){
         return new QueueConfig(this.guildID, this.nowPlaying, this.queue, this.loop.song, this.loop.list, this.volume);
@@ -485,6 +509,56 @@ class Queue extends EventEmitter {
             length += song.length;
         });
         this.length = length;
+    }
+    /**
+     * Returns an embed with information about a song
+     * @param {Message} message 
+     * @param {Number} position 
+     */
+    songinfo(message, position){
+        var seconds = 0;
+        if (message.guild.voiceConnection && message.guild.voiceConnection.dispatcher){
+            seconds += this.nowPlaying.length-Math.floor((message.guild.voiceConnection.dispatcher.time/1000));
+        }
+        else seconds += this.nowPlaying.length;
+        this.queue.some((song, index) => {
+            if (index === position-1) {
+                return true;
+            }
+            seconds+=song.length;
+            return false;
+        });
+        var date = new Date();
+        var newDate = new Date(date.setTime(date.getTime()+seconds*1000)).toString();
+        if (position !== 0){
+            var embed = new RichEmbed()
+            .setAuthor(this.queue[position-1].title, null, `https://www.youtube.com/watch?v=${this.queue[position-1].ID}`)
+            .setColor(666)
+            .setThumbnail(this.queue[position-1].thumbnailURL)
+            .setTimestamp(new Date())
+            .setImage(this.queue[position-1].thumbnailURL)
+            .addField("Channel", `[${this.queue[position-1].author}](https://www.youtube.com/channel/${this.queue[position-1].channelID})`, true)
+            .addField("Length", moment.duration(this.queue[position-1].length, "seconds").format(), true)
+            .addField("Description", this.queue[position-1].description.length > 1024 ? this.queue[position-1].description.substring(0,1009) + "\n...<too long>" : this.queue[position-1].description, true)
+            .addField("Queued by", message.guild.member(this.queue[position-1].queuedBy).user.toString(), true)
+            .addField("Queued at", this.queue[position-1].queuedAt, true)
+            .addField("ETA", newDate).addField("Thumbnail", this.queue[position-1].thumbnailURL);
+        }
+        else {
+            var embed = new RichEmbed()
+            .setAuthor(this.nowPlaying.title, null, `https://www.youtube.com/watch?v=${this.nowPlaying.ID}`)
+            .setColor(666)
+            .setThumbnail(this.nowPlaying.thumbnailURL)
+            .setTimestamp(new Date())
+            .setImage(this.nowPlaying.thumbnailURL)
+            .addField("Channel", `[${this.nowPlaying.author}](https://www.youtube.com/channel/${this.nowPlaying.channelID})`, true)
+            .addField("Length", moment.duration(this.nowPlaying.length, "seconds").format(), true)
+            .addField("Description", this.nowPlaying.description.length > 1024 ? this.nowPlaying.description.substring(0,1009) + "\n...<too long>" : this.nowPlaying.description, true)
+            .addField("Queued by", message.guild.member(this.nowPlaying.queuedBy).user.toString(), true)
+            .addField("Queued at", this.nowPlaying.queuedAt, true)
+            .addField("ETA", "Now playing").addField("Thumbnail", this.nowPlaying.thumbnailURL);
+        }
+        return embed;
     }
 }
 module.exports = Queue;

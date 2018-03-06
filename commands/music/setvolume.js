@@ -44,7 +44,7 @@ class SetVolumeCommand extends commando.Command {
         }
         queue.channel = message.channel;
         if (args.number === -1) {
-            await queue.getVolume(message);
+            await message.channel.send({embed: await queue.getVolume(message).embed})
             return;
         }else{
             await queue.setVolume(message, args.number);
