@@ -42,12 +42,11 @@ class SetVolumeCommand extends commando.Command {
         else{
             var queue = audioworker.queues.get(message.guild.id);
         }
-        queue.channel = message.channel;
         if (args.number === -1) {
             await message.channel.send({embed: await queue.getVolume(message).embed})
             return;
         }else{
-            await queue.setVolume(message, args.number);
+            await queue.setVolume(args.number, message);
         }
     }
     /**
@@ -76,7 +75,10 @@ class SetVolumeCommand extends commando.Command {
 function role(message, command) {
     var ret;
     message.member.roles.array().some((role, index, array) => {
-        if(command.role.true.indexOf(role.id) >-1) ret = true;return true;
+        if(command.role.true.indexOf(role.id) >-1) {
+            ret = true;
+            return true;
+        }
         if(index === array.length-1) {
             ret = false;
             return false;

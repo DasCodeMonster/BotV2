@@ -414,7 +414,7 @@ class Queue extends EventEmitter {
      * @param {Message} message 
      * @param {Number} vol
      */
-    async setVolume(message, vol){
+    async setVolume(vol, message=null){
         if(message !== null){
             this.channel = message.channel;
         }
@@ -490,6 +490,9 @@ class Queue extends EventEmitter {
      * @param {Message} message 
      */
     async leave(message){
+        if(message !== null){
+            this.channel = message.channel;
+        }
         if (message.guild.voiceConnection) {
             let channel = message.guild.voiceConnection.channel;
             await message.guild.voiceConnection.channel.leave();

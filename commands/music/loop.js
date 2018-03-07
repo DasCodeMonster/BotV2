@@ -57,10 +57,10 @@ class Loop extends commando.Command {
             }
         } else if (args.songorlist !== "default" && args.boolean !== "default") {
             if(args.songorlist === "song"){
-                queue.setLoopSong(args.boolean);
+                queue.setLoopSong(args.boolean, message);
             }
             if(args.songorlist === "list"){
-                queue.setLoopList(args.boolean);
+                queue.setLoopList(args.boolean, message);
             }
             message.reply(`set loop ${args.songorlist} to ${args.boolean}`);
         } else if (args.songorlist === "default" && args.boolean !== "default") {
@@ -93,7 +93,10 @@ class Loop extends commando.Command {
 function role(message, command) {
     var ret;
     message.member.roles.array().some((role, index, array) => {
-        if(command.role.true.indexOf(role.id) >-1) ret = true;return true;
+        if(command.role.true.indexOf(role.id) >-1) {
+            ret = true;
+            return true;
+        }
         if(index === array.length-1) {
             ret = false;
             return false;

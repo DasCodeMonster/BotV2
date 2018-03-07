@@ -44,8 +44,7 @@ class QueueRemove extends commando.Command {
         else{
             var queue = audioworker.queues.get(message.guild.id);
         }
-        queue.channel = message.channel;
-        var del = queue.remove(args.start-1, args.count);
+        var del = queue.remove(args.start-1, args.count, message);
         if (del.length === 1) message.reply("Removed "+del[0].title+" from the queue");
         else message.reply("Removed "+del.length+" songs!");
     }
@@ -75,7 +74,10 @@ class QueueRemove extends commando.Command {
 function role(message, command) {
     var ret;
     message.member.roles.array().some((role, index, array) => {
-        if(command.role.true.indexOf(role.id) >-1) ret = true;return true;
+        if(command.role.true.indexOf(role.id) >-1) {
+            ret = true;
+            return true;
+        }
         if(index === array.length-1) {
             ret = false;
             return false;

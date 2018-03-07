@@ -39,7 +39,6 @@ class Queuecommand extends commando.Command {
             var queue = audioworker.queues.get(message.guild.id);
         }
         await queue.updateQueueMessage();
-        queue.channel = message.channel;
         var reactions = queue.getQueue(args.page-1, message).reactions;
         var reply = await message.channel.send({embed: await queue.getQueue(args.page-1).embed});
         if(reactions.length !== 0){
@@ -114,7 +113,10 @@ class Queuecommand extends commando.Command {
 function role(message, command) {
     var ret;
     message.member.roles.array().some((role, index, array) => {
-        if(command.role.true.indexOf(role.id) >-1) ret = true;return true;
+        if(command.role.true.indexOf(role.id) >-1) {
+            ret = true;
+            return true;
+        }
         if(index === array.length-1) {
             ret = false;
             return false;
