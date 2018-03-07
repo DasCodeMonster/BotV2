@@ -534,6 +534,7 @@ class Queue extends EventEmitter {
         var date = new Date();
         var newDate = new Date(date.setTime(date.getTime()+seconds*1000)).toString();
         if (position !== 0){
+            var description = Util.splitMessage(this.queue[position-1].description, {maxLength: 1000, char: "\n", append: "\n(Description too long)"});
             var embed = new RichEmbed()
             .setAuthor(this.queue[position-1].title, null, `https://www.youtube.com/watch?v=${this.queue[position-1].ID}`)
             .setColor(666)
@@ -542,12 +543,13 @@ class Queue extends EventEmitter {
             .setImage(this.queue[position-1].thumbnailURL)
             .addField("Channel", `[${this.queue[position-1].author}](https://www.youtube.com/channel/${this.queue[position-1].channelID})`, true)
             .addField("Length", moment.duration(this.queue[position-1].length, "seconds").format(), true)
-            .addField("Description", this.queue[position-1].description.length > 1024 ? this.queue[position-1].description.substring(0,1009) + "\n...<too long>" : this.queue[position-1].description, true)
+            .addField("Description", util.isArray(description)? description[0] : description, false)
             .addField("Queued by", message.guild.member(this.queue[position-1].queuedBy).user.toString(), true)
             .addField("Queued at", this.queue[position-1].queuedAt, true)
             .addField("ETA", newDate).addField("Thumbnail", this.queue[position-1].thumbnailURL);
         }
         else {
+            var description = Util.splitMessage(this.nowPlaying.description, {maxLength: 1000, char: "\n", append: "\n...(Description too long)"});
             var embed = new RichEmbed()
             .setAuthor(this.nowPlaying.title, null, `https://www.youtube.com/watch?v=${this.nowPlaying.ID}`)
             .setColor(666)
@@ -556,7 +558,7 @@ class Queue extends EventEmitter {
             .setImage(this.nowPlaying.thumbnailURL)
             .addField("Channel", `[${this.nowPlaying.author}](https://www.youtube.com/channel/${this.nowPlaying.channelID})`, true)
             .addField("Length", moment.duration(this.nowPlaying.length, "seconds").format(), true)
-            .addField("Description", this.nowPlaying.description.length > 1024 ? this.nowPlaying.description.substring(0,1009) + "\n...<too long>" : this.nowPlaying.description, true)
+            .addField("Description", util.isArray(description)? description[0] : description, false)
             .addField("Queued by", message.guild.member(this.nowPlaying.queuedBy).user.toString(), true)
             .addField("Queued at", this.nowPlaying.queuedAt, true)
             .addField("ETA", "Now playing").addField("Thumbnail", this.nowPlaying.thumbnailURL);
