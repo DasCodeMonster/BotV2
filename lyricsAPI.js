@@ -2,6 +2,7 @@ const {Collection} = require("discord.js");
 const sqlite = require("sqlite");
 const Lyrics = require("./lyrics");
 const colors = require("colors");
+const {EventEmitter} = require("events");
 colors.setTheme({
     info: "green",
     debug: "cyan",
@@ -9,10 +10,15 @@ colors.setTheme({
     warn: "yellow"
 });
 
-class LyricsAPI {
+class LyricsAPI extends EventEmitter {
     constructor(){
+        super();
+        /**
+         * @type {Collection<Number,Lyrics>}
+         */
         this.lyrics = new Collection();
         this.db;
+        this.events = {ready: "ready"}
         this.init();
     }
     async init(){
@@ -21,9 +27,10 @@ class LyricsAPI {
         var dataj = await this.db.all("SELECT * FROM lyrics");
         if (dataj.length !== 0){
             dataj.forEach((val, index, array)=>{
-                this.lyrics.set(val.id, new Lyrics(JSON.parse(val.id), val.author, val.title, val.lyrics, val.genre, JSON.parse(val.links)));
+                this.lyrics.set(Number.parseInt(val.id), new Lyrics(Number.parseInt(val.id), val.author, val.title, val.lyrics, val.genre, JSON.parse(val.links)));
             });
         }
+        this.emit(this.events.ready);
     }
     /**
      * Adds a song to the database
@@ -43,6 +50,10 @@ class LyricsAPI {
     async edit(){
 
     }
+    /**
+     * 
+     * @param {String} title Searchquerry
+     */
     searchTitle(title){
         return this.lyrics.findAll("title", title);
     }
