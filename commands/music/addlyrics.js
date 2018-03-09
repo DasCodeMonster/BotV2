@@ -22,10 +22,11 @@ class AddLyrics extends commando.Command {
                 prompt: "name of the song",
                 type: "string"
             }, {
-                key: "lyrics",
-                label: "lyrics",
-                prompt: "songtext of the song",
-                type: "string"
+                key: "links",
+                label: "links",
+                prompt: "YT links to the song",
+                type: "string",
+                default: "none"
             }, {
                 key: "genre",
                 label: "genre",
@@ -33,25 +34,57 @@ class AddLyrics extends commando.Command {
                 type: "string",
                 default: "none"
             }, {
-                key: "links",
-                label: "links",
-                prompt: "YT links to the song",
+                key: "lyrics",
+                label: "lyrics",
+                prompt: "songtext of the song",
                 type: "string",
-                default: "none"
+                infinite: true
             }]
         });
-        /**
-         * @type {LyricsAPI}
-         */
-        this.LyricsAPI = client.LyricsAPI;
     }
     /**
      * 
      * @param {Message} message 
      * @param {*} args 
      */
-    async run(message, args){
-        await this.client.LyricsAPI.add(args.author, args.title, args.lyrics);
+    async run(message, Args){
+        var args = {
+            /**
+             * @type {String}
+             */
+            author: Args.author,
+            /**
+             * @type {String}
+             */
+            title: Args.title,
+            /**
+             * @type {String[]}
+             */
+            lyrics: Args.lyrics,
+            /**
+             * @type {String}
+             */
+            genre: Args.genre,
+            /**
+             * @type {String}
+             */
+            links: Args.links
+        }
+        console.log(args);
+        var ytlinks = [];
+        if (args.links !== "none"){
+            args.links.trim().split(",").forEach((link, index, array)=>{
+                ytlinks.push(link.trim());
+            });
+        }
+        if (args.genre === "none"){
+            args.genre = null;
+        }
+        var songtext = "";
+        args.lyrics.forEach((part, index, array)=>{
+            songtext += part;
+        });
+        await this.client.LyricsAPI.add(args.author, args.title, songtext, args.genre, ytlinks);
         await message.reply(":ok:");
     }
 }

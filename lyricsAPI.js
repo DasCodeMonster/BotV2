@@ -55,22 +55,30 @@ class LyricsAPI extends EventEmitter {
      * @param {String} title Searchquerry
      */
     searchTitle(title){
-        return this.lyrics.findAll("title", title);
+         return this.lyrics.filterArray((lyrics, key, collection)=>{
+            return lyrics.title.includes(title) //|| lyrics.title.toLowerCase().includes(title) || lyrics.title.includes(title.toLowerCase());
+        });
     }
     searchAuthor(author){
-        return this.lyrics.findAll("author", author);
+        return this.lyrics.filterArray((lyrics, key, collection)=>{
+            return lyrics.author.includes(author) || lyrics.title.toLocaleLowerCase().includes(title) || lyrics.title.includes(title.toLocaleLowerCase());
+        });
     }
     searchGenre(genre){
-        return this.lyrics.findAll("genre", genre);
+        return this.lyrics.filterArray((lyrics, key, collection)=>{
+            return lyrics.genre.includes(genre) || lyrics.title.toLocaleLowerCase().includes(title) || lyrics.title.includes(title.toLocaleLowerCase());
+        });
     }
     searchId(id){
-        return this.lyrics.findAll("id", id);
+        return this.lyrics.filterArray((lyrics, key, collection)=>{
+            return lyrics.id.includes(id) || lyrics.title.toLocaleLowerCase().includes(title) || lyrics.title.includes(title.toLocaleLowerCase());
+        });
     }
     // searchLink(link){
     //     return this.lyrics.findAll("link", link);
     // }
     async getAll(){
-
+        return this.lyrics.array();
     }
     async close(){
         await this.db.close();
