@@ -70,7 +70,6 @@ class AddLyrics extends commando.Command {
              */
             links: Args.links
         }
-        console.log(args);
         var ytlinks = [];
         if (args.links !== "none"){
             args.links.trim().split(",").forEach((link, index, array)=>{
