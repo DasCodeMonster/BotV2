@@ -1,10 +1,10 @@
 const {Collection} = require("discord.js");
 const sqlite = require("sqlite");
 const Lyrics = require("./lyrics");
-const colors = require("colors");
 const Sifter = require("sifter");
 const YT = require("./ytsong");
 const {EventEmitter} = require("events");
+const colors = require("colors");
 colors.setTheme({
     info: "green",
     debug: "cyan",
@@ -80,7 +80,7 @@ class LyricsAPI extends EventEmitter {
         var result = searchArray.search(title, {
             fields: ["title"],
             sort: [{field: "title", direction: "asc"}],
-        limit: 5});
+            limit: 5});
         var resArr = [];
         result.items.forEach((val, index, array)=>{
             resArr.push(this.lyrics.get(val.id+1));

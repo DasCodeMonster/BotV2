@@ -1,7 +1,14 @@
 const commando = require("discord.js-commando");
-const {Message} = require("discord.js");
+const {Message, ReactionCollector} = require("discord.js");
 const Audioworker = require("../../audioworker");
 const util = require("util");
+const colors = require("colors");
+colors.setTheme({
+    info: "green",
+    debug: "cyan",
+    error: "red",
+    warn: "yellow"
+});
 
 class Queuecommand extends commando.Command {
     constructor(client) {
@@ -40,41 +47,67 @@ class Queuecommand extends commando.Command {
         }
         await queue.updateQueueMessage();
         var reactions = queue.getQueue(args.page-1, message).reactions;
-        var reply = await message.channel.send({embed: await queue.getQueue(args.page-1).embed});
+        /**
+         * @type {Message}
+         */
+        var reply = await message.channel.send({embed: await queue.getQueue(args.page-1).embed, split:false});
         if(reactions.length !== 0){
             await this.react(reactions, reply);
         }
         if (!util.isArray(reply)){
-            var coll = await reply.awaitReactions((reaction, user)=>{
-                if (!util.isArray(reply)){
-                    if(this.client.user.id === user.id) return false;
-                    reply.reactions.get(reaction.emoji.name).remove(user);
-                    var name = reaction.emoji.name;
-                    if(!reply.reactions.has(name)) return false;
-                    if(name === "🔁"){
-                        if (queue.loop.list) queue.setLoopList(false);
-                        else queue.setLoopList(true);
-                        reply.edit({embed: queue.getQueue(args.page-1).embed});
-                        reply.reactions.clear();
-                        this.react(queue.getQueue(args.page-1).reactions, reply);
-                    }
-                    if(name === "🔂"){
-                        if(queue.loop.song) queue.setLoopSong(false);
-                        else queue.setLoopSong(true);
-                        reply.edit({embed: queue.getQueue(args.page-1).embed});
-                        reply.reactions.clear();
-                        this.react(queue.getQueue(args.page-1).reactions, reply);
-                    }
-                    if(name === "🔀"){
-                        queue.shuffle();
-                        reply.edit({embed: queue.getQueue(args.page-1).embed});
-                        reply.reactions.clear();
-                        this.react(queue.getQueue(args.page-1).reactions, reply);
-                    }
+            var collector = new ReactionCollector(reply, async (reaction, user)=>{
+                console.log(reaction.me);
+                if(reaction.me){
                     return false;
                 }
+                console.log(user);   
+                var ret = await reactions.includes(reaction.emoji.name);
+                await reply.reactions.get(reaction.emoji.name).remove(user);
+                return ret;
             }, {time: 60000});
-            await reply.clearReactions();
+            collector.on("collect", async (element, collector)=>{
+                console.log(element.users);
+                var name = element.emoji.name
+                if(name === "🔁"){
+                    if (queue.loop.list) await queue.setLoopList(false);
+                    else await queue.setLoopList(true);
+                    await reply.edit({embed: await queue.getQueue(args.page-1).embed});
+                    await reply.reactions.clear();
+                    await this.react(await queue.getQueue(args.page-1).reactions, reply);
+                }
+                if(name === "🔂"){
+                    if(queue.loop.song) await queue.setLoopSong(false);
+                    else await queue.setLoopSong(true);
+                    await reply.edit({embed: await queue.getQueue(args.page-1).embed});
+                    await reply.reactions.clear();
+                    await this.react(await queue.getQueue(args.page-1).reactions, reply);
+                }
+                if(name === "🔀"){
+                    await queue.shuffle();
+                    await reply.edit({embed: await queue.getQueue(args.page-1).embed});
+                    await reply.reactions.clear();
+                    await this.react(await queue.getQueue(args.page-1).reactions, reply);
+                }
+                if(name === "ℹ"){
+                    var embed = await queue.songinfo(message, 0);
+                    await message.channel.send({embed: embed});
+                }
+                if(name === "⏭"){
+                    await queue.skip();
+                    await queue.play(message);
+                }
+            });
+            collector.once("end", async (collected, reason)=>{
+                await reply.reactions.forEach((val, key, map)=>{
+                    val.users.forEach(async (user, ukey, map)=>{
+                        await val.remove(user);
+                    });
+                });
+                console.debug("%s".debug, reason);
+            });
+            collector.on("error", (error)=>{
+                console.error("%s".error, util.inspect(error));
+            }); 
         }
     }
     /**

@@ -65,6 +65,11 @@ class Queue extends EventEmitter {
             this.updateQueueMessage();
             this.updateLength();
         });
+        this.client.on("voiceStateUpdate", (oldMember, newMember)=>{
+            if(newMember.id === this.client.user.id){
+                this.channel = newMember.voiceChannel;
+            }
+        })
         this.emit(this.events.ready, this.queueMessage, this.queue);
     }
     /**
@@ -284,7 +289,10 @@ class Queue extends EventEmitter {
     async play(message) {
         if(message !== null){
             this.channel = message.channel;
-            this.voiceConnection = message.guild.voiceConnection;
+        }
+        this.voiceConnection = await this.join(message);
+        if(this.voiceConnection === null){
+            return;
         }
         await message.guild.voiceConnection.playStream(ytdl(this.nowPlaying.ID, {filter: "audioonly"}));
         await message.guild.voiceConnection.dispatcher.setVolume(this.volume/100);
@@ -357,8 +365,6 @@ class Queue extends EventEmitter {
             this.channel = message.channel;
         }
         var reactions = [];
-        reactions.push("🔁");
-        reactions.push("🔂");
         if (page >= this.queueMessage.size) page = this.queueMessage.size-1;
         if (this.queueMessage.size === 0 && this.nowPlaying === null){
             return {
@@ -367,6 +373,9 @@ class Queue extends EventEmitter {
             }
         }
         else if((page<this.queueMessage.size) || (this.queueMessage.size === 0 && this.nowPlaying !== null)){
+            reactions.push("🔁");
+            reactions.push("🔂");
+            reactions.push("ℹ");
             if (this.nowPlaying !== null){
                 var embed = new RichEmbed().setTitle("Queue").setColor(666).addField("Now Playing:", this.nowPlaying.title, false).addField("Channel:", this.nowPlaying.author, true);
                 if (this.voiceConnection && this.voiceConnection.dispatcher) {
@@ -446,43 +455,76 @@ class Queue extends EventEmitter {
      * @param {Message} message 
      */
     async join(message){
-        if(message !== null){
-            this.channel = message.channel;
-        }
-        if (message.guild.voiceConnection && message.member.voiceChannel){
-            this.voiceConnection = message.guild.voiceConnection;
-            if (message.guild.voiceConnection.channel.equals(message.member.voiceChannel)){
-                if (message.guild.voiceConnection.dispatcher){
-                    this.emit(this.events.join, "already in voicechannel", message.guild.voiceConnection.channel);
-                    message.reply("I am already in your voicechannel :)");
-                    return;
-                }
-            }
-        }
-        if (message.member.voiceChannel) {
+        if(message.guild.voiceConnection && message.guild.voiceConnection.channel.equals(message.member.voiceChannel)){
+            this.emit(this.events.join, "equal", this.voiceConnection);
+        }else if(message.member.voiceChannel){
+            var oldConnection = this.voiceConnection
             await message.member.voiceChannel.join();
             this.voiceConnection = message.guild.voiceConnection;
-            if (message.guild.voiceConnection.channel.equals(message.member.voiceChannel)){
-                this.emit(this.events.join, "joined", message.guild.voiceConnection.channel);
-                message.reply("ok i joined voicechannel: " + message.member.voiceChannel.name);
-            }
-            if(!message.guild.voiceConnection.dispatcher){
-                if (this.nowPlaying !== null){
-                    this.play(message);
-                }
-                else if (this.queue.length !== 0){
-                    this.next();
-                    this.play(message)
-                }
-                else {
-                    message.reply("you need to add some songs to the queue first!");
-                }
-            }
-        }
-        else {
+            var newConnection = this.voiceConnection;
+            this.emit(this.events.join, "changed", oldConnection, newConnection);
+        }else {
             this.voiceConnection = null;
-            this.emit(this.events.join, "member not in voice");
-            message.reply("you need to join a voicechannel first!");
+            this.emit(this.events.join, "null");
+            return null;
+        }
+        return this.voiceConnection;
+
+        // if(message !== null){
+        //     this.channel = message.channel;
+        // }
+        // if (message.guild.voiceConnection && message.member.voiceChannel){
+        //     this.voiceConnection = message.guild.voiceConnection;
+        //     if (message.guild.voiceConnection.channel.equals(message.member.voiceChannel)){
+        //         if (message.guild.voiceConnection.dispatcher){
+        //             this.emit(this.events.join, "already in voicechannel", message.guild.voiceConnection.channel);
+        //             message.reply("I am already in your voicechannel :)");
+        //             return;
+        //         }
+        //     }
+        // }
+        // if (message.member.voiceChannel) {
+        //     await message.member.voiceChannel.join();
+        //     this.voiceConnection = message.guild.voiceConnection;
+        //     if (message.guild.voiceConnection.channel.equals(message.member.voiceChannel)){
+        //         this.emit(this.events.join, "joined", message.guild.voiceConnection.channel);
+        //         message.reply("ok i joined voicechannel: " + message.member.voiceChannel.name);
+        //     }
+        //     if(!message.guild.voiceConnection.dispatcher){
+        //         if (this.nowPlaying !== null){
+        //             this.play(message);
+        //         }
+        //         else if (this.queue.length !== 0){
+        //             this.next();
+        //             this.play(message)
+        //         }
+        //         else {
+        //             message.reply("you need to add some songs to the queue first!");
+        //         }
+        //     }
+        // }
+        // else {
+        //     this.voiceConnection = null;
+        //     this.emit(this.events.join, "member not in voice");
+        //     message.reply("you need to join a voicechannel first!");
+        // }
+    }
+    /**
+     * 
+     * @param {Message} message 
+     */
+    async autoplay(message){
+        if(!this.voiceConnection.dispatcher){
+            if(this.nowPlaying !== null){
+                await this.play(message);
+            }
+            else if(this.queue.length !== 0){
+                await this.next();
+                await this.play(message);
+            }
+            else {
+                await message.reply("you need to add some songs to the queue first!");
+            }
         }
     }
     /**
