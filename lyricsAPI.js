@@ -3,6 +3,7 @@ const sqlite = require("sqlite");
 const Lyrics = require("./lyrics");
 const colors = require("colors");
 const Sifter = require("sifter");
+const YT = require("./ytsong");
 const {EventEmitter} = require("events");
 colors.setTheme({
     info: "green",
@@ -24,7 +25,7 @@ class LyricsAPI extends EventEmitter {
     }
     async init(){
         this.db = await sqlite.open("lyrics.sqlite", {promise: Promise});
-        await this.db.run('CREATE TABLE IF NOT EXISTS lyrics (id INTEGER, author TEXT NOT NULL, title TEXT, lyrics TEXT NOT NULL, genre TEXT, links TEXT)');
+        await this.db.run('CREATE TABLE IF NOT EXISTS lyrics (id INTEGER, author TEXT NOT NULL, title TEXT, lyrics TEXT NOT NULL, genre TEXT, ytids TEXT)');
         var dataj = await this.db.all("SELECT * FROM lyrics");
         if (dataj.length !== 0){
             dataj.forEach((val, index, array)=>{
@@ -39,11 +40,11 @@ class LyricsAPI extends EventEmitter {
      * @param {String} author original interpret of the song
      * @param {String} lyrics lyrics of the song
      * @param {String} genre Genre of the song
-     * @param {String[]} links Youtube Links of the song
+     * @param {String[]} ytids Youtube Links of the song
      */
-    async add(author, title, lyrics, genre=null, links=[]){
-        await this.db.run('INSERT OR REPLACE INTO lyrics(id, author, title, lyrics, genre, links) VALUES(?, ?, ?, ?, ?, ?)', this.lyrics.size+1, author, title, lyrics, genre, JSON.stringify(links));
-        this.lyrics.set(this.lyrics.size+1, new Lyrics(this.lyrics.size+1, author, title, lyrics, genre, links));
+    async add(author, title, lyrics, genre=null, ytids=[]){
+        await this.db.run('INSERT OR REPLACE INTO lyrics(id, author, title, lyrics, genre, ytids) VALUES(?, ?, ?, ?, ?, ?)', this.lyrics.size+1, author, title, lyrics, genre, JSON.stringify(ytids));
+        this.lyrics.set(this.lyrics.size+1, new Lyrics(this.lyrics.size+1, author, title, lyrics, genre, ytids));
     }
     async remove(id){
         await this.db.run('DELETE FROM lyrics WHERE id=?', id);
@@ -72,6 +73,7 @@ class LyricsAPI extends EventEmitter {
     /**
      * 
      * @param {String} title Searchquerry
+     * @returns {Lyrics[]}
      */
     searchTitle(title){
         var searchArray = new Sifter(this.lyrics.array());
@@ -79,34 +81,43 @@ class LyricsAPI extends EventEmitter {
             fields: ["title"],
             sort: [{field: "title", direction: "asc"}],
         limit: 5});
-        console.log(result);
         var resArr = [];
         result.items.forEach((val, index, array)=>{
             resArr.push(this.lyrics.get(val.id+1));
         });
-        console.log(resArr);
         return resArr;
-         return this.lyrics.filterArray((lyrics, key, collection)=>{
-            return lyrics.title.match(title) || lyrics.title.includes(title) || lyrics.title.toLowerCase().includes(title) || lyrics.title.includes(title.toLowerCase());
-        });
     }
     /**
      * 
      * @param {String} author 
      */
     searchAuthor(author){
-        return this.lyrics.filterArray((lyrics, key, collection)=>{
-            return lyrics.author.match(author) || lyrics.author.includes(author) || lyrics.title.toLowerCase().includes(author) || lyrics.title.includes(author.toLowerCase());
+        var searchArray = new Sifter(this.lyrics.array());
+        var result = searchArray.search(author, {
+            fields: ["author"],
+            sort: [{field: "author", direction: "asc"}],
+        limit: 5});
+        var resArr = [];
+        result.items.forEach((val, index, array)=>{
+            resArr.push(this.lyrics.get(val.id+1));
         });
+        return resArr;
     }
     /**
      * 
      * @param {String} genre 
      */
     searchGenre(genre){
-        return this.lyrics.filterArray((lyrics, key, collection)=>{
-            return lyrics.genre.match(genre) || lyrics.genre.includes(genre) || lyrics.title.toLowerCase().includes(genre) || lyrics.title.includes(genre.toLowerCase());
+        var searchArray = new Sifter(this.lyrics.array());
+        var result = searchArray.search(genre, {
+            fields: ["genre"],
+            sort: [{field: "genre", direction: "asc"}],
+        limit: 5});
+        var resArr = [];
+        result.items.forEach((val, index, array)=>{
+            resArr.push(this.lyrics.get(val.id+1));
         });
+        return resArr;
     }
     /**
      * 
@@ -114,12 +125,30 @@ class LyricsAPI extends EventEmitter {
      */
     searchId(id){
         return this.lyrics.filterArray((lyrics, key, collection)=>{
-            return lyrics.id ===id;
+            return lyrics.id === id;
         });
     }
-    // searchLink(link){
-    //     return this.lyrics.findAll("link", link);
-    // }
+    searchLyrics(text){
+        var searchArray = new Sifter(this.lyrics.array());
+        var result = searchArray.search(text, {
+            fields: ["lyrics"],
+            sort: [{field: "lyrics", direction: "asc"}],
+        limit: 5});
+        var resArr = [];
+        result.items.forEach((val, index, array)=>{
+            resArr.push(this.lyrics.get(val.id+1));
+        });
+        return resArr;
+    }
+    /**
+     * 
+     * @param {String} link 
+     */
+    searchYTID(id){
+        return this.lyrics.filterArray((lyric, key, coll)=>{
+            return lyric.links.includes(id);
+        });
+    }
     async getAll(){
         return this.lyrics.array();
     }

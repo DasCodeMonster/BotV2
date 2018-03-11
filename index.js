@@ -50,32 +50,32 @@ client.on("ready", () => {
     client.Audioworker = new Audioworker(client, 60000);
     client.LyricsAPI = new LyricsAPI();
     console.info(colors.info("bot startet"));
-    function repeatEvery(func, interval) {
-        // Check current time and calculate the delay until next interval
-        var now = new Date(),
-            delay = interval - now % interval;
-        console.debug(colors.debug(now));
-        console.debug(colors.debug(now%interval));
-        console.debug(colors.debug(delay));
-        function start() {
-            // Execute function now...
-            func();
-            // ... and every interval
-            setInterval(func, interval);
-        }    
-        // Delay execution until it's an even interval
-    }
-    repeatEvery(() => {
-        console.debug(colors.debug(time.create().format("H:M:S")));
-        client.guilds.array().forEach(Guild => {
-            Guild.members.array().forEach(member => {
-                if (member.user.presence.status != "online") return;
-                if (client.provider.get(Guild, member.id)) var points = client.provider.get(Guild, member.id);
-                else var points = 0;
-                client.provider.set(Guild, member.id, points+10);
-            });
-        });
-    }, 200000);
+    // function repeatEvery(func, interval) {
+    //     // Check current time and calculate the delay until next interval
+    //     var now = new Date(),
+    //         delay = interval - now % interval;
+    //     console.debug(colors.debug(now));
+    //     console.debug(colors.debug(now%interval));
+    //     console.debug(colors.debug(delay));
+    //     function start() {
+    //         // Execute function now...
+    //         func();
+    //         // ... and every interval
+    //         setInterval(func, interval);
+    //     }    
+    //     // Delay execution until it's an even interval
+    // }
+    // repeatEvery(() => {
+    //     console.debug(colors.debug(time.create().format("H:M:S")));
+    //     client.guilds.array().forEach(Guild => {
+    //         Guild.members.array().forEach(member => {
+    //             if (member.user.presence.status !== "online") return;
+    //             if (client.provider.get(Guild, member.id)) var points = client.provider.get(Guild, member.id);
+    //             else var points = 0;
+    //             client.provider.set(Guild, member.id, points+10);
+    //         });
+    //     });
+    // }, 200000);
 });
 client.on("channelCreate", channel => {
     

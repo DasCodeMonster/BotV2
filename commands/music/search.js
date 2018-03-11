@@ -1,5 +1,5 @@
 const commando = require("discord.js-commando");
-const {Message, RichEmbed} = require("discord.js");
+const {Message, RichEmbed, MessageCollector} = require("discord.js");
 const getYT = require("../../ytsong");
 const Queue = require("../../myQueue");
 const Audioworker = require("../../audioworker");
@@ -65,8 +65,11 @@ class Search extends commando.Command {
         songs.forEach((song, index)=>{
             embed.addField(`${index+1} ${song.title}`, `Titel: [${song.title}](https://www.youtube.com/watch?v=${song.ID})\nChannel: [${song.author}](https://www.youtube.com/channel/${song.channelID})\n`);
         });
+        /**
+         * @type {Message}
+         */
         var commandmsg = await message.channel.send({embed: embed});
-        var responses = await message.channel.awaitMessages(replymsg=>{
+        var collector = new MessageCollector(message.channel, (replymsg)=>{
             if (replymsg.author.id === message.author.id && replymsg.content.toLowerCase().trim() === "cancel") {
                 return true;
             }
@@ -74,13 +77,21 @@ class Search extends commando.Command {
                 return true;
             }
             else return false;
-        }, {maxMatches:1, time:30000, errors: ["time"]});
-        if(responses.first().content.toLowerCase() === 'cancel') {
-            commandmsg.delete();
-            return null;
-        }
-        commandmsg.delete();
-        await queue.playNow(songs[Number.parseInt(responses.first().content)-1], message);
+        }, {time: 30000, maxMatches: 1});
+        collector.on("collect", async (msg, collector)=>{
+            if (msg.content === "cancel"){
+                collector.emit("cancel", msg, collector);
+                return;
+            }
+            await queue.playNow(songs[Number.parseInt(msg.content)-1], message);
+        });
+        collector.on("end", async (collected, reason)=>{
+            await commandmsg.delete();
+            console.log(reason);
+        });
+        collector.on("cancel", async (msg, collector)=>{
+            await msg.reply("canceled command");
+        });
     }
     /**
      * 

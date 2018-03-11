@@ -1,8 +1,17 @@
 const commando = require("discord.js-commando");
-const {Message, Collection, RichEmbed, Util} = require("discord.js");
+const {Message, Collection, RichEmbed, Util, MessageCollector} = require("discord.js");
 const LyricsAPI = require("../../lyricsAPI");
 const Lyrics = require("../../lyrics");
 const util = require("util");
+const colors = require("colors");
+const Audioworker = require("../../audioworker");
+colors.setTheme({
+    info: "green",
+    debug: "cyan",
+    error: "red",
+    warn: "yellow"
+});
+
 class LyricsCommand extends commando.Command {
     constructor(client){
         super(client, {
@@ -15,7 +24,8 @@ class LyricsCommand extends commando.Command {
             args: [{key: "q",
                 label: "query",
                 prompt: "what do you want to search for?",
-                type: "string"
+                type: "string",
+                default: 0
             }],
             argsSingleQuotes: true
         });
@@ -30,10 +40,28 @@ class LyricsCommand extends commando.Command {
      * @param {*} args 
      */
     async run(message, args){
-        /** 
-         * @type {Lyrics[]}
-        */
-        var lyrics = this.client.LyricsAPI.searchTitle(args.q);
+        if(args.q === 0){
+            /** 
+             * @type {Audioworker}
+             */
+            var audioworker = this.client.Audioworker;
+            if(!audioworker.queues.has(message.guild.id)){
+                var queue = audioworker.add(message.guild);
+            }
+            else{
+                var queue = audioworker.queues.get(message.guild.id);
+            }
+            /**
+             * @type {Lyrics[]}
+             */
+            var lyrics = await this.client.LyricsAPI.searchYTID(queue.nowPlaying.ID);
+        }
+        else{
+            /** 
+             * @type {Lyrics[]}
+             */
+            var lyrics = this.client.LyricsAPI.searchTitle(args.q);
+        }
         if(lyrics.length !== 0){
             var embed = new RichEmbed({
                 title: "Search result:"
@@ -44,8 +72,11 @@ class LyricsCommand extends commando.Command {
                 if(index === 4) return true;
                 return false;
             });
+            /**
+             * @type {Message}
+             */
             var commandmsg = await message.channel.send({embed: embed});
-            var responses = await message.channel.awaitMessages(replymsg=>{
+            var collector = new MessageCollector(message.channel, replymsg=>{
                 if (replymsg.author.id === message.author.id && replymsg.content.toLowerCase().trim() === "cancel") {
                     return true;
                 }
@@ -53,28 +84,43 @@ class LyricsCommand extends commando.Command {
                     return true;
                 }
                 else return false;
-            }, {maxMatches:1, time:30000, errors: ["time"]});
-            if(responses.size === 0 || responses.first().content.toLowerCase() === 'cancel') {
+            }, {time: 30000, maxMatches: 1});
+            collector.on("collect", async (msg, collector)=>{
+                if(msg.content === "cancel"){
+                    collector.emit("cancel", msg, collector);
+                    return;
+                }
+                var num = Number.parseInt(msg.content);
+                var split = Util.splitMessage(lyrics[num-1].lyrics, {maxLength: 2047, char: "\n"});
+                if (util.isArray(split)){
+                    split.forEach((text, index, array)=>{
+                        let embed = new RichEmbed().setColor(666).setTimestamp(new Date()).setTitle(`Lyrics: ${lyrics[num-1].title}`).setDescription(text).setFooter(`Requested by ${message.author.username} || Page ${index+1} of ${split.length}`, message.author.avatarURL);
+                        if(lyrics[num-1].links.length !== 0){
+                            embed.setURL(`https://www.youtube.com/watch?v=${lyrics[num-1].links[0]}`);
+                        }
+                        message.channel.send({embed: embed});
+                    });
+                    console.log(lyrics[num-1].id);
+                }
+                else {
+                    let embed = new RichEmbed().setColor(666).setTimestamp(new Date()).setTitle(`Lyrics: ${lyrics[num-1].title}`).setDescription(lyrics[num-1].lyrics).setFooter(`Requested by ${message.author.username}`, message.author.avatarURL);
+                    if(lyrics[num-1].links.length !== 0){
+                        embed.setURL(`https://www.youtube.com/watch?v=${lyrics[num-1].links[0]}`);
+                    }
+                    await message.channel.send({embed: embed});
+                    console.log(lyrics[num-1].id);
+                }
+            });
+            collector.once("end", async (collected, reason)=>{
                 commandmsg.delete();
-                return null;
-            }
-            commandmsg.delete();
-            var split = Util.splitMessage(lyrics[Number.parseInt(responses.first().content)-1].lyrics, {maxLength: 2047, char: "\n"});
-            if (util.isArray(split)){
-                split.forEach((text, index, array)=>{
-                    let embed = new RichEmbed().setColor(666).setTimestamp(new Date()).setTitle(`Lyrics: ${lyrics[Number.parseInt(responses.first().content)-1].title}`).setDescription(text).setFooter(`Requested by ${message.author.username} || Page ${index+1} of ${split.length}`, message.author.avatarURL);
-                    message.channel.send({embed: embed});
-                });
-                console.log(lyrics[Number.parseInt(responses.first().content)-1].id);
-            }
-            else {
-                let embed = new RichEmbed().setColor(666).setTimestamp(new Date()).setTitle(`Lyrics: ${lyrics[Number.parseInt(responses.first().content)-1].title}`).setDescription(lyrics[Number.parseInt(responses.first().content)-1].lyrics).setFooter(`Requested by ${message.author.username}`, message.author.avatarURL);
-                await message.channel.send({embed: embed});
-                console.log(lyrics[Number.parseInt(responses.first().content)-1].id);
-            }
+                console.debug("%s".debug,reason);
+            });
+            collector.on("cancel", async (msg, collector)=>{
+                await msg.reply("canceled command");
+            });
         }
         else{
-            message.reply("I did not found any lyrics matching your query :(");
+            message.reply("I did not found any lyrics matching your query :frowning:");
         }
     }
 }

@@ -2,6 +2,7 @@ const commando = require("discord.js-commando");
 const {Message, Collection} = require("discord.js");
 const LyricsAPI = require("../../lyricsAPI");
 const Lyrics = require("../../lyrics");
+const YT = require("../../ytsong");
 
 class AddLyrics extends commando.Command {
     constructor(client){
@@ -70,11 +71,19 @@ class AddLyrics extends commando.Command {
              */
             links: Args.links
         }
+        /**
+         * @type {String[]}
+         */
         var ytlinks = [];
         if (args.links !== "none"){
             args.links.trim().split(",").forEach((link, index, array)=>{
                 ytlinks.push(link.trim());
             });
+        }
+        var ids = [];
+        for(var i=0;i<ytlinks.length;i++){
+            let song = await YT.Single(ytlinks[i], message);
+            ids.push(song.ID); 
         }
         if (args.genre === "none"){
             args.genre = null;
@@ -83,7 +92,7 @@ class AddLyrics extends commando.Command {
         args.lyrics.forEach((part, index, array)=>{
             songtext += part;
         });
-        await this.client.LyricsAPI.add(args.author, args.title, songtext, args.genre, ytlinks);
+        await this.client.LyricsAPI.add(args.author, args.title, songtext, args.genre, ids);
         await message.reply(":ok:");
     }
 }
