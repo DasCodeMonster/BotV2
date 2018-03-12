@@ -52,7 +52,6 @@ class Queuecommand extends commando.Command {
          */
         var reply = await message.channel.send({embed: await queue.getQueue(args.page-1).embed, split:false});
         var collector = new ReactionCollector(reply, (reaction, user)=>{
-            console.log(this.client.user.id === user.id);
             if(this.client.user.id === user.id){
                 return false;
             }

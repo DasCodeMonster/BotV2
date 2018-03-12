@@ -27,6 +27,7 @@
     "discord.js-commando": "^0.9.0",
     "eslint": "^4.18.2",
     "googleapis": "^26.0.1",
+    "libsodium-wrappers": "^0.7.3",
     "moment": "^2.21.0",
     "moment-duration-format": "^2.2.2",
     "node-datetime": "^2.0.6",
