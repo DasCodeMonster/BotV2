@@ -514,7 +514,7 @@ class Queue extends EventEmitter {
      * @param {Message} message 
      */
     async autoplay(message){
-        if(!this.voiceConnection.dispatcher){
+        if(this.voiceConnection && !this.voiceConnection.dispatcher){
             if(this.nowPlaying !== null){
                 await this.play(message);
             }
