@@ -35,33 +35,22 @@ class Skip extends commando.Command {
      * @param {*} args 
      */
     async run(message, args) {
-        if (message.guild.voiceConnection) {
-            if (message.guild.voiceConnection.dispatcher){
-                message.guild.voiceConnection.dispatcher.end("!skip");
-            }
-            
-        } else if (message.member.voiceChannel) {
-            await message.member.voiceChannel.join();
-            if(!message.guild.voiceConnection.dispatcher){
-                /** 
-                 * @type {Audioworker}
-                 */
-                var audioworker = this.client.Audioworker;
-                if(!audioworker.queues.has(message.guild.id)){
-                    var queue = audioworker.add(message.guild);
-                }
-                else{
-                    var queue = audioworker.queues.get(message.guild.id);
-                }
-                queue.skip(message);
-                // this.play(message, queue);
-                queue.play(message);
-                return;
-            }
-            message.guild.voiceConnection.dispatcher.end("!skip");
+        /** 
+         * @type {Audioworker}
+         */
+        var audioworker = this.client.Audioworker;
+        if(!audioworker.queues.has(message.guild.id)){
+            var queue = audioworker.add(message.guild);
+        }
+        else{
+            var queue = audioworker.queues.get(message.guild.id);
+        }
+        if (await queue.join(message) === null){
+            message.reply("you need to join a voicechannel first");
         }
         else {
-            message.reply("I don't play any Songs at the moment!");
+            queue.skip(message);
+            // queue.autoplay(message);
         }
     }
     /**

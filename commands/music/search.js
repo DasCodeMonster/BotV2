@@ -37,18 +37,22 @@ class Search extends commando.Command {
         else{
             var queue = audioworker.queues.get(message.guild.id);
         }
-        if (message.guild.voiceConnection) {
-            this.addSingle(message, args, queue);
+        if (await queue.join(message) === null){
+            message.reply("you need to join a voicechannel first");
         }
         else {
-            if (message.member.voiceChannel) {
-                    message.member.voiceChannel.join();
-                    this.addSingle(message, args, queue);
-            }
-            else {
-                message.reply("you need to join a voicechannel first");
-            }
+            this.addSingle(message, args, queue);
         }
+        // if (message.guild.voiceConnection) {
+        // }
+        // else {
+        //     if (message.member.voiceChannel) {
+        //         await this.addSingle(message, args, queue);
+        //         message.member.voiceChannel.join();
+        //     }
+        //     else {
+        //     }
+        // }
     }
     /**
      * 

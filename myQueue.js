@@ -1,5 +1,5 @@
 const Song = require("./Song");
-const {Message, Util, Collection, RichEmbed, Client} = require("discord.js");
+const {Message, Util, Collection, RichEmbed, Client, VoiceConnection} = require("discord.js");
 // const {Client} = require("discord.js-commando");
 const ytdl = require("ytdl-core");
 const QueueConfig = require("./queueConfig");
@@ -91,11 +91,11 @@ class Queue extends EventEmitter {
         }
         if (this.nowPlaying === null) this.next();
         // else message.reply("I added "+song.title+" to the queue("+this.queue.length+" titles)");
-        this.emit(this.events.addedSong, message, song, pos);
         if (logLevel > 0) {
             console.debug(`added 1 song(${song.title}) to the queue(${this.queue.length} titles)`.debug);
         }
         if(message){
+            this.emit(this.events.addedSong, message, song, pos);
             message.reply("I added "+song.title+" to the queue("+this.queue.length+" titles)");
         }
     }
@@ -151,6 +151,7 @@ class Queue extends EventEmitter {
     /**
      * Skips a song and returns the next in the Queue
      * @param {number} amount How many songs should be skipped
+     * @param {VoiceConnection} dispatcher
      */
     skip(message=null){
         if(message !== null){
@@ -164,6 +165,9 @@ class Queue extends EventEmitter {
             return null;
         }
         this.nowPlaying = this.queue.shift();
+        if(this.voiceConnection){
+            this.play(message);
+        }
         this.emit(this.events.skip, this.nowPlaying);
         return this.nowPlaying;
     }
@@ -185,7 +189,7 @@ class Queue extends EventEmitter {
                 await this.skip();
             }
             if(this.nowPlaying === song){
-                this.play(message);
+                await this.play(message);
             }
             else {
                 console.error("An error occured in the playNow Method!".error);
@@ -292,6 +296,7 @@ class Queue extends EventEmitter {
         }
         this.voiceConnection = await this.join(message);
         if(this.voiceConnection === null){
+            console.warn("No voiceConnection".warn);
             return;
         }
         await message.guild.voiceConnection.playStream(ytdl(this.nowPlaying.ID, {filter: "audioonly"}));
@@ -453,6 +458,7 @@ class Queue extends EventEmitter {
     /**
      * 
      * @param {Message} message 
+     * @returns {VoiceConnection}
      */
     async join(message){
         if(message.guild.voiceConnection && message.guild.voiceConnection.channel.equals(message.member.voiceChannel)){
