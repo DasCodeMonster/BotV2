@@ -186,7 +186,7 @@ class Queue extends EventEmitter {
         }
         else {
             if(this.nowPlaying !== song){
-                await this.skip();
+                await this.skip(message);
             }
             if(this.nowPlaying === song){
                 await this.play(message);
@@ -472,7 +472,6 @@ class Queue extends EventEmitter {
         }else {
             this.voiceConnection = null;
             this.emit(this.events.join, "null");
-            return null;
         }
         return this.voiceConnection;
 
