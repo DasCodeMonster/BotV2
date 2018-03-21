@@ -93,10 +93,12 @@ class List extends commando.Command {
             pos = args.position;
         }
         var song = await getYt.Single(args.link.link, message);
-        await queue.addSingle(message, song, pos);
-        await queue.autoplay(message);
-        // if(message.guild.voiceConnection.dispatcher) return;
-        // else queue.play(message);
+        // await queue.addSingle(message, song, pos);
+        // await queue.autoplay(message);
+        console.log(queue.tqueue);
+        queue.tadd(song);
+        console.log(queue.tqueue);
+        queue.tplay(message);
     }
     /**
      * 

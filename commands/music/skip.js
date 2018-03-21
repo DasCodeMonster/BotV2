@@ -49,8 +49,11 @@ class Skip extends commando.Command {
             message.reply("you need to join a voicechannel first");
         }
         else {
-            queue.skip(message);
+            // queue.skip(message);
             // queue.autoplay(message);
+
+            queue.tskip();
+            queue.tplay();
         }
     }
     /**

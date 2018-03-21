@@ -212,6 +212,9 @@ process.once('SIGINT', () => {
     client.destroy();
     process.exit(0);
 });
+process.on("uncaughtException", (error)=>{
+    console.error(error);
+})
 process.on('unhandledRejection', (reason, p) => {
     console.error("Unhandled Rejection at:".error);
     console.error("%s".error, util.inspect(p));

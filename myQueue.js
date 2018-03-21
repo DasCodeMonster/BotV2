@@ -1,5 +1,5 @@
 const Song = require("./Song");
-const {Message, Util, Collection, RichEmbed, Client, VoiceConnection} = require("discord.js");
+const {Message, Util, Collection, RichEmbed, Client, VoiceConnection, TextChannel} = require("discord.js");
 // const {Client} = require("discord.js-commando");
 const ytdl = require("ytdl-core");
 const QueueConfig = require("./queueConfig");
@@ -21,12 +21,19 @@ class Queue extends EventEmitter {
      */
     constructor(queueConfig, client){
         super();
+        /**
+         * @type {Collection<Number,Song>}
+         */
+        this.tqueue = new Collection().set(0, null);
         this.nowPlaying = queueConfig.nowPlaying;
         this.queue = queueConfig.queue;
         this.length = 0;
         this.loop = queueConfig.loop;
         this.volume = queueConfig.volume;
         this.voiceConnection = null;
+        /**
+         * @type {TextChannel}
+         */
         this.channel = null;
         this.client = client;
         this.guildID = queueConfig.guildID;
@@ -100,6 +107,202 @@ class Queue extends EventEmitter {
         }
     }
     /**
+     * It will move all elements in the queue forward. Additionally the new currently played song will be returned;
+     * @returns {Song}
+     */
+    tnext(){
+        // console.log(tqueue);
+        if(this.loop.song){
+            return this.tqueue.get(0);
+        }
+        if(this.tqueue.size === 1){
+            if(this.loop.list === true){
+                this.tqueue.set(0, null);
+            }
+            // console.log(tqueue);
+            return this.tqueue.get(0);
+        }
+        this.tqueue.forEach((val, key, map)=>{
+            this.tqueue.set(key-1, val);
+        });
+        if (this.loop.list){
+            this.tqueue.set(this.tqueue.size-1, this.tqueue.get(-1));
+        }
+        // console.log(tqueue);
+        return this.tqueue.get(0);
+    }
+    /**
+     * Adds a List of Songs (or one) to the current Queue in the order they are given.
+     * The first Song of the Array will be at the given position
+     * @param {Song|Song[]} songs 
+     * @param {Number} position
+     */
+    tadd(songs, position=1){
+        if(position<1) throw new Error("Position must be at least 1");
+        if(!position){
+            if(util.isArray(songs)){
+                songs.forEach((song, index, array)=>{
+                    this.tqueue.set(this.tqueue.size, song);
+                });
+            }else{
+                this.tqueue.set(this.tqueue.size, songs);
+            }
+            // console.log(tqueue);
+        }else{
+            var afterpos = this.tqueue.filter((song, key, coll)=>{
+                if(key>=position){
+                    return true;
+                }
+            });
+            afterpos.forEach((song, key, map)=>{
+                this.tqueue.delete(key);
+            });
+            if(util.isArray(songs)){
+                songs.forEach((song, index, array)=>{
+                    this.tqueue.set(this.tqueue.size, song);
+                });
+            }else{
+                this.tqueue.set(this.tqueue.size, songs);
+            }
+            afterpos.forEach((song, key, map)=>{
+                this.tqueue.set(this.tqueue.size, song);
+            });
+        }
+        if(this.tqueue.get(0) ===null){
+            this.tskip();
+        }
+    }
+    /**
+     * Skips a song and returns the next in the Queue
+     */
+    tskip(){
+        // console.log(tqueue);
+        if(this.tqueue.size === 1){
+            if(!this.loop.list){
+                this.tqueue.set(0, null);
+            }
+            // console.log(tqueue);
+            return this.tqueue.get(0);
+        }
+        var newQ = this.tqueue.clone();
+        this.tqueue.forEach((val, key, map)=>{
+            newQ.set(key-1, val);
+        });
+        if(this.loop.list){
+            newQ.set(newQ.size-1, newQ.get(-1));
+        }
+        // console.log(tqueue);
+        newQ.delete(-1);
+        this.tqueue = newQ;
+        return this.tqueue.get(0);
+    }
+    /**
+     * 
+     * @param {Message} message 
+     * @param {Song|Song[]} song 
+     */
+    async tplay(message, song=null){
+        this.channel = message.channel;
+        if(song){
+            console.log(this.tqueue);
+            await this.tadd(song, 1);
+            if(this.tqueue.get(0)!==song){
+                await this.tskip();
+            }
+        }
+        // if(!await this.join(message)){
+        //     message.reply("You need to join a voicechannel first");
+        //     return;
+        // }
+        if(!message.guild.voiceConnection){
+            if(message.member.voiceChannel){
+                await message.member.voiceChannel.join();
+            }else{
+                message.reply("You need to join a voicechannel first");
+                return;
+            }
+        }
+        console.log(0);
+        this.voiceConnection = message.guild.voiceConnection;
+        if(message.guild.voiceConnection.dispatcher){
+            message.guild.voiceConnection.dispatcher.end("skip");
+        }else{
+            console.log(1);
+            await this.voiceConnection.playStream(ytdl(this.tqueue.get(0).ID, {filter: "audioonly"}));
+            console.log(2);
+            await this.voiceConnection.dispatcher.setVolume(this.volume/100);
+            console.log(3);
+            await this.channel.send(`Now playing: ${this.tqueue.get(0).title}`);
+            console.log(4);
+            await this.voiceConnection.dispatcher.once("end", reason=>{
+                if(reason){
+                    console.debug("%s".debug, reason);
+                }
+                this.tonEnd(message, reason);
+            });
+        }
+    }
+    /**
+     * This Method will be called everytime a song ends
+     * @param {Message} message Message which invoked the command
+     * @param {String} reason Why the stream ended
+     */
+    async tonEnd(message, reason){
+        // this.emit(this.events.end, reason, message);
+        this.voiceConnection = message.guild.voiceConnection;
+        console.log(1);
+        await this.voiceConnection.playStream(ytdl(this.tqueue.get(0).ID, {filter: "audioonly"}));
+        console.log(2);
+        await this.voiceConnection.dispatcher.setVolume(this.volume/100);
+        console.log(3);
+        await this.channel.send("Now playing: "+this.nowPlaying.title);
+        console.log(4);
+        await this.voiceConnection.dispatcher.once("end", reason => {
+            if (reason) {
+                console.debug("%s".debug, reason);
+            }
+            this.tonEnd(message, reason);
+        });
+    }
+    tshuffle(){
+        let before = this.tqueue.filterArray((song, key, coll)=>{
+            return key > 0
+        });
+        var queue = before;
+        var currentIndex = before.length, temporaryValue, randomIndex;
+          // While there remain elements to shuffle...
+        while (0 !== currentIndex) {
+        
+            // Pick a remaining element...
+            randomIndex = Math.floor(Math.random() * currentIndex);
+            currentIndex -= 1;
+        
+            // And swap it with the current element.
+            temporaryValue = queue[currentIndex];
+            queue[currentIndex] = queue[randomIndex];
+            queue[randomIndex] = temporaryValue;
+        }
+        let after = queue;
+        queue.forEach((song, index, arr)=>{
+            this.tqueue.set(index+1, song);
+        });
+        // this.emit(this.events.shuffle, before, after);
+    }
+    tremove(start=0, count=1){
+        var nowPlaying = this.tqueue.get(0);
+        var queue = this.tqueue.filterArray((song, key, coll)=>{
+            return key>0;
+        });
+        let removed = queue.splice(start, count);
+        this.tqueue.clear();
+        this.tqueue.set(0, nowPlaying);
+        queue.forEach((song, index, arr)=>{
+            this.tqueue.set(this.tqueue.size, song);
+        });
+        // this.emit(this.events.remove, removed);
+        return removed;
+    }
+    /**
      * Adds a List of Songs to the current Queue in the order they are in the Array.
      * The first Song of the Array will be at the given position
      * @param {Message} message
@@ -158,14 +361,14 @@ class Queue extends EventEmitter {
             this.channel = message.channel;
         }
         if(this.loop.list){
-            if(this.nowPlaying !== null) this.addSingle(null, this.nowPlaying);
+            if(this.nowPlaying !== null) this.addSingle(message, this.nowPlaying);
         }
         if (this.queue.length === 0) {
             this.nowPlaying = null;
             return null;
         }
         this.nowPlaying = this.queue.shift();
-        if(this.voiceConnection){
+        if(this.voiceConnection && message){
             this.play(message);
         }
         this.emit(this.events.skip, this.nowPlaying);
@@ -462,7 +665,7 @@ class Queue extends EventEmitter {
      */
     async join(message){
         if(message.guild.voiceConnection && message.guild.voiceConnection.channel.equals(message.member.voiceChannel)){
-            this.emit(this.events.join, "equal", this.voiceConnection);
+            this.emit(this.events.join, "equal", message.guild.voiceConnection);
         }else if(message.member.voiceChannel){
             var oldConnection = this.voiceConnection
             await message.member.voiceChannel.join();
@@ -614,3 +817,13 @@ class Queue extends EventEmitter {
     }
 }
 module.exports = Queue;
+// var tqueue = new Collection();
+// tqueue.set("NowPlaying", "now!");
+// tqueue.set(1, "eins");
+// tqueue.set(2, "zwei");
+// tqueue.set(3, "drei");
+// var loop = true;
+// console.log(tqueue);
+// for(var i=4;i<7;i++){
+//     Queue.tadd(new Song(i, "custom", "nu", "me", "none", 0, "www", "me"), tqueue);
+// }
