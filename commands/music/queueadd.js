@@ -54,6 +54,15 @@ class List extends commando.Command {
                 }
             }
         }
+        if(await queue.join(message)){
+            if (args.link.type ==="single") {
+                this.addSingle(ID, message, args, queue);
+            }
+            else {
+                this.addPlaylist(message, args, ID, queue);
+            }
+        }
+        return;
         if (message.guild.voiceConnection) {
             if (args.link.type ==="single") {
                 this.addSingle(ID, message, args, queue);
@@ -95,9 +104,8 @@ class List extends commando.Command {
         var song = await getYt.Single(args.link.link, message);
         // await queue.addSingle(message, song, pos);
         // await queue.autoplay(message);
-        console.log(queue.tqueue);
         queue.tadd(song);
-        console.log(queue.tqueue);
+        if(message.guild.voiceConnection && message.guild.voiceConnection.dispatcher) return;        
         queue.tplay(message);
     }
     /**
@@ -116,10 +124,12 @@ class List extends commando.Command {
             pos = args.position;
         }
         var songs = await getYt.Playlist(ID, message);
-        queue.addList(message, songs, pos);
-        queue.autoplay(message);
-        // if(message.guild.voiceConnection.dispatcher) return;
+        // queue.addList(message, songs, pos);
+        // queue.autoplay(message);
         // else queue.play(message);
+        queue.tadd(songs);
+        if(message.guild.voiceConnection && message.guild.voiceConnection.dispatcher) return;
+        queue.tplay(message);
     }
     /**
      * 
