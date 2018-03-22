@@ -152,11 +152,11 @@ class Queue extends EventEmitter {
                     this.tqueue.set(this.tqueue.size, song);
                 });
             }else{
-                console.log(this.tqueue); 
-                console.log("\n\n");
+                // console.log(this.tqueue); 
+                // console.log("\n\n");
                 this.tqueue.set(this.tqueue.size, songs);
-                console.log(this.tqueue);
-                console.log("\n\n");
+                // console.log(this.tqueue);
+                // console.log("\n\n");
             }
         }else{
             if(position<1) throw new Error("Position must be at least 1");
@@ -168,10 +168,10 @@ class Queue extends EventEmitter {
             afterpos.forEach((song, key, map)=>{
                 this.tqueue.delete(key);
             });
-            console.log(this.tqueue);
-            console.log("\n\n");
-            console.log(afterpos);
-            console.log("\n\n");
+            // console.log(this.tqueue);
+            // console.log("\n\n");
+            // console.log(afterpos);
+            // console.log("\n\n");
             if(util.isArray(songs)){
                 songs.forEach((song, index, array)=>{
                     this.tqueue.set(this.tqueue.size, song);
@@ -182,8 +182,8 @@ class Queue extends EventEmitter {
             afterpos.forEach((song, key, map)=>{
                 this.tqueue.set(this.tqueue.size, song);
             });
-            console.log(this.tqueue);
-            console.log("\n\n");
+            // console.log(this.tqueue);
+            // console.log("\n\n");
         }
         if(this.tqueue.get(0) ===null){
             this.tskip();
@@ -231,7 +231,7 @@ class Queue extends EventEmitter {
     async tplay(message, song=null){
         this.channel = message.channel;
         if(song){
-            console.log(this.tqueue);
+            // console.log(this.tqueue);
             await this.tadd(song, 1);
             if(this.tqueue.get(0)!==song){
                 await this.tskip();
@@ -239,17 +239,16 @@ class Queue extends EventEmitter {
         }
         if(!message.guild.voiceConnection){
             if(message.member.voiceChannel){
-                await message.member.voiceChannel.join();
+                this.voiceConnection = await message.member.voiceChannel.join();
             }else{
                 message.reply("You need to join a voicechannel first");
                 return;
             }
         }
         this.voiceConnection = message.guild.voiceConnection;
-        console.log("hi");
         if(message.guild.voiceConnection.dispatcher){
-            console.log("skip");
-            message.guild.voiceConnection.dispatcher.end("skip");
+            // console.log("skip");
+            this.voiceConnection.dispatcher.end("skip");
         }else{
             await this.voiceConnection.playStream(ytdl(this.tqueue.get(0).ID, {filter: "audioonly"}));
             await this.voiceConnection.dispatcher.setVolume(this.volume/100);
@@ -273,7 +272,9 @@ class Queue extends EventEmitter {
             this.voiceConnection = message.guild.voiceConnection;
         }else return;
         console.log(1);
-        console.log(await this.tnext());
+        if(reason !== "skip"){
+            await this.tnext();
+        }
         await this.voiceConnection.playStream(ytdl(this.tqueue.get(0).ID, {filter: "audioonly"}));
         console.log(2);
         await this.voiceConnection.dispatcher.setVolume(this.volume/100);
@@ -588,7 +589,7 @@ class Queue extends EventEmitter {
         }
     }
     tgetQueueMessage(){
-        console.log("q start");
+        // console.log("q start");
         if (this.tqueue.size === 1) {
             console.log("null");
             return null;
@@ -603,7 +604,7 @@ class Queue extends EventEmitter {
             firstLine += messageBuilder;
             firstLine += "```";
             var built = Util.splitMessage(firstLine, {maxLength: 1000, char: "\n", prepend: "```", append: "```"});
-            console.log(built);
+            // console.log(built);
             return built;
         }
     }
@@ -728,7 +729,7 @@ class Queue extends EventEmitter {
         else{
             this.tqueueMessage.set(0, q);
         }
-        console.log(this.tqueueMessage);
+        // console.log(this.tqueueMessage);
     }
     /**
      * 
