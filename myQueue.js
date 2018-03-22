@@ -717,7 +717,7 @@ class Queue extends EventEmitter {
         }
     }
     tupdateQueueMessage(){
-        this.queueMessage.clear();
+        this.tqueueMessage.clear();
         let q = this.tgetQueueMessage();
         if (q === null) return;
         if(util.isArray(q)){
