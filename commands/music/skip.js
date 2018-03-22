@@ -45,16 +45,16 @@ class Skip extends commando.Command {
         else{
             var queue = audioworker.queues.get(message.guild.id);
         }
-        if (await queue.join(message) === null){
-            message.reply("you need to join a voicechannel first");
-        }
-        else {
-            // queue.skip(message);
-            // queue.autoplay(message);
+        // if (await queue.join(message) === null){
+        //     message.reply("you need to join a voicechannel first");
+        // }
+        // else {
+        //     // queue.skip(message);
+        //     // queue.autoplay(message);
 
-            queue.tskip();
-            queue.tplay();
-        }
+        // }
+        queue.tskip();
+        queue.tplay(message);
     }
     /**
      * 

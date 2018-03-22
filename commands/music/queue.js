@@ -164,7 +164,7 @@ class Queuecommand extends commando.Command {
                 await this.react(await queue.tgetQueue(args.page-1, message).reactions, reply);
             }
             if(name === "🔀"){
-                await queue.shuffle();
+                await queue.tshuffle();
                 await reply.edit({embed: await queue.tgetQueue(args.page-1, message).embed});
                 await reply.reactions.clear();
                 await this.react(await queue.tgetQueue(args.page-1, message).reactions, reply);
