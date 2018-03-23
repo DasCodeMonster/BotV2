@@ -44,7 +44,8 @@ class QueueRemove extends commando.Command {
         else{
             var queue = audioworker.queues.get(message.guild.id);
         }
-        var del = queue.remove(args.start-1, args.count, message);
+        // var del = queue.remove(args.start-1, args.count, message);
+        var del = queue.tremove(args.start-1, args.count);
         if (del.length === 1) message.reply("Removed "+del[0].title+" from the queue");
         else message.reply("Removed "+del.length+" songs!");
     }

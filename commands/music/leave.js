@@ -29,7 +29,7 @@ class LeaveVoiceCommand extends commando.Command {
         else{
             var queue = audioworker.queues.get(message.guild.id);
         }
-        await queue.leave(message);
+        await queue.tleave(message);
     }
     /**
      * 

@@ -38,12 +38,29 @@ class Play extends commando.Command {
         else{
             var queue = audioworker.queues.get(message.guild.id);
         }
+        if (args.link.type ==="single") {
+            // this.addSingle(ID, message, args, queue);
+            var song = await getYt.Single(args.link.link, message);
+            queue.tplay(message, song);
+        }
+        else {
+            // this.addPlaylist(message, args, ID, queue);
+            var songs = await getYt.Playlist(ID, message);
+            queue.tplay(message, songs);
+        }
+        return;
+
+        
         if (message.guild.voiceConnection) {
             if (args.link.type ==="single") {
-                this.addSingle(ID, message, args, queue);
+                // this.addSingle(ID, message, args, queue);
+                var song = await getYt.Single(args.link.link, message);
+                queue.tplay(message, song);
             }
             else {
-                this.addPlaylist(message, args, ID, queue);
+                // this.addPlaylist(message, args, ID, queue);
+                var songs = await getYt.Playlist(ID, message);
+                queue.tplay(message, songs);
             }
         }
         else {

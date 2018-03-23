@@ -29,7 +29,7 @@ class joinVoicechannelCommand extends commando.Command {
         else{
             var queue = audioworker.queues.get(message.guild.id);
         }
-        await queue.join(message);
+        // await queue.join(message);
         await queue.tautoplay(message);
     }
     /**
