@@ -28,7 +28,7 @@ class Shuffle extends commando.Command {
         else{
             var queue = audioworker.queues.get(message.guild.id);
         }
-        queue.shuffle(message);
+        queue.tshuffle(message);
         message.reply("ok i shuffeled the queue!");
     }
     

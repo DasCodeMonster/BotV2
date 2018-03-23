@@ -41,10 +41,6 @@ class SongInfo extends commando.Command {
         else{
             var queue = audioworker.queues.get(message.guild.id);
         }
-        // if (args.number > queue.queue.length){
-        //     args.number = queue.queue.length;
-        // }
-        // await message.channel.send({embed: await queue.songinfo(message, args.number)});
         await message.channel.send({embed: await queue.tsonginfo(message, args.number)});
     }
     /**

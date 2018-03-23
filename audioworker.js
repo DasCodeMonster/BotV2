@@ -30,7 +30,7 @@ class Audioworker {
      * @param {Guild} guild 
      */
     add(guild){
-        var coll = this.queues.set(guild.id, new Queue(new QueueConfig(guild.id)));
+        var coll = this.queues.set(guild.id, new Queue(new QueueConfig(guild.id), this.client));
         return coll.get(guild.id);
     }
     /**

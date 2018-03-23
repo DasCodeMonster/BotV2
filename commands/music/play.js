@@ -48,57 +48,6 @@ class Play extends commando.Command {
             var songs = await getYt.Playlist(ID, message);
             queue.tplay(message, songs);
         }
-        return;
-
-        
-        if (message.guild.voiceConnection) {
-            if (args.link.type ==="single") {
-                // this.addSingle(ID, message, args, queue);
-                var song = await getYt.Single(args.link.link, message);
-                queue.tplay(message, song);
-            }
-            else {
-                // this.addPlaylist(message, args, ID, queue);
-                var songs = await getYt.Playlist(ID, message);
-                queue.tplay(message, songs);
-            }
-        }
-        else {
-            if (message.member.voiceChannel) {
-                message.member.voiceChannel.join();
-                if (args.link.type === "single") {
-                    this.addSingle(ID, message, args, queue);
-                }
-                else {
-                    this.addPlaylist(message, args, ID, queue);
-                }              
-            }
-            else {
-                message.reply("you need to join a voicechannel first");
-            }
-        }
-    }
-    /**
-     *  
-     * @param {*} ID 
-     * @param {Message} message
-     * @param {Object} args
-     * @param {Queue} queue
-     */
-    async addSingle(ID, message, args, queue) {
-        var song = await getYt.Single(args.link.link, message);
-        queue.playNow(song, message);
-    }
-    /**
-     * 
-     * @param {Message} message 
-     * @param {Object} args 
-     * @param {*} ID 
-     * @param {Queue} queue 
-     */
-    async addPlaylist(message, args, ID, queue) {
-        var songs = await getYt.Playlist(ID, message);
-        queue.playNowList(songs, message);
     }
     /**
      * 

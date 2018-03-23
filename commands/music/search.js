@@ -72,67 +72,6 @@ class Search extends commando.Command {
         collector.on("cancel", async (msg, collector)=>{
             await msg.reply("canceled command");
         });
-
-
-        // if (await queue.join(message) === null){
-        //     message.reply("you need to join a voicechannel first");
-        // }
-        // else {
-        //     this.addSingle(message, args, queue);
-        // }
-        // if (message.guild.voiceConnection) {
-        // }
-        // else {
-        //     if (message.member.voiceChannel) {
-        //         await this.addSingle(message, args, queue);
-        //         message.member.voiceChannel.join();
-        //     }
-        //     else {
-        //     }
-        // }
-    }
-    /**
-     * 
-     * @param {Message} message 
-     * @param {*} args 
-     * @param {Queue} queue 
-     */
-    async addSingle(message, args, queue){
-        var songs = await getYT.search(message, args.query);
-        var embed = new RichEmbed({
-            title: "Search result:"
-        }).setTimestamp(new Date()).setDescription("Type the number of the song you want to play **NOW** or copy the link, `cancel` the command, and add it to the queue manually")
-        .setColor(666);
-        songs.forEach((song, index)=>{
-            embed.addField(`${index+1} ${song.title}`, `Titel: [${song.title}](https://www.youtube.com/watch?v=${song.ID})\nChannel: [${song.author}](https://www.youtube.com/channel/${song.channelID})\n`);
-        });
-        /**
-         * @type {Message}
-         */
-        var commandmsg = await message.channel.send({embed: embed});
-        var collector = new MessageCollector(message.channel, (replymsg)=>{
-            if (replymsg.author.id === message.author.id && replymsg.content.toLowerCase().trim() === "cancel") {
-                return true;
-            }
-            if (replymsg.author.id === message.author.id && Number.parseInt(replymsg.content) && Number.parseInt(replymsg.content)>= 1 && Number.parseInt(replymsg.content)<= 5){
-                return true;
-            }
-            else return false;
-        }, {time: 30000, maxMatches: 1});
-        collector.on("collect", async (msg, collector)=>{
-            if (msg.content === "cancel"){
-                collector.emit("cancel", msg, collector);
-                return;
-            }
-            await queue.playNow(songs[Number.parseInt(msg.content)-1], message);
-        });
-        collector.on("end", async (collected, reason)=>{
-            await commandmsg.delete();
-            console.log(reason);
-        });
-        collector.on("cancel", async (msg, collector)=>{
-            await msg.reply("canceled command");
-        });
     }
     /**
      * 
