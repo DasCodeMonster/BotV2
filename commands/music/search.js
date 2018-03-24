@@ -63,7 +63,7 @@ class Search extends commando.Command {
                 collector.emit("cancel", msg, collector);
                 return;
             }
-            await queue.tplay(message, songs[Number.parseInt(msg.content)-1]);
+            await queue.play(message, songs[Number.parseInt(msg.content)-1]);
         });
         collector.on("end", async (collected, reason)=>{
             await commandmsg.delete();

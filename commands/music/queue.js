@@ -45,12 +45,12 @@ class Queuecommand extends commando.Command {
         else{
             var queue = audioworker.queues.get(message.guild.id);
         }
-        await queue.tupdateQueueMessage();
-        var reactions = queue.tgetQueue(args.page-1, message).reactions;
+        await queue.updateQueueMessage();
+        var reactions = queue.getQueue(args.page-1, message).reactions;
         /**
          * @type {Message}
          */
-        var reply = await message.channel.send({embed: await queue.tgetQueue(args.page-1, message).embed, split:false});
+        var reply = await message.channel.send({embed: await queue.getQueue(args.page-1, message).embed, split:false});
         var collector = new ReactionCollector(reply, (reaction, user)=>{
             if(this.client.user.id === user.id){
                 return false;
@@ -64,30 +64,30 @@ class Queuecommand extends commando.Command {
             if(name === "🔁"){
                 if (queue.loop.list) await queue.setLoopList(false);
                 else await queue.setLoopList(true);
-                await reply.edit({embed: await queue.tgetQueue(args.page-1, message).embed});
+                await reply.edit({embed: await queue.getQueue(args.page-1, message).embed});
                 await reply.reactions.clear();
-                await this.react(await queue.tgetQueue(args.page-1, message).reactions, reply);
+                await this.react(await queue.getQueue(args.page-1, message).reactions, reply);
             }
             if(name === "🔂"){
                 if(queue.loop.song) await queue.setLoopSong(false);
                 else await queue.setLoopSong(true);
-                await reply.edit({embed: await queue.tgetQueue(args.page-1, message).embed});
+                await reply.edit({embed: await queue.getQueue(args.page-1, message).embed});
                 await reply.reactions.clear();
-                await this.react(await queue.tgetQueue(args.page-1, message).reactions, reply);
+                await this.react(await queue.getQueue(args.page-1, message).reactions, reply);
             }
             if(name === "🔀"){
-                await queue.tshuffle();
-                await reply.edit({embed: await queue.tgetQueue(args.page-1, message).embed});
+                await queue.shuffle();
+                await reply.edit({embed: await queue.getQueue(args.page-1, message).embed});
                 await reply.reactions.clear();
-                await this.react(await queue.tgetQueue(args.page-1, message).reactions, reply);
+                await this.react(await queue.getQueue(args.page-1, message).reactions, reply);
             }
             if(name === "ℹ"){
-                var embed = await queue.tsonginfo(message, 0);
+                var embed = await queue.songInfo(message, 0);
                 await message.channel.send({embed: embed});
             }
             if(name === "⏭"){
-                await queue.tskip();
-                await queue.tplay(message);
+                await queue.skip();
+                await queue.play(message);
             }
         });
         collector.once("end", async (collected, reason)=>{

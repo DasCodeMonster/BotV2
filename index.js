@@ -108,7 +108,7 @@ client.on("emojiUpdate", (oldEmoji, newEmoji) => {
 
 });
 client.on("error", error => {
-
+    console.error("%s".error, error);
 });
 client.on("guildBanAdd", (guild, user) => {
 

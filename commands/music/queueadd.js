@@ -77,9 +77,9 @@ class List extends commando.Command {
             pos = args.position;
         }
         var song = await getYt.Single(args.link.link, message);
-        queue.tadd(song);
+        queue.add(song);
         if(message.guild.voiceConnection && message.guild.voiceConnection.dispatcher) return;        
-        queue.tplay(message);
+        queue.play(message);
     }
     /**
      * 
@@ -97,9 +97,9 @@ class List extends commando.Command {
             pos = args.position;
         }
         var songs = await getYt.Playlist(ID, message);
-        queue.tadd(songs);
+        queue.add(songs);
         if(message.guild.voiceConnection && message.guild.voiceConnection.dispatcher) return;
-        queue.tplay(message);
+        queue.play(message);
     }
     /**
      * 

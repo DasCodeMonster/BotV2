@@ -24,7 +24,7 @@ class Queue extends EventEmitter {
         /**
          * @type {Collection<Number, String}
          */
-        this.tqueueMessage = new Collection();
+        this.queueMessage = new Collection();
         this.loop = queueConfig.loop;
         this.volume = queueConfig.volume;
         this.guildID = queueConfig.guildID;
@@ -38,37 +38,39 @@ class Queue extends EventEmitter {
         /**
          * @type {Collection<Number,Song>}
          */
-        this.tqueue = new Collection().set(0, null);
-        this.tadd(queueConfig.queue);
+        this.queue = new Collection().set(0, null);
+        if(queueConfig.queue.length !== 0){
+            this.add(queueConfig.queue);
+        }
         this.once(this.events.ready, (queueMessage, queue)=>{
-            this.tupdateQueueMessage();
-            this.tupdateLength();
+            this.updateQueueMessage();
+            this.updateLength();
         });
         this.on(this.events.end, (reason, message)=>{
             if(reason){
-                this.tupdateQueueMessage();
-                this.tupdateLength();
+                this.updateQueueMessage();
+                this.updateLength();
             }
         });
         this.on(this.events.skip, (song)=>{
-            this.tupdateQueueMessage();
-            this.tupdateLength();
+            this.updateQueueMessage();
+            this.updateLength();
         });
         this.on(this.events.addedSong, ()=>{
-            this.tupdateQueueMessage();
-            this.tupdateLength();
+            this.updateQueueMessage();
+            this.updateLength();
         });
         this.on(this.events.remove, ()=>{
-            this.tupdateQueueMessage();
-            this.tupdateLength();
+            this.updateQueueMessage();
+            this.updateLength();
         });
         this.on(this.events.shuffle, ()=>{
-            this.tupdateQueueMessage();
-            this.tupdateLength();
+            this.updateQueueMessage();
+            this.updateLength();
         });
         this.on(this.events.play, ()=>{
-            // this.tupdateQueueMessage();
-            // this.tupdateLength();
+            // this.updateQueueMessage();
+            // this.updateLength();
         });
         this.emit(this.events.ready, this.queueMessage, this.queue);
     }
@@ -76,12 +78,12 @@ class Queue extends EventEmitter {
      * It will move all elements in the queue forward. Additionally the new currently played song will be returned;
      * @returns {Song}
      */
-    tnext(){
+    next(){
         if(this.loop.song){
-            return this.tqueue.get(0);
+            return this.queue.get(0);
         }
         var newQ = new Collection();
-        this.tqueue.forEach((val, key, map)=>{
+        this.queue.forEach((val, key, map)=>{
             if(key === 0 && val === null) return;
             newQ.set(key-1, val);
         });
@@ -96,8 +98,8 @@ class Queue extends EventEmitter {
         if(newQ.size === 0){
             newQ.set(0, null);
         }
-        this.tqueue = newQ;
-        return this.tqueue.get(0);
+        this.queue = newQ;
+        return this.queue.get(0);
     }
     /**
      * Adds a List of Songs (or one) to the current Queue in the order they are given.
@@ -105,52 +107,52 @@ class Queue extends EventEmitter {
      * @param {Song|Song[]} songs Songs to add to the queue
      * @param {Number} position Position to insert the new songs
      */
-    tadd(songs, position=null){
+    add(songs, position=null){
         if(!position){
             if(util.isArray(songs)){
                 songs.forEach((song, index, array)=>{
-                    this.tqueue.set(this.tqueue.size, song);
+                    this.queue.set(this.queue.size, song);
                 });
             }else{
-                this.tqueue.set(this.tqueue.size, songs);
+                this.queue.set(this.queue.size, songs);
             }
         }else{
             if(position<1) throw new Error("Position must be at least 1");
-            var afterpos = this.tqueue.filter((song, key, coll)=>{
+            var afterpos = this.queue.filter((song, key, coll)=>{
                 if(key>=position){
                     return true;
                 }
             });
             afterpos.forEach((song, key, map)=>{
-                this.tqueue.delete(key);
+                this.queue.delete(key);
             });
             if(util.isArray(songs)){
                 songs.forEach((song, index, array)=>{
-                    this.tqueue.set(this.tqueue.size, song);
+                    this.queue.set(this.queue.size, song);
                 });
             }else{
-                this.tqueue.set(this.tqueue.size, songs);
+                this.queue.set(this.queue.size, songs);
             }
             afterpos.forEach((song, key, map)=>{
-                this.tqueue.set(this.tqueue.size, song);
+                this.queue.set(this.queue.size, song);
             });
         }
-        if(this.tqueue.get(0) ===null){
-            this.tskip();
+        if(this.queue.get(0) ===null){
+            this.skip();
         }
     }
     /**
      * Skips a song and returns the next in the Queue
      */
-    tskip(){
-        if(this.tqueue.size === 1){
+    skip(){
+        if(this.queue.size === 1){
             if(!this.loop.list){
-                this.tqueue.set(0, null);
+                this.queue.set(0, null);
             }
-            return this.tqueue.get(0);
+            return this.queue.get(0);
         }
         var newQ = new Collection();
-        this.tqueue.forEach((val, key, map)=>{
+        this.queue.forEach((val, key, map)=>{
             if(key === 0 && val === null) return;
             newQ.set(key-1, val);
         });
@@ -162,8 +164,8 @@ class Queue extends EventEmitter {
         if(newQ.has(-1)){
             newQ.delete(-1);
         }
-        this.tqueue = newQ;
-        return this.tqueue.get(0);
+        this.queue = newQ;
+        return this.queue.get(0);
     }
     /**
      * Will join a voiceChannel if possible and starts playing the first song in queue.
@@ -171,11 +173,11 @@ class Queue extends EventEmitter {
      * @param {Message} message 
      * @param {Song|Song[]} song Song or songs to add in front of the queue. First one will be played directly.
      */
-    async tplay(message, song=null){
+    async play(message, song=null){
         if(song){
-            await this.tadd(song, 1);
-            if(this.tqueue.get(0)!==song){
-                await this.tskip();
+            await this.add(song, 1);
+            if(this.queue.get(0)!==song){
+                await this.skip();
             }
         }
         if(!message.guild.voiceConnection){
@@ -190,14 +192,14 @@ class Queue extends EventEmitter {
         if(message.guild.voiceConnection.dispatcher){
             message.guild.voiceConnection.dispatcher.end("skip");
         }else{
-            await message.guild.voiceConnection.playStream(ytdl(this.tqueue.get(0).ID, {filter: "audioonly"}));
+            await message.guild.voiceConnection.playStream(ytdl(this.queue.get(0).ID, {filter: "audioonly"}));
             await message.guild.voiceConnection.dispatcher.setVolume(this.volume/100);
             if(this.channel){
-                await this.channel.send(`Now playing: ${this.tqueue.get(0).title}`);
+                await this.channel.send(`Now playing: ${this.queue.get(0).title}`);
             }else if(this.lastMessage !== null && this.lastMessage !== message){
-                await this.lastMessage.channel.send(`Now playing: ${this.tqueue.get(0).title}`);
+                await this.lastMessage.channel.send(`Now playing: ${this.queue.get(0).title}`);
             }else{
-                await message.channel.send(`Now playing: ${this.tqueue.get(0).title}`);
+                await message.channel.send(`Now playing: ${this.queue.get(0).title}`);
             }
             await message.guild.voiceConnection.dispatcher.once("end", reason=>{
                 if(reason){
@@ -206,7 +208,7 @@ class Queue extends EventEmitter {
                         return;
                     }
                 }
-                this.tonEnd(message, reason);
+                this.onEnd(message, reason);
             });
         }
     }
@@ -215,23 +217,23 @@ class Queue extends EventEmitter {
      * @param {Message} message Message which invoked the command
      * @param {String} reason Why the stream ended
      */
-    async tonEnd(message, reason){
+    async onEnd(message, reason){
         if(reason !== "skip"){
-            await this.tnext();
+            await this.next();
         }
-        if(this.tqueue.get(0) === null) {
+        if(this.queue.get(0) === null) {
             return;
         }
-        await message.guild.voiceConnection.playStream(ytdl(this.tqueue.get(0).ID, {filter: "audioonly"}));
+        await message.guild.voiceConnection.playStream(ytdl(this.queue.get(0).ID, {filter: "audioonly"}));
         console.log(2);
         await message.guild.voiceConnection.dispatcher.setVolume(this.volume/100);
         console.log(3);
         if(this.channel){
-            await this.channel.send(`Now playing: ${this.tqueue.get(0).title}`);
+            await this.channel.send(`Now playing: ${this.queue.get(0).title}`);
         }else if(this.lastMessage !== null && this.lastMessage !== message){
-            await this.lastMessage.channel.send(`Now playing: ${this.tqueue.get(0).title}`);
+            await this.lastMessage.channel.send(`Now playing: ${this.queue.get(0).title}`);
         }else{
-            await message.channel.send(`Now playing: ${this.tqueue.get(0).title}`);
+            await message.channel.send(`Now playing: ${this.queue.get(0).title}`);
         }
         console.log(4);
         await message.guild.voiceConnection.dispatcher.once("end", reason => {
@@ -241,14 +243,14 @@ class Queue extends EventEmitter {
                     return;
                 }
             }
-            this.tonEnd(message, reason);
+            this.onEnd(message, reason);
         });
     }
     /**
      * Generates a new random order of the songs in the queue.
      */
-    tshuffle(){
-        let before = this.tqueue.filterArray((song, key, coll)=>{
+    shuffle(){
+        let before = this.queue.filterArray((song, key, coll)=>{
             return key > 0
         });
         var queue = before;
@@ -267,9 +269,9 @@ class Queue extends EventEmitter {
         }
         let after = queue;
         queue.forEach((song, index, arr)=>{
-            this.tqueue.set(index+1, song);
+            this.queue.set(index+1, song);
         });
-        this.tupdateQueueMessage();
+        this.updateQueueMessage();
         // this.emit(this.events.shuffle, before, after);
     }
     /**
@@ -277,16 +279,16 @@ class Queue extends EventEmitter {
      * @param {number} start Where to start deleting songs 
      * @param {number} count How many songs after the start(included) should be deleted
      */
-    tremove(start=0, count=1){
-        var nowPlaying = this.tqueue.get(0);
-        var queue = this.tqueue.filterArray((song, key, coll)=>{
+    remove(start=0, count=1){
+        var nowPlaying = this.queue.get(0);
+        var queue = this.queue.filterArray((song, key, coll)=>{
             return key>0;
         });
         let removed = queue.splice(start, count);
-        this.tqueue.clear();
-        this.tqueue.set(0, nowPlaying);
+        this.queue.clear();
+        this.queue.set(0, nowPlaying);
         queue.forEach((song, index, arr)=>{
-            this.tqueue.set(this.tqueue.size, song);
+            this.queue.set(this.queue.size, song);
         });
         // this.emit(this.events.remove, removed);
         return removed;
@@ -328,14 +330,14 @@ class Queue extends EventEmitter {
     /**
      * Returns a String representing the current queue or if the queue is empty returns null
      */
-    tgetQueueMessage(){
-        if (this.tqueue.size === 1) {
+    getQueueMessage(){
+        if (this.queue.size === 1) {
             return null;
         }
         else {
             var firstLine = "```";
             var messageBuilder = "";
-            this.tqueue.forEach((song, index) => {
+            this.queue.forEach((song, index) => {
                 if(index===0)return;
                 messageBuilder += (index)+" Title: "+song.title + " | Channel: "+ song.author + "\n";
             });
@@ -350,36 +352,36 @@ class Queue extends EventEmitter {
      * @param {Number} page
      * @param {Message} message 
      */
-    tgetQueue(page=1, message=null){
+    getQueue(page=1, message=null){
         this.lastMessage = message;
         var reactions = [];
-        if (page >= this.tqueueMessage.size) page = this.tqueueMessage.size-1;
-        if (this.tqueueMessage.size === 0 && this.tqueue.get(0) === null){
+        if (page >= this.queueMessage.size) page = this.queueMessage.size-1;
+        if (this.queueMessage.size === 0 && this.queue.get(0) === null){
             return {
                 embed: new RichEmbed().setTitle("Queue").setDescription("**The queue is empty!**").setTimestamp(new Date()).setColor(666).setFooter(`Requested by ${message.author.username}`, message.author.displayAvatarURL),
                 reactions: reactions
             }
         }
-        else if((page<this.tqueueMessage.size) || (this.tqueueMessage.size === 0 && this.tqueue.get(0) !== null)){
+        else if((page<this.queueMessage.size) || (this.queueMessage.size === 0 && this.queue.get(0) !== null)){
             reactions.push("🔁");
             reactions.push("🔂");
             reactions.push("ℹ");
-            if (this.tqueue.get(0) !== null){
-                var embed = new RichEmbed().setTitle("Queue").setColor(666).addField("Now Playing:", this.tqueue.get(0).title, false).addField("Channel:", this.tqueue.get(0).author, true);
+            if (this.queue.get(0) !== null){
+                var embed = new RichEmbed().setTitle("Queue").setColor(666).addField("Now Playing:", this.queue.get(0).title, false).addField("Channel:", this.queue.get(0).author, true);
                 if (message.guild.voiceConnection && message.guild.voiceConnection.dispatcher) {
-                    embed.addField("Songlength:", `${moment.duration(message.guild.voiceConnection.dispatcher.time, "milliseconds").format()}/${moment.duration(this.tqueue.get(0).length, "seconds").format()}`, true).setTimestamp(new Date());
+                    embed.addField("Songlength:", `${moment.duration(message.guild.voiceConnection.dispatcher.time, "milliseconds").format()}/${moment.duration(this.queue.get(0).length, "seconds").format()}`, true).setTimestamp(new Date());
                 }else{
-                    embed.addField("Songlength:", `0:00/${moment.duration(this.tqueue.get(0).length, "seconds").format()}`, true);
+                    embed.addField("Songlength:", `0:00/${moment.duration(this.queue.get(0).length, "seconds").format()}`, true);
                 }
-                embed.addField("Queued by:", this.client.guilds.get(this.guildID).member(this.tqueue.get(0).queuedBy).user.toString(), true);
+                embed.addField("Queued by:", this.client.guilds.get(this.guildID).member(this.queue.get(0).queuedBy).user.toString(), true);
             }
-            if(this.tqueueMessage.size !== 0){
-                this.tupdateLength();
-                embed.addField(`Queue (Page: ${page+1})`, this.tqueueMessage.get(page), false)
-                .addField("Total pages:", this.tqueueMessage.size, true)
-                .addField("Total songs in queue:", this.tqueue.size-1, true)
+            if(this.queueMessage.size !== 0){
+                this.updateLength();
+                embed.addField(`Queue (Page: ${page+1})`, this.queueMessage.get(page), false)
+                .addField("Total pages:", this.queueMessage.size, true)
+                .addField("Total songs in queue:", this.queue.size-1, true)
                 .addField("Total queue length:", moment.duration(this.length, "seconds").format() , true);
-                if(this.tqueue.size > 2) reactions.push("🔀");
+                if(this.queue.size > 2) reactions.push("🔀");
             }
             if(!embed) throw new Error("Queuemessage unavailable");
             if(this.loop.list && this.loop.song) embed.addField("Loop mode:", "🔁🔂");
@@ -397,17 +399,17 @@ class Queue extends EventEmitter {
     /**
      * Updates the intern Collection which holds all the pages of the queue in message form
      */
-    tupdateQueueMessage(){
-        this.tqueueMessage.clear();
-        let q = this.tgetQueueMessage();
+    updateQueueMessage(){
+        this.queueMessage.clear();
+        let q = this.getQueueMessage();
         if (q === null) return;
         if(util.isArray(q)){
             q.forEach((page, index, array)=>{
-                this.tqueueMessage.set(index, page);
+                this.queueMessage.set(index, page);
             });
         }
         else{
-            this.tqueueMessage.set(0, q);
+            this.queueMessage.set(0, q);
         }
     }
     /**
@@ -434,23 +436,28 @@ class Queue extends EventEmitter {
         }
     }
     save(){
-        return new QueueConfig(this.guildID, this.tqueue.array(), this.loop.song, this.loop.list, this.volume);        
+        return new QueueConfig(this.guildID, this.queue.array(), this.loop.song, this.loop.list, this.volume);        
     }
     /**
      * Automatically joins a voicechannel if possible and plays the first song in queue when not already playing
      * @param {Message} message 
      */
-    async tautoplay(message){
-        if(!message.guild.voiceConnection && message.member.voiceChannel){
-            await message.member.voiceChannel.join();
+    async autoplay(message){
+        if(!message.guild.voiceConnection){
+            if(message.member.voiceChannel){
+                await message.member.voiceChannel.join();
+            } else {
+                message.reply("You need to join a voicechannel first!");
+                return;
+            }
         }
         if(message.guild.voiceConnection && !message.guild.voiceConnection.dispatcher){
-            if(this.tqueue.get(0) !== null){
-                await this.tplay(message);
+            if(this.queue.get(0) !== null){
+                await this.play(message);
             }
-            else if(this.tqueue.size > 1){
-                await this.tnext();
-                await this.tplay(message);
+            else if(this.queue.size > 1){
+                await this.next();
+                await this.play(message);
             }
             else{
                 await message.reply("you need to add some songs to the queue first!");
@@ -461,7 +468,7 @@ class Queue extends EventEmitter {
      * Leaving the voicechannel if connected to one
      * @param {Message} message 
      */
-    async tleave(message){
+    async leave(message){
         this.lastMessage = message;
         if (message.guild.voiceConnection) {
             if(message.guild.voiceConnection.dispatcher){
@@ -477,9 +484,9 @@ class Queue extends EventEmitter {
     /**
      * Updated the intern property which defines the length of all queued songs
      */
-    tupdateLength(){
+    updateLength(){
         var length = 0;
-        var queue = this.tqueue.filterArray((song, key, coll)=>{
+        var queue = this.queue.filterArray((song, key, coll)=>{
             return key>0
         });
         queue.forEach((song, index, array)=>{
@@ -492,20 +499,20 @@ class Queue extends EventEmitter {
      * @param {Message} message 
      * @param {Number} position position of the song in queue
      */
-    tsonginfo(message, position){
+    songInfo(message, position){
         this.lastMessage = message;
-        if(position > this.tqueue.size-1){
-            position = this.tqueue.size-1;
+        if(position > this.queue.size-1){
+            position = this.queue.size-1;
         }
-        if(this.tqueue.get(0) === null){
+        if(this.queue.get(0) === null){
             return new RichEmbed().setColor(666).setTimestamp(new Date()).setDescription("There are not any songs in the queue. You need add some first!");
         }
         var seconds = 0;
         if (message.guild.voiceConnection && message.guild.voiceConnection.dispatcher){
-            seconds += this.tqueue.get(0).length-Math.floor((message.guild.voiceConnection.dispatcher.time/1000));
+            seconds += this.queue.get(0).length-Math.floor((message.guild.voiceConnection.dispatcher.time/1000));
         }
-        else seconds += this.tqueue.get(0).length;
-        this.tqueue.some((song, index) => {
+        else seconds += this.queue.get(0).length;
+        this.queue.some((song, index) => {
             if(index === 0)return false;
             if (index === position) {
                 return true;
@@ -515,19 +522,19 @@ class Queue extends EventEmitter {
         });
         var date = new Date();
         var newDate = new Date(date.setTime(date.getTime()+seconds*1000)).toString();
-        var description = Util.splitMessage(this.tqueue.get(position).description, {maxLength: 1000, char: "\n", append: "\n(Description too long)"});
+        var description = Util.splitMessage(this.queue.get(position).description, {maxLength: 1000, char: "\n", append: "\n(Description too long)"});
         var embed = new RichEmbed()
-        .setAuthor(this.tqueue.get(position).title, null, `https://www.youtube.com/watch?v=${this.tqueue.get(position).ID}`)
+        .setAuthor(this.queue.get(position).title, null, `https://www.youtube.com/watch?v=${this.queue.get(position).ID}`)
         .setColor(666)
-        .setThumbnail(this.tqueue.get(position).thumbnailURL)
+        .setThumbnail(this.queue.get(position).thumbnailURL)
         .setTimestamp(new Date())
-        .setImage(this.tqueue.get(position).thumbnailURL)
-        .addField("Channel", `[${this.tqueue.get(position).author}](https://www.youtube.com/channel/${this.tqueue.get(position).channelID})`, true)
-        .addField("Length", moment.duration(this.tqueue.get(position).length, "seconds").format(), true)
+        .setImage(this.queue.get(position).thumbnailURL)
+        .addField("Channel", `[${this.queue.get(position).author}](https://www.youtube.com/channel/${this.queue.get(position).channelID})`, true)
+        .addField("Length", moment.duration(this.queue.get(position).length, "seconds").format(), true)
         .addField("Description", util.isArray(description)? description[0] : description, false)
-        .addField("Queued by", message.guild.member(this.tqueue.get(position).queuedBy).user.toString(), true)
-        .addField("Queued at", this.tqueue.get(position).queuedAt, true)
-        .addField("ETA", newDate).addField("Thumbnail", this.tqueue.get(position).thumbnailURL);
+        .addField("Queued by", message.guild.member(this.queue.get(position).queuedBy).user.toString(), true)
+        .addField("Queued at", this.queue.get(position).queuedAt, true)
+        .addField("ETA", newDate).addField("Thumbnail", this.queue.get(position).thumbnailURL);
         return embed;
     }
 }

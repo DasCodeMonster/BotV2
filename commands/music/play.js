@@ -41,12 +41,12 @@ class Play extends commando.Command {
         if (args.link.type ==="single") {
             // this.addSingle(ID, message, args, queue);
             var song = await getYt.Single(args.link.link, message);
-            queue.tplay(message, song);
+            queue.play(message, song);
         }
         else {
             // this.addPlaylist(message, args, ID, queue);
             var songs = await getYt.Playlist(ID, message);
-            queue.tplay(message, songs);
+            queue.play(message, songs);
         }
     }
     /**
