@@ -4,3 +4,4 @@ audio.sqlite
 lyrics.sqlite
 settings.sqlite3
 localToken.json
+.vscode
