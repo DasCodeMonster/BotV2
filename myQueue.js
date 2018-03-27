@@ -200,8 +200,7 @@ class Queue extends EventEmitter {
         if(message.guild.voiceConnection.dispatcher){
             message.guild.voiceConnection.dispatcher.end("skip");
         }else{
-            await message.guild.voiceConnection.playStream(ytdl(this.queue.get(0).ID, {filter: "audioonly"}));
-            await message.guild.voiceConnection.dispatcher.setVolume(this.volume/100);
+            await message.guild.voiceConnection.playStream(ytdl(this.queue.get(0).ID, {filter: "audioonly"}), {volume: this.volume/100});
             if(this.channel){
                 await this.channel.send(`Now playing: ${this.queue.get(0).title}`);
             }else if(this.lastMessage !== null && this.lastMessage !== message){
@@ -232,13 +231,11 @@ class Queue extends EventEmitter {
         if(this.queue.get(0) === null) {
             return;
         }
-        await message.guild.voiceConnection.playStream(ytdl(this.queue.get(0).ID, {filter: "audioonly"}));
+        await message.guild.voiceConnection.playStream(ytdl(this.queue.get(0).ID, {filter: "audioonly"}), {volume: this.volume/100});
         if(this.qReactionCollector !== null){
             this.qReactionCollector.emit("update");
         }
-        console.log(2);
-        await message.guild.voiceConnection.dispatcher.setVolume(this.volume/100);
-        console.log(3);
+        console.log(1);
         if(this.channel){
             await this.channel.send(`Now playing: ${this.queue.get(0).title}`);
         }else if(this.lastMessage !== null && this.lastMessage !== message){
@@ -246,7 +243,7 @@ class Queue extends EventEmitter {
         }else{
             await message.channel.send(`Now playing: ${this.queue.get(0).title}`);
         }
-        console.log(4);
+        console.log(2);
         await message.guild.voiceConnection.dispatcher.once("end", reason => {
             if (reason) {
                 console.debug("%s".debug, reason);
@@ -404,6 +401,7 @@ class Queue extends EventEmitter {
                 if(this.loop.song) embed.addField("Loop mode:", "🔂");
             }
             embed.setFooter(`Requested by ${message.author.username}`, message.author.displayAvatarURL);
+            reactions.push("⏭");
             return {
                 embed: embed,
                 reactions: reactions
