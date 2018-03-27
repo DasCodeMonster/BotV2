@@ -45,8 +45,8 @@ class Skip extends commando.Command {
         else{
             var queue = audioworker.queues.get(message.guild.id);
         }
-        queue.skip();
-        queue.play(message);
+        await queue.skip();
+        await queue.play(message);
     }
     /**
      * 

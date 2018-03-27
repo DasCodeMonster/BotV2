@@ -72,6 +72,9 @@ class Queue extends EventEmitter {
             // this.updateQueueMessage();
             // this.updateLength();
         });
+        this.on("error", error=>{
+            console.error("%s".error, error);
+        });
         this.emit(this.events.ready, this.queueMessage, this.queue);
     }
     /**
@@ -352,7 +355,7 @@ class Queue extends EventEmitter {
      * @param {Number} page
      * @param {Message} message 
      */
-    getQueue(page=1, message=null){
+    getQueueEmbed(page=1, message=null){
         this.lastMessage = message;
         var reactions = [];
         if (page >= this.queueMessage.size) page = this.queueMessage.size-1;
