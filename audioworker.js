@@ -26,6 +26,9 @@ class Audioworker extends EventEmitter{
         this.init();
         this.db;
         this.client = client;
+        this.on("error", error=>{
+            console.error("%s".error, error);
+        });
     }
     /**
      * Add a queue for a guild to the audioworker
