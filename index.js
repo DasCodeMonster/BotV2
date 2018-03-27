@@ -48,8 +48,12 @@ client.dispatcher.addInhibitor(msg=>{
 
 client.on("ready", () => {
     client.Audioworker = new Audioworker(client, 60000);
-    client.LyricsAPI = new LyricsAPI();
-    console.info(colors.info("bot startet"));
+    client.Audioworker.once("ready", ()=>{
+        client.LyricsAPI = new LyricsAPI();
+        client.LyricsAPI.once("ready", ()=>{
+            console.info(colors.info("bot startet"));
+        });
+    });
     // function repeatEvery(func, interval) {
     //     // Check current time and calculate the delay until next interval
     //     var now = new Date(),
