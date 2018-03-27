@@ -1,5 +1,5 @@
 const Song = require("./Song");
-const {Message, Util, Collection, RichEmbed, Client, VoiceConnection, TextChannel} = require("discord.js");
+const {Message, Util, Collection, RichEmbed, Client, VoiceConnection, TextChannel, ReactionCollector} = require("discord.js");
 const ytdl = require("ytdl-core");
 const QueueConfig = require("./queueConfig");
 const moment = require("moment");
@@ -33,6 +33,8 @@ class Queue extends EventEmitter {
          */
         this.channel = null;
         this.lastMessage = null;
+        this.lastQueueEmbedID = null;
+        this.qReactionCollector = null;
         this.length = 0;
         this.events = {skip: "skip", play: "play", volumeChange: "volumeChange", addedSong: "addedSong", remove: "remove", join: "join", leave: "leave", end:"qend", loopChange: "loopChange", shuffle: "shuffle", ready: "qready"};
         /**
@@ -42,36 +44,36 @@ class Queue extends EventEmitter {
         if(queueConfig.queue.length !== 0){
             this.add(queueConfig.queue);
         }
-        this.once(this.events.ready, (queueMessage, queue)=>{
-            this.updateQueueMessage();
-            this.updateLength();
-        });
-        this.on(this.events.end, (reason, message)=>{
-            if(reason){
-                this.updateQueueMessage();
-                this.updateLength();
-            }
-        });
-        this.on(this.events.skip, (song)=>{
-            this.updateQueueMessage();
-            this.updateLength();
-        });
-        this.on(this.events.addedSong, ()=>{
-            this.updateQueueMessage();
-            this.updateLength();
-        });
-        this.on(this.events.remove, ()=>{
-            this.updateQueueMessage();
-            this.updateLength();
-        });
-        this.on(this.events.shuffle, ()=>{
-            this.updateQueueMessage();
-            this.updateLength();
-        });
-        this.on(this.events.play, ()=>{
-            // this.updateQueueMessage();
-            // this.updateLength();
-        });
+        // this.once(this.events.ready, (queueMessage, queue)=>{
+        //     this.updateQueueMessage();
+        //     this.updateLength();
+        // });
+        // this.on(this.events.end, (reason, message)=>{
+        //     if(reason){
+        //         this.updateQueueMessage();
+        //         this.updateLength();
+        //     }
+        // });
+        // this.on(this.events.skip, (song)=>{
+        //     this.updateQueueMessage();
+        //     this.updateLength();
+        // });
+        // this.on(this.events.addedSong, ()=>{
+        //     this.updateQueueMessage();
+        //     this.updateLength();
+        // });
+        // this.on(this.events.remove, ()=>{
+        //     this.updateQueueMessage();
+        //     this.updateLength();
+        // });
+        // this.on(this.events.shuffle, ()=>{
+        //     this.updateQueueMessage();
+        //     this.updateLength();
+        // });
+        // this.on(this.events.play, ()=>{
+        //     // this.updateQueueMessage();
+        //     // this.updateLength();
+        // });
         this.on("error", error=>{
             console.error("%s".error, error);
         });
@@ -102,6 +104,7 @@ class Queue extends EventEmitter {
             newQ.set(0, null);
         }
         this.queue = newQ;
+        this.updateQueueMessage();
         return this.queue.get(0);
     }
     /**
@@ -143,6 +146,7 @@ class Queue extends EventEmitter {
         if(this.queue.get(0) ===null){
             this.skip();
         }
+        this.updateQueueMessage();
     }
     /**
      * Skips a song and returns the next in the Queue
@@ -168,6 +172,7 @@ class Queue extends EventEmitter {
             newQ.delete(-1);
         }
         this.queue = newQ;
+        this.updateQueueMessage();
         return this.queue.get(0);
     }
     /**
@@ -228,6 +233,9 @@ class Queue extends EventEmitter {
             return;
         }
         await message.guild.voiceConnection.playStream(ytdl(this.queue.get(0).ID, {filter: "audioonly"}));
+        if(this.qReactionCollector !== null){
+            this.qReactionCollector.emit("update");
+        }
         console.log(2);
         await message.guild.voiceConnection.dispatcher.setVolume(this.volume/100);
         console.log(3);
@@ -294,6 +302,7 @@ class Queue extends EventEmitter {
             this.queue.set(this.queue.size, song);
         });
         // this.emit(this.events.remove, removed);
+        this.updateQueueMessage();
         return removed;
     }
     /**
@@ -316,6 +325,7 @@ class Queue extends EventEmitter {
         this.loop.song = bool;
         let after = this.loop;
         // this.emit(this.events.loopChange, before, after);
+        this.updateQueueMessage();
         return this.loop;
     }
     /**
@@ -328,6 +338,7 @@ class Queue extends EventEmitter {
         this.loop.list = bool;
         let after = this.loop;
         // this.emit(this.events.loopChange, before, after);
+        this.updateQueueMessage();
         return this.loop;
     }
     /**
@@ -400,6 +411,108 @@ class Queue extends EventEmitter {
         }
     }
     /**
+     * Sends an embed to the channel where the command was invoked and handles reactions and also updates the message
+     * @param {Message} message 
+     */
+    async sendQueueEmbed(message, args){
+        var last = this.getLastQueueEmbedID();
+        if(this.qReactionCollector !== null){
+            this.qReactionCollector.stop("starting new Collector");
+        }
+        if(last !== null && await message.guild.channels.has(last.channelID)){
+            /**
+             * @type {Message}
+             */
+            var lastQueueMessage = await message.guild.channels.get(last.channelID).fetchMessage(last.embedID);
+            // lastQueueMessage.reactions.clear();
+            await lastQueueMessage.reactions.forEach((val, key, map)=>{
+                val.users.forEach(async (user, ukey, map)=>{
+                    await val.remove(user);
+                });
+            });
+        }
+        var obj = await this.getQueueEmbed(args.page-1, message);
+        var embed = obj.embed;
+        var reactions = obj.reactions;
+        /**
+         * @type {Message}
+         */
+        var reply = await message.channel.send({embed: embed, split:false});
+        var collector = new ReactionCollector(reply, (reaction, user)=>{
+            if(this.client.user.id === user.id){
+                return false;
+            }
+            var ret = reactions.includes(reaction.emoji.name);
+            reply.reactions.get(reaction.emoji.name).remove(user);
+            return ret;
+        });
+        collector.on("collect", async (element, collector)=>{
+            var name = element.emoji.name
+            if(name === "🔁"){
+                if (this.loop.list) await this.setLoopList(false);
+                else await this.setLoopList(true);
+            }
+            if(name === "🔂"){
+                if(this.loop.song) await this.setLoopSong(false);
+                else await this.setLoopSong(true);
+            }
+            if(name === "🔀"){
+                await this.shuffle();
+            }
+            if(name === "ℹ"){
+                var embed = await this.songInfo(message, 0);
+                await message.channel.send({embed: embed});
+            }
+            if(name === "⏭"){
+                await this.skip();
+                await this.play(message);
+            }
+        });
+        collector.once("end", async (collected, reason)=>{
+            await reply.reactions.forEach((val, key, map)=>{
+                val.users.forEach(async (user, ukey, map)=>{
+                    await val.remove(user);
+                });
+            });
+            console.debug("%s".debug, reason);
+        });
+        collector.on("error", (error)=>{
+            console.error("%s".error, util.inspect(error));
+        });
+        collector.on("update", async ()=>{
+            var obj = await this.getQueueEmbed(args.page-1, message);
+            var embed = obj.embed;
+            var reactions = obj.reactions;
+            await reply.edit({embed: embed});
+            await reply.reactions.clear();
+            await react(reactions, reply);
+        });
+        this.setLastQueueEmbedID(reply, collector);
+        if(reactions.length !== 0){
+            await react(reactions, reply);
+        }
+        async function react(reactions, message) {
+            for(var i=0;i<reactions.length;i++){
+                await message.react(reactions[i]);
+            }
+        }
+    }
+    /**
+     * 
+     * @param {Message} embedMessage 
+     * @param {ReactionCollector} collector
+     */
+    setLastQueueEmbedID(embedMessage, collector){
+        this.lastQueueEmbedID = {
+            embedID: embedMessage.id,
+            channelID: embedMessage.channel.id 
+        }
+        this.qReactionCollector = collector;
+    }
+    getLastQueueEmbedID(){
+        return this.lastQueueEmbedID
+    }
+    /**
      * Updates the intern Collection which holds all the pages of the queue in message form
      */
     updateQueueMessage(){
@@ -413,6 +526,10 @@ class Queue extends EventEmitter {
         }
         else{
             this.queueMessage.set(0, q);
+        }
+        if(this.qReactionCollector !== null){
+            console.log("will emit update");
+            this.qReactionCollector.emit("update");
         }
     }
     /**
@@ -483,6 +600,7 @@ class Queue extends EventEmitter {
         else {
             message.reply("I am not in a voicechannel.");
         }
+        this.updateQueueMessage();
     }
     /**
      * Updated the intern property which defines the length of all queued songs
