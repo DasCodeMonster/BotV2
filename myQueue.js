@@ -123,7 +123,10 @@ class Queue extends EventEmitter {
                 this.queue.set(this.queue.size, songs);
             }
         }else{
-            if(position<1) throw new Error("Position must be at least 1");
+            if(position<1) {
+                console.error("error while running add()".error);
+                throw new Error("Position must be at least 1");
+            }
             var afterpos = this.queue.filter((song, key, coll)=>{
                 if(key>=position){
                     return true;

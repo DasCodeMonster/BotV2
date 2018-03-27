@@ -69,15 +69,13 @@ class List extends commando.Command {
      * @param {Queue} queue
      */
     async addSingle(ID, message, args, queue) {
-        var pos;
+        var song = await getYt.Single(args.link.link, message);
         if(args.position === 0){
-            pos = null;
+            queue.add(song);
         }
         else {
-            pos = args.position;
+            queue.add(song, args.position);
         }
-        var song = await getYt.Single(args.link.link, message);
-        queue.add(song);
         if(message.guild.voiceConnection && message.guild.voiceConnection.dispatcher) return;        
         queue.play(message);
     }
@@ -89,15 +87,13 @@ class List extends commando.Command {
      * @param {Queue} queue 
      */
     async addPlaylist(message, args, ID, queue) {
-        var pos;
+        var songs = await getYt.Playlist(ID, message);
         if(args.position === 0){
-            pos = null;
+            queue.add(songs);
         }
         else {
-            pos = args.position;
+            queue.add(songs, args.position);
         }
-        var songs = await getYt.Playlist(ID, message);
-        queue.add(songs);
         if(message.guild.voiceConnection && message.guild.voiceConnection.dispatcher) return;
         queue.play(message);
     }
