@@ -3,6 +3,8 @@ const {Message, RichEmbed} = require("discord.js");
 const moment = require("moment");
 var momentDurationFormatSetup = require("moment-duration-format");
 const Audioworker = require("../../audioworker");
+const Logger = require("../../logger");
+const util = require("util");
 
 class SongInfo extends commando.Command {
     constructor(client) {
@@ -31,6 +33,16 @@ class SongInfo extends commando.Command {
      * @param {*} args 
      */
     async run(message, args) {
+        if(this.client.loggers.has(message.guild.id)){
+            /**
+             * @type {Logger}
+             */
+            var logger = this.client.loggers.get(message.guild.id);
+        }else{
+            var logger = new Logger(message.guild.id);
+            this.client.loggers.set(message.guild.id, logger);
+        }
+        logger.log(message.author.username+"#"+message.author.discriminator, "("+message.author.id+")", "used", this.name, "command in channel:", message.channel.name, "("+message.channel.id+")\nArguments:", util.inspect(args));
         /** 
          * @type {Audioworker}
          */

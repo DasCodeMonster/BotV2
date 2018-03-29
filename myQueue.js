@@ -29,7 +29,16 @@ class Queue extends EventEmitter {
         this.loop = queueConfig.loop;
         this.volume = queueConfig.volume;
         this.guildID = queueConfig.guildID;
-        this.logger = new Logger(this.guildID);
+        this.guild = this.client.guilds.get(this.guildID);
+        if(this.client.loggers.has(this.guildID)){
+            /**
+             * @type {Logger}
+             */
+            this.logger = this.client.loggers.get(this.guildID);
+        }else{
+            this.logger = new Logger(this.guildID);
+            this.client.loggers.set(this.guildID, this.logger);
+        }
         /**
          * @type {TextChannel}
          */
@@ -49,7 +58,7 @@ class Queue extends EventEmitter {
         this.once(this.events.ready, (queueMessage, queue)=>{
             // this.updateQueueMessage();
             // this.updateLength();
-            this.logger.log("Guildqueue is ready now!");
+            this.logger.log("Queue for Guild "+this.guild.name+"("+this.guild.id+") is ready now!");
         });
         // this.on(this.events.end, (reason, message)=>{
         //     if(reason){
@@ -79,6 +88,7 @@ class Queue extends EventEmitter {
         // });
         this.on("error", error=>{
             console.error("%s".error, error);
+            this.logger.error(error);
         });
         this.emit(this.events.ready, this.queueMessage, this.queue);
     }
@@ -127,7 +137,7 @@ class Queue extends EventEmitter {
             }
         }else{
             if(position<1) {
-                console.error("error while running add()".error);
+                // console.error("error while running add()".error);
                 this.emit("error", new Error("Position must be at least 1"));
             }
             var afterpos = this.queue.filter((song, key, coll)=>{

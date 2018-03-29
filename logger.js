@@ -3,6 +3,10 @@ const fs = require("fs");
 const util = require("util");
 
 class Logger extends Console{
+    /**
+     * 
+     * @param {String} guildID 
+     */
     constructor(guildID){
         if(!fs.existsSync("./Logs")){
             fs.mkdirSync("./Logs");

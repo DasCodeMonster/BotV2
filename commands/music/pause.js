@@ -1,5 +1,7 @@
 const commando = require("discord.js-commando");
 const {Message} = require("discord.js");
+const Logger = require("../../logger");
+const util = require("util");
 
 class Pause extends commando.Command {
     constructor(client) {
@@ -17,6 +19,16 @@ class Pause extends commando.Command {
      * @param {*} args 
      */
     run(message, args) {
+        if(this.client.loggers.has(message.guild.id)){
+            /**
+             * @type {Logger}
+             */
+            var logger = this.client.loggers.get(message.guild.id);
+        }else{
+            var logger = new Logger(message.guild.id);
+            this.client.loggers.set(message.guild.id, logger);
+        }
+        logger.log(message.author.username+"#"+message.author.discriminator, "("+message.author.id+")", "used", this.name, "command in channel:", message.channel.name, "("+message.channel.id+")\nArguments:", util.inspect(args));
         if (message.guild.voiceConnection && message.guild.voiceConnection.dispatcher) {
             if (message.guild.voiceConnection.dispatcher.paused){
                 message.reply("the stream is already paused!");

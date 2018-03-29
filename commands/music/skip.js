@@ -2,6 +2,8 @@ const commando = require("discord.js-commando");
 const {Message} = require("discord.js");
 const Audioworker = require("../../audioworker");
 const colors = require("colors");
+const Logger = require("../../logger");
+const util = require("util");
 colors.setTheme({
     info: "green",
     debug: "cyan",
@@ -35,6 +37,16 @@ class Skip extends commando.Command {
      * @param {*} args 
      */
     async run(message, args) {
+        if(this.client.loggers.has(message.guild.id)){
+            /**
+             * @type {Logger}
+             */
+            var logger = this.client.loggers.get(message.guild.id);
+        }else{
+            var logger = new Logger(message.guild.id);
+            this.client.loggers.set(message.guild.id, logger);
+        }
+        logger.log(message.author.username+"#"+message.author.discriminator, "("+message.author.id+")", "used", this.name, "command in channel:", message.channel.name, "("+message.channel.id+")\nArguments:", util.inspect(args));
         /** 
          * @type {Audioworker}
          */

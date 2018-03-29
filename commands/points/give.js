@@ -1,4 +1,6 @@
 const commando = require("discord.js-commando");
+const Logger = require("../../logger");
+const util = require("util");
 
 class Give extends commando.Command {
     constructor(client) {
@@ -23,7 +25,16 @@ class Give extends commando.Command {
         })
     }
     async run(message, args) {
-        console.log(args.user.username);
+        if(this.client.loggers.has(message.guild.id)){
+            /**
+             * @type {Logger}
+             */
+            var logger = this.client.loggers.get(message.guild.id);
+        }else{
+            var logger = new Logger(message.guild.id);
+            this.client.loggers.set(message.guild.id, logger);
+        }
+        logger.log(message.author.username+"#"+message.author.discriminator, "("+message.author.id+")", "used", this.name, "command in channel:", message.channel.name, "("+message.channel.id+")\nArguments:", util.inspect(args));
         if (this.client.provider.get(message.guild, message.member.id)) {
             var points = this.client.provider.get(message.guild, message.member.id);
             if (args.number > points) {

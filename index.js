@@ -1,5 +1,4 @@
-const discord = require("discord.js");
-const Collection = discord.Collection;
+const {Collection, Client} = require("discord.js");
 const Commando = require('discord.js-commando');
 const time = require("node-datetime");
 const path = require('path');
@@ -10,12 +9,16 @@ const util = require("util");
 const Audioworker = require("./audioworker");
 const LyricsAPI = require("./lyricsAPI");
 const colors = require("colors");
+const Logger = require("./logger");
 colors.setTheme({
     info: "green",
     debug: "cyan",
     error: "red",
     warn: "yellow"
 });
+/**
+ * @type {Client}
+ */
 const client = new Commando.Client({
     owner: keys.OwnerID,
     unknownCommandResponse: false,
@@ -47,6 +50,14 @@ client.dispatcher.addInhibitor(msg=>{
 });
 
 client.on("ready", () => {
+    /**
+     * @type {Collection<String,Logger>}
+     */
+    let loggers = new Collection();
+    client.guilds.forEach((guild, ID)=>{
+        loggers.set(ID, new Logger(ID));
+    });
+    client.loggers = loggers
     client.Audioworker = new Audioworker(client, 60000);
     client.Audioworker.once("ready", ()=>{
         client.LyricsAPI = new LyricsAPI();
