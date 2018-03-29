@@ -23,11 +23,13 @@ class Audioworker extends EventEmitter{
          */
         this.queues = new Collection();
         this.intervall = intervall;
-        this.init();
         this.db;
         this.client = client;
         this.on("error", error=>{
             console.error("%s".error, error);
+        });
+        this.init().catch(reason=>{
+          this.emit("error", reason);  
         });
     }
     /**
