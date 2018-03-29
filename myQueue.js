@@ -6,6 +6,7 @@ const moment = require("moment");
 const colors = require("colors");
 const util = require("util");
 const {EventEmitter} = require("events");
+const Logger = require("./logger");
 colors.setTheme({
     info: "green",
     debug: "cyan",
@@ -28,6 +29,7 @@ class Queue extends EventEmitter {
         this.loop = queueConfig.loop;
         this.volume = queueConfig.volume;
         this.guildID = queueConfig.guildID;
+        this.logger = new Logger(this.guildID);
         /**
          * @type {TextChannel}
          */
@@ -44,10 +46,11 @@ class Queue extends EventEmitter {
         if(queueConfig.queue.length !== 0){
             this.add(queueConfig.queue);
         }
-        // this.once(this.events.ready, (queueMessage, queue)=>{
-        //     this.updateQueueMessage();
-        //     this.updateLength();
-        // });
+        this.once(this.events.ready, (queueMessage, queue)=>{
+            // this.updateQueueMessage();
+            // this.updateLength();
+            this.logger.log("Guildqueue is ready now!");
+        });
         // this.on(this.events.end, (reason, message)=>{
         //     if(reason){
         //         this.updateQueueMessage();

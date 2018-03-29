@@ -40,13 +40,21 @@ class Play extends commando.Command {
         }
         if (args.link.type ==="single") {
             // this.addSingle(ID, message, args, queue);
-            var song = await getYt.Single(args.link.link, message);
-            queue.play(message, song);
+            var song = await getYt.Single(args.link.link, message).catch(reason=>{
+                queue.logger.error(reason);
+            });
+            await queue.play(message, song).catch(reason=>{
+                queue.logger.error(reason);
+            });
         }
         else {
             // this.addPlaylist(message, args, ID, queue);
-            var songs = await getYt.Playlist(ID, message);
-            queue.play(message, songs);
+            var songs = await getYt.Playlist(ID, message).catch(reason=>{
+                queue.logger.error(reason);
+            });
+            await queue.play(message, songs).catch(reason=>{
+                queue.logger.error(reason);
+            });
         }
     }
     /**
