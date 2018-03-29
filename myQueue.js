@@ -125,7 +125,7 @@ class Queue extends EventEmitter {
         }else{
             if(position<1) {
                 console.error("error while running add()".error);
-                throw new Error("Position must be at least 1");
+                this.emit("error", new Error("Position must be at least 1"));
             }
             var afterpos = this.queue.filter((song, key, coll)=>{
                 if(key>=position){
@@ -232,11 +232,12 @@ class Queue extends EventEmitter {
             await this.next();
         }
         if(this.queue.get(0) === null) {
+            this.updateQueueMessage();
             return;
         }
         await message.guild.voiceConnection.playStream(ytdl(this.queue.get(0).ID, {filter: "audioonly"}), {volume: this.volume/100});
         if(this.qReactionCollector !== null){
-            this.qReactionCollector.emit("update");
+            this.updateQueueMessage();
         }
         console.log(1);
         if(this.channel){
@@ -470,11 +471,7 @@ class Queue extends EventEmitter {
             }
         });
         collector.once("end", async (collected, reason)=>{
-            await reply.reactions.forEach((val, key, map)=>{
-                val.users.forEach(async (user, ukey, map)=>{
-                    await val.remove(user);
-                });
-            });
+            await reply.clearReactions();
             console.debug("%s".debug, reason);
         });
         collector.on("error", (error)=>{
@@ -482,11 +479,15 @@ class Queue extends EventEmitter {
         });
         collector.on("update", async ()=>{
             var obj = await this.getQueueEmbed(args.page-1, message);
-            var embed = obj.embed;
-            var reactions = obj.reactions;
+            embed = obj.embed;
+            reactions = obj.reactions;
             await reply.edit({embed: embed});
-            await reply.reactions.clear();
-            await react(reactions, reply);
+            if (reactions.length === 0){
+                await reply.clearReactions();
+            }else{
+                await reply.reactions.clear();
+                await react(reactions, reply);
+            }
         });
         this.setLastQueueEmbedID(reply, collector);
         if(reactions.length !== 0){
@@ -519,14 +520,15 @@ class Queue extends EventEmitter {
     updateQueueMessage(){
         this.queueMessage.clear();
         let q = this.getQueueMessage();
-        if (q === null) return;
-        if(util.isArray(q)){
-            q.forEach((page, index, array)=>{
-                this.queueMessage.set(index, page);
-            });
-        }
-        else{
-            this.queueMessage.set(0, q);
+        if (q !== null) {
+            if(util.isArray(q)){
+                q.forEach((page, index, array)=>{
+                    this.queueMessage.set(index, page);
+                });
+            }
+            else{
+                this.queueMessage.set(0, q);
+            }
         }
         if(this.qReactionCollector !== null){
             console.log("will emit update");
