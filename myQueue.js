@@ -29,6 +29,10 @@ class Queue extends EventEmitter {
         this.loop = queueConfig.loop;
         this.volume = queueConfig.volume;
         this.guildID = queueConfig.guildID;
+        if(!this.client.guilds.has(this.guildID)){
+            console.log("huh? No guild found");
+            return;
+        }
         this.guild = this.client.guilds.get(this.guildID);
         if(this.client.loggers.has(this.guildID)){
             /**
@@ -87,7 +91,6 @@ class Queue extends EventEmitter {
         //     // this.updateLength();
         // });
         this.on("error", error=>{
-            console.error("%s".error, error);
             this.logger.error(error);
         });
         this.emit(this.events.ready, this.queueMessage, this.queue);
@@ -670,8 +673,13 @@ class Queue extends EventEmitter {
         .addField("Length", moment.duration(this.queue.get(position).length, "seconds").format(), true)
         .addField("Description", util.isArray(description)? description[0] : description, false)
         .addField("Queued by", message.guild.member(this.queue.get(position).queuedBy).user.toString(), true)
-        .addField("Queued at", this.queue.get(position).queuedAt, true)
-        .addField("ETA", newDate).addField("Thumbnail", this.queue.get(position).thumbnailURL);
+        .addField("Queued at", this.queue.get(position).queuedAt, true);
+        if(position === 0){
+            embed.addField("ETA:", newDate+"\n"+moment.duration(seconds, "seconds").format());
+        }else{
+            embed.addField("ETA:", "Now playing!");
+        }
+        embed.addField("Thumbnail", this.queue.get(position).thumbnailURL);
         return embed;
     }
 }

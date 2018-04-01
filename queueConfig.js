@@ -6,7 +6,8 @@ class QueueConfig {
      * @param {Song} nowPlaying 
      * @param {Song[]} queueArr 
      * @param {boolean} loopSong 
-     * @param {boolean} loopList 
+     * @param {boolean} loopList
+     * @param {String} guildID 
      */
     // constructor(guildID, nowPlaying=null, queueArr=[], loopSong=false, loopList=false, volume=30){
     constructor(guildID, queueArr=[], loopSong=false, loopList=false, volume=30){        
