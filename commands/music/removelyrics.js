@@ -1,25 +1,24 @@
 const commando = require("discord.js-commando");
-const {Message} = require("discord.js");
-const CAH = require("./CAH");
 const Logger = require("../../logger");
 const util = require("util");
 
-class CardsAgainstHumanity extends commando.Command {
+class RemoveLyrics extends commando.Command {
     constructor(client){
         super(client, {
-            name: "cardsagainsthumanity",
-            aliases: ["cah"],
-            group: "fun",
-            memberName: "cardsagainsthumanity",
-            description: "Play a nice round of CAH",
-            guildOnly: false
+            name: "removelyrics",
+            aliases: ["rl"],
+            group: "music",
+            memberName: "removelyrics",
+            description: "remove a lyrics by id",
+            args: [{
+                key: "id",
+                label: "id",
+                prompt: "ID of the lyrics",
+                type: "integer"
+            }]
         });
     }
-    /**
-     * 
-     * @param {Message} message 
-     */
-    async run(message){
+    async run(message, args){
         if(this.client.loggers.has(message.guild.id)){
             /**
              * @type {Logger}
@@ -30,9 +29,8 @@ class CardsAgainstHumanity extends commando.Command {
             this.client.loggers.set(message.guild.id, logger);
         }
         logger.log(message.author.username+"#"+message.author.discriminator, "("+message.author.id+")", "used", this.name, "command in channel:", message.channel.name, "("+message.channel.id+")\nArguments:", util.inspect(args));
-        if(!message.channel.recipient) return null;
-        var testgame = new CAH(4);
-        testgame.run(message.channel);
+        await this.client.LyricsAPI.remove(args.id);
+        message.reply(":ok:");
     }
 }
-module.exports = CardsAgainstHumanity;
+module.exports = RemoveLyrics;

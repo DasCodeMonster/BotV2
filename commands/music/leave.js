@@ -1,6 +1,8 @@
 const commando = require('discord.js-commando');
 const {Message} = require("discord.js");
 const Audioworker = require("../../audioworker");
+const Logger = require("../../logger");
+const util = require("util");
 
 class LeaveVoiceCommand extends commando.Command {
     constructor(client) {
@@ -18,6 +20,16 @@ class LeaveVoiceCommand extends commando.Command {
      * @param {*} args 
      */
     async run(message, args) {
+        if(this.client.loggers.has(message.guild.id)){
+            /**
+             * @type {Logger}
+             */
+            var logger = this.client.loggers.get(message.guild.id);
+        }else{
+            var logger = new Logger(message.guild.id);
+            this.client.loggers.set(message.guild.id, logger);
+        }
+        logger.log(message.author.username+"#"+message.author.discriminator, "("+message.author.id+")", "used", this.name, "command in channel:", message.channel.name, "("+message.channel.id+")\nArguments:", util.inspect(args));
         var ID = args.link.id;
         /** 
          * @type {Audioworker}
@@ -57,7 +69,10 @@ class LeaveVoiceCommand extends commando.Command {
 function role(message, command) {
     var ret;
     message.member.roles.array().some((role, index, array) => {
-        if(command.role.true.indexOf(role.id) >-1) ret = true;return true;
+        if(command.role.true.indexOf(role.id) >-1) {
+            ret = true;
+            return true;
+        }
         if(index === array.length-1) {
             ret = false;
             return false;

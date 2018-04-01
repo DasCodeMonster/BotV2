@@ -1,4 +1,7 @@
 const commando = require("discord.js-commando");
+const {Message, RichEmbed} = require("discord.js");
+const Logger = require("../../logger");
+const util = require("util");
 
 class Userinfo extends commando.Command {
     constructor(client) {
@@ -13,99 +16,52 @@ class Userinfo extends commando.Command {
                 key: "user",
                 label: "user",
                 prompt: "about which user do you want to have informations?",
-                type: "user"
+                type: "user",
+                default: "self"
             }]
         });
     }
+    /**
+     * 
+     * @param {Message} message 
+     * @param {*} args 
+     */
     async run(message, args) {
-        // var permissions = await this.client.provider.get(message.guild, message.member.user.id, []);
-        // console.log(permissions);
-        // console.log(this.groupID);
-        // if (permissions.indexOf(`${this.groupID}:${this.name}`)>=0) {
-        //     return;
-        // }
-        if (args.user.avatarURL == null){
-            var avatarURL = args.user.displayAvatarURL;
+        if(this.client.loggers.has(message.guild.id)){
+            /**
+             * @type {Logger}
+             */
+            var logger = this.client.loggers.get(message.guild.id);
+        }else{
+            var logger = new Logger(message.guild.id);
+            this.client.loggers.set(message.guild.id, logger);
         }
-        else var avatarURL = args.user.avatarURL;
-        console.log(avatarURL);
-        if (this.client.provider.get(message.guild, args.user.id)) var points = this.client.provider.get(message.guild, args.user.id);
-        else var points = 0;
-        var roles = "";
-        /*message.member.roles.array().forEach((role, index, array)=> {
-            console.log(index);
-            if(role && index===0){
-                roles+=role.toString();
-                console.log(roles);
-            }else if(role){
-                roles += "\n"+role.toString();
-                console.log(roles);
-            }
-            console.log(index);
-            console.log(array.length);
-            if(index+1===array.length){
-                message.channel.send({embed: {
-                    "title": args.user.username + " #"+args.user.discriminator,
-                    "color": 666,
-                    "thumbnail": {
-                        "url": avatarURL
-                    },
-                    "timestamp": new Date(),
-                    "fields": [{
-                        "name": "ID",
-                        "value": args.user.id
-                    }, {
-                        "name": "Bot",
-                        "value": this.isBot(args)
-                    }, {
-                        "name": "Points",
-                        "value": points
-                    }, {
-                        "name": "Roles",
-                        "value": roles
-                    }]
-                }});
-            }
-        });*/
-        this.client.guilds.array().some((guild, index, array)=>{
-            if(guild==message.guild){
-                guild.member(args.user).roles.array().forEach((role, index, array)=>{
-                    if(role && index===0){
-                        roles+=role.toString();
-                    }else if(role){
-                        roles += "\n"+role.toString();
-                    }
-                    if(index+1===array.length){
-                        message.channel.send({embed: {
-                            "title": args.user.username + " #"+args.user.discriminator,
-                            "color": 666,
-                            "thumbnail": {
-                                "url": avatarURL
-                            },
-                            "timestamp": new Date(),
-                            "fields": [{
-                                "name": "ID",
-                                "value": args.user.id
-                            }, {
-                                "name": "Bot",
-                                "value": this.isBot(args)
-                            }, {
-                                "name": "Points",
-                                "value": points
-                            }, {
-                                "name": "Roles",
-                                "value": roles
-                            }]
-                        }});
-                    }
-                });
-            }
+        logger.log(message.author.username+"#"+message.author.discriminator, "("+message.author.id+")", "used", this.name, "command in channel:", message.channel.name, "("+message.channel.id+")\nArguments:", util.inspect(args));
+        if(args.user === "self"){
+            var user = message.member.user;
+        }
+        else {
+            var user = args.user;
+        }
+        var points = this.client.provider.get(message.guild, user.id, 0);
+        var roles = message.guild.roles.filterArray((role, key, colection)=>{
+            return role.members.has(message.author.id);
         });
-    }
-    isBot(args) {
-        if(args.user.bot) var bot = ":white_check_mark:";
-        else var bot = ":x:";
-        return bot;
+        var roleString = "";
+        roles.forEach((role, index, array)=>{
+            roleString += role.toString()+"\n";
+        });
+        var embed = new RichEmbed()
+        .setAuthor(user.username+"#"+user.discriminator, user.displayAvatarURL)
+        .setColor(666)
+        .setThumbnail(user.displayAvatarURL)
+        .setTimestamp(new Date())
+        .addField("ID:", user.id)
+        .addField("Bot:", user.bot?":white_check_mark:":":x:", true)
+        .addField("Points:", points, true)
+        .addField("Roles:", roleString, true)
+        .setFooter(`Requested by ${message.author.username}`, message.author.displayAvatarURL);
+        await message.channel.send({embed: embed});
     }
     /**
      * 
@@ -133,7 +89,10 @@ class Userinfo extends commando.Command {
 function role(message, command) {
     var ret;
     message.member.roles.array().some((role, index, array) => {
-        if(command.role.true.indexOf(role.id) >-1) ret = true;return true;
+        if(command.role.true.indexOf(role.id) >-1) {
+            ret = true;
+            return true;
+        }
         if(index === array.length-1) {
             ret = false;
             return false;

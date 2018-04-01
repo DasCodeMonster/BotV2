@@ -2,6 +2,8 @@ const commando = require("discord.js-commando");
 const {Message} = require("discord.js");
 const Audioworker = require("../../audioworker");
 const colors = require("colors");
+const Logger = require("../../logger");
+const util = require("util");
 colors.setTheme({
     info: "green",
     debug: "cyan",
@@ -35,34 +37,28 @@ class Skip extends commando.Command {
      * @param {*} args 
      */
     async run(message, args) {
-        if (message.guild.voiceConnection) {
-            if (message.guild.voiceConnection.dispatcher){
-                message.guild.voiceConnection.dispatcher.end("!skip");
-            }
-            
-        } else if (message.member.voiceChannel) {
-            await message.member.voiceChannel.join();
-            if(!message.guild.voiceConnection.dispatcher){
-                /** 
-                 * @type {Audioworker}
-                 */
-                var audioworker = this.client.Audioworker;
-                if(!audioworker.queues.has(message.guild.id)){
-                    var queue = audioworker.add(message.guild);
-                }
-                else{
-                    var queue = audioworker.queues.get(message.guild.id);
-                }
-                queue.skip();
-                // this.play(message, queue);
-                queue.play(message);
-                return;
-            }
-            message.guild.voiceConnection.dispatcher.end("!skip");
+        if(this.client.loggers.has(message.guild.id)){
+            /**
+             * @type {Logger}
+             */
+            var logger = this.client.loggers.get(message.guild.id);
+        }else{
+            var logger = new Logger(message.guild.id);
+            this.client.loggers.set(message.guild.id, logger);
         }
-        else {
-            message.reply("I don't play any Songs at the moment!");
+        logger.log(message.author.username+"#"+message.author.discriminator, "("+message.author.id+")", "used", this.name, "command in channel:", message.channel.name, "("+message.channel.id+")\nArguments:", util.inspect(args));
+        /** 
+         * @type {Audioworker}
+         */
+        var audioworker = this.client.Audioworker;
+        if(!audioworker.queues.has(message.guild.id)){
+            var queue = audioworker.add(message.guild);
         }
+        else{
+            var queue = audioworker.queues.get(message.guild.id);
+        }
+        await queue.skip();
+        await queue.play(message);
     }
     /**
      * 
@@ -90,7 +86,10 @@ class Skip extends commando.Command {
 function role(message, command) {
     var ret;
     message.member.roles.array().some((role, index, array) => {
-        if(command.role.true.indexOf(role.id) >-1) ret = true;return true;
+        if(command.role.true.indexOf(role.id) >-1) {
+            ret = true;
+            return true;
+        }
         if(index === array.length-1) {
             ret = false;
             return false;

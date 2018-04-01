@@ -1,6 +1,9 @@
 const commando = require("discord.js-commando");
-const {WebhookClient, Message, Emoji} = require("discord.js");
+const {Message} = require("discord.js");
+const Tokens = require("../../Token&Keys");
 const curl = require("curl");
+const Logger = require("../../logger");
+const util = require("util");
 
 class Webhookcommand extends commando.Command {
     constructor(client){
@@ -25,7 +28,17 @@ class Webhookcommand extends commando.Command {
      * @returns {void} 
      */
     run(message, args){
-        curl.getJSON("https://api.twitch.tv/helix/users?login="+args.TwitchUsername, {headers:{"Client-ID":"tmd29hfnhojjqg6vuagrwru9vzn280"}}, async(err, response)=>{
+        if(this.client.loggers.has(message.guild.id)){
+            /**
+             * @type {Logger}
+             */
+            var logger = this.client.loggers.get(message.guild.id);
+        }else{
+            var logger = new Logger(message.guild.id);
+            this.client.loggers.set(message.guild.id, logger);
+        }
+        logger.log(message.author.username+"#"+message.author.discriminator, "("+message.author.id+")", "used", this.name, "command in channel:", message.channel.name, "("+message.channel.id+")\nArguments:", util.inspect(args));
+        curl.getJSON("https://api.twitch.tv/helix/users?login="+args.TwitchUsername, {headers:{"Client-ID": Tokens.TwitchClientID}}, async(err, response)=>{
             if (err) {
                 console.log(err);
                 var sry = await message.reply("An Error occurred! Please try again!");
@@ -42,7 +55,7 @@ class Webhookcommand extends commando.Command {
                 var login = tojson.data[0].login;
                 var webhooks = await message.guild.fetchWebhooks();
                 webhooks.first().send(id);
-                curl.getJSON("https://api.twitch.tv/helix/streams?user_id="+id, {headers:{"Client-ID":"tmd29hfnhojjqg6vuagrwru9vzn280"}}, async(error, res)=>{
+                curl.getJSON("https://api.twitch.tv/helix/streams?user_id="+id, {headers:{"Client-ID":Tokens.TwitchClientID}}, async(error, res)=>{
                     if(error){
                         console.log(error);
                         var sry = await message.reply("An Error occurred! Please try again!");

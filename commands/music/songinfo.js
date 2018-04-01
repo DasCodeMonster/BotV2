@@ -1,29 +1,37 @@
 const commando = require("discord.js-commando");
+const {Message, RichEmbed} = require("discord.js");
+const moment = require("moment");
+var momentDurationFormatSetup = require("moment-duration-format");
+const Audioworker = require("../../audioworker");
 const Logger = require("../../logger");
 const util = require("util");
 
-class Give extends commando.Command {
+class SongInfo extends commando.Command {
     constructor(client) {
         super(client, {
-            name: "give",
-            group: "points",
-            memberName: "give",
-            description: "Give points to another user",
+            name: "songinfo",
+            aliases: ["si"],
+            group: "music",
+            memberName: "songinfo",
+            description: "Gives detailed information about the current song or a song in queue.",
             guildOnly: true,
-            argsCount: 2,
             args: [{
-                key: "user",
-                label: "user",
-                prompt: "to which user you want to tranfer your points?",
-                type: "user"
-            }, {
                 key: "number",
-                label: "number",
-                prompt: "how many points do you want to transfer?",
-                type: "integer"
-            }]
-        })
+                label: "songnumber",
+                prompt: "",
+                type: "integer",
+                default: 0,
+                infinite: false,
+                min: 0
+            }],
+            argsPromptLimit: 0
+        });
     }
+    /**
+     * 
+     * @param {Message} message 
+     * @param {*} args 
+     */
     async run(message, args) {
         if(this.client.loggers.has(message.guild.id)){
             /**
@@ -35,26 +43,17 @@ class Give extends commando.Command {
             this.client.loggers.set(message.guild.id, logger);
         }
         logger.log(message.author.username+"#"+message.author.discriminator, "("+message.author.id+")", "used", this.name, "command in channel:", message.channel.name, "("+message.channel.id+")\nArguments:", util.inspect(args));
-        if (this.client.provider.get(message.guild, message.member.id)) {
-            var points = this.client.provider.get(message.guild, message.member.id);
-            if (args.number > points) {
-                message.reply("you dont have that much points!\nPoints: "+points);
-                return;
-            }
+        /** 
+         * @type {Audioworker}
+         */
+        var audioworker = this.client.Audioworker;
+        if(!audioworker.queues.has(message.guild.id)){
+           var queue = audioworker.add(message.guild);
         }
-        else {
-            message.reply("you have no points to transfer :/");
-            return;
+        else{
+            var queue = audioworker.queues.get(message.guild.id);
         }
-        message.reply(args.number+" points successfully transfered to "+args.user);
-        this.client.provider.set(message.guild, message.member.id, points-args.number);
-        if (this.client.provider.get(message.guild, args.id)) {
-            var friendPoints = this.client.provider.get(message.guild, args.user.id);
-        }
-        else {
-            var friendPoints = 0;
-        }
-        this.client.provider.set(message.guild, args.user.id, friendPoints+args.number);
+        await message.channel.send({embed: await queue.songInfo(message, args.number)});
     }
     /**
      * 
@@ -93,4 +92,4 @@ function role(message, command) {
     });
     return ret;
 }
-module.exports = Give;
+module.exports = SongInfo;

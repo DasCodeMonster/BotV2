@@ -1,5 +1,4 @@
-const discord = require("discord.js");
-const Collection = discord.Collection;
+const {Collection, Client} = require("discord.js");
 const Commando = require('discord.js-commando');
 const time = require("node-datetime");
 const path = require('path');
@@ -10,12 +9,16 @@ const util = require("util");
 const Audioworker = require("./audioworker");
 const LyricsAPI = require("./lyricsAPI");
 const colors = require("colors");
+const Logger = require("./logger");
 colors.setTheme({
     info: "green",
     debug: "cyan",
     error: "red",
     warn: "yellow"
 });
+/**
+ * @type {Client}
+ */
 const client = new Commando.Client({
     owner: keys.OwnerID,
     unknownCommandResponse: false,
@@ -47,35 +50,47 @@ client.dispatcher.addInhibitor(msg=>{
 });
 
 client.on("ready", () => {
+    /**
+     * @type {Collection<String,Logger>}
+     */
+    let loggers = new Collection();
+    client.guilds.forEach((guild, ID)=>{
+        loggers.set(ID, new Logger(ID));
+    });
+    client.loggers = loggers
     client.Audioworker = new Audioworker(client, 60000);
-    client.LyricsAPI = new LyricsAPI();
-    console.info(colors.info("bot startet"));
-    function repeatEvery(func, interval) {
-        // Check current time and calculate the delay until next interval
-        var now = new Date(),
-            delay = interval - now % interval;
-        console.debug(colors.debug(now));
-        console.debug(colors.debug(now%interval));
-        console.debug(colors.debug(delay));
-        function start() {
-            // Execute function now...
-            func();
-            // ... and every interval
-            setInterval(func, interval);
-        }    
-        // Delay execution until it's an even interval
-    }
-    repeatEvery(() => {
-        console.debug(colors.debug(time.create().format("H:M:S")));
-        client.guilds.array().forEach(Guild => {
-            Guild.members.array().forEach(member => {
-                if (member.user.presence.status != "online") return;
-                if (client.provider.get(Guild, member.id)) var points = client.provider.get(Guild, member.id);
-                else var points = 0;
-                client.provider.set(Guild, member.id, points+10);
-            });
+    client.Audioworker.once("ready", ()=>{
+        client.LyricsAPI = new LyricsAPI();
+        client.LyricsAPI.once("ready", ()=>{
+            console.info(colors.info("bot startet"));
         });
-    }, 200000);
+    });
+    // function repeatEvery(func, interval) {
+    //     // Check current time and calculate the delay until next interval
+    //     var now = new Date(),
+    //         delay = interval - now % interval;
+    //     console.debug(colors.debug(now));
+    //     console.debug(colors.debug(now%interval));
+    //     console.debug(colors.debug(delay));
+    //     function start() {
+    //         // Execute function now...
+    //         func();
+    //         // ... and every interval
+    //         setInterval(func, interval);
+    //     }    
+    //     // Delay execution until it's an even interval
+    // }
+    // repeatEvery(() => {
+    //     console.debug(colors.debug(time.create().format("H:M:S")));
+    //     client.guilds.array().forEach(Guild => {
+    //         Guild.members.array().forEach(member => {
+    //             if (member.user.presence.status !== "online") return;
+    //             if (client.provider.get(Guild, member.id)) var points = client.provider.get(Guild, member.id);
+    //             else var points = 0;
+    //             client.provider.set(Guild, member.id, points+10);
+    //         });
+    //     });
+    // }, 200000);
 });
 client.on("channelCreate", channel => {
     
@@ -108,7 +123,7 @@ client.on("emojiUpdate", (oldEmoji, newEmoji) => {
 
 });
 client.on("error", error => {
-
+    console.error("%s".error, error);
 });
 client.on("guildBanAdd", (guild, user) => {
 
@@ -212,6 +227,9 @@ process.once('SIGINT', () => {
     client.destroy();
     process.exit(0);
 });
+process.on("uncaughtException", (error)=>{
+    console.error(error);
+})
 process.on('unhandledRejection', (reason, p) => {
     console.error("Unhandled Rejection at:".error);
     console.error("%s".error, util.inspect(p));

@@ -1,6 +1,15 @@
 const commando = require("discord.js-commando");
-const {Message} = require("discord.js");
+const {Message, ReactionCollector} = require("discord.js");
 const Audioworker = require("../../audioworker");
+const util = require("util");
+const colors = require("colors");
+const Logger = require("../../logger");
+colors.setTheme({
+    info: "green",
+    debug: "cyan",
+    error: "red",
+    warn: "yellow"
+});
 
 class Queuecommand extends commando.Command {
     constructor(client) {
@@ -27,6 +36,16 @@ class Queuecommand extends commando.Command {
      * @param {*} args 
      */
     async run(message, args){
+        if(this.client.loggers.has(message.guild.id)){
+            /**
+             * @type {Logger}
+             */
+            var logger = this.client.loggers.get(message.guild.id);
+        }else{
+            var logger = new Logger(message.guild.id);
+            this.client.loggers.set(message.guild.id, logger);
+        }
+        logger.log(message.author.username+"#"+message.author.discriminator, "("+message.author.id+")", "used", this.name, "command in channel:", message.channel.name, "("+message.channel.id+")\nArguments:", util.inspect(args));
         /** 
          * @type {Audioworker}
          */
@@ -37,7 +56,17 @@ class Queuecommand extends commando.Command {
         else{
             var queue = audioworker.queues.get(message.guild.id);
         }
-        await message.reply(queue.getQueue(args.page-1));
+        await queue.sendQueueEmbed(message, args);
+    }
+    /**
+     * 
+     * @param {Array} reactions 
+     * @param {Message} message 
+     */
+    async react(reactions, message){
+        for(var i=0;i<reactions.length;i++){
+            await message.react(reactions[i]);
+        }
     }
     /**
      * 
@@ -65,7 +94,10 @@ class Queuecommand extends commando.Command {
 function role(message, command) {
     var ret;
     message.member.roles.array().some((role, index, array) => {
-        if(command.role.true.indexOf(role.id) >-1) ret = true;return true;
+        if(command.role.true.indexOf(role.id) >-1) {
+            ret = true;
+            return true;
+        }
         if(index === array.length-1) {
             ret = false;
             return false;
