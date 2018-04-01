@@ -3,6 +3,8 @@ const {Message, RichEmbed, MessageCollector} = require("discord.js");
 const getYT = require("../../ytsong");
 const Queue = require("../../myQueue");
 const Audioworker = require("../../audioworker");
+const Logger = require("../../logger");
+const util = require("util");
 
 class Search extends commando.Command {
     constructor(client) {
@@ -27,6 +29,16 @@ class Search extends commando.Command {
      * @param {*} args 
      */
     async run(message, args) {
+        if(this.client.loggers.has(message.guild.id)){
+            /**
+             * @type {Logger}
+             */
+            var logger = this.client.loggers.get(message.guild.id);
+        }else{
+            var logger = new Logger(message.guild.id);
+            this.client.loggers.set(message.guild.id, logger);
+        }
+        logger.log(message.author.username+"#"+message.author.discriminator, "("+message.author.id+")", "used", this.name, "command in channel:", message.channel.name, "("+message.channel.id+")\nArguments:", util.inspect(args));
         /** 
          * @type {Audioworker}
          */
@@ -37,30 +49,6 @@ class Search extends commando.Command {
         else{
             var queue = audioworker.queues.get(message.guild.id);
         }
-        if (await queue.join(message) === null){
-            message.reply("you need to join a voicechannel first");
-        }
-        else {
-            this.addSingle(message, args, queue);
-        }
-        // if (message.guild.voiceConnection) {
-        // }
-        // else {
-        //     if (message.member.voiceChannel) {
-        //         await this.addSingle(message, args, queue);
-        //         message.member.voiceChannel.join();
-        //     }
-        //     else {
-        //     }
-        // }
-    }
-    /**
-     * 
-     * @param {Message} message 
-     * @param {*} args 
-     * @param {Queue} queue 
-     */
-    async addSingle(message, args, queue){
         var songs = await getYT.search(message, args.query);
         var embed = new RichEmbed({
             title: "Search result:"
@@ -87,7 +75,7 @@ class Search extends commando.Command {
                 collector.emit("cancel", msg, collector);
                 return;
             }
-            await queue.playNow(songs[Number.parseInt(msg.content)-1], message);
+            await queue.play(message, songs[Number.parseInt(msg.content)-1]);
         });
         collector.on("end", async (collected, reason)=>{
             await commandmsg.delete();

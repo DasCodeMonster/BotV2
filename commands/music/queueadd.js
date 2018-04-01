@@ -3,6 +3,8 @@ const Queue = require("../../myQueue");
 const {Message} = require("discord.js");
 const getYt = require("../../ytsong");
 const Audioworker = require("../../audioworker");
+const Logger = require("../../logger");
+const util = require("util");
 
 class List extends commando.Command {
     constructor(client) {
@@ -35,6 +37,16 @@ class List extends commando.Command {
      * @param {Object} args 
      */
     async run(message, args) {
+        if(this.client.loggers.has(message.guild.id)){
+            /**
+             * @type {Logger}
+             */
+            var logger = this.client.loggers.get(message.guild.id);
+        }else{
+            var logger = new Logger(message.guild.id);
+            this.client.loggers.set(message.guild.id, logger);
+        }
+        logger.log(message.author.username+"#"+message.author.discriminator, "("+message.author.id+")", "used", this.name, "command in channel:", message.channel.name, "("+message.channel.id+")\nArguments:", util.inspect(args));
         var ID = args.link.id;
         /** 
          * @type {Audioworker}
@@ -54,27 +66,11 @@ class List extends commando.Command {
                 }
             }
         }
-        if (message.guild.voiceConnection) {
-            if (args.link.type ==="single") {
-                this.addSingle(ID, message, args, queue);
-            }
-            else {
-                this.addPlaylist(message, args, ID, queue);
-            }
+        if (args.link.type ==="single") {
+            this.addSingle(ID, message, args, queue);
         }
         else {
-            if (message.member.voiceChannel) {
-                message.member.voiceChannel.join();
-                if (args.link.type === "single") {
-                    this.addSingle(ID, message, args, queue);
-                }
-                else {
-                    this.addPlaylist(message, args, ID, queue);
-                }              
-            }
-            else {
-                message.reply("you need to join a voicechannel first");
-            }
+            this.addPlaylist(message, args, ID, queue);
         }
     }
     /**
@@ -85,18 +81,15 @@ class List extends commando.Command {
      * @param {Queue} queue
      */
     async addSingle(ID, message, args, queue) {
-        var pos;
+        var song = await getYt.Single(args.link.link, message);
         if(args.position === 0){
-            pos = null;
+            queue.add(song);
         }
         else {
-            pos = args.position;
+            queue.add(song, args.position);
         }
-        var song = await getYt.Single(args.link.link, message);
-        await queue.addSingle(message, song, pos);
-        await queue.autoplay(message);
-        // if(message.guild.voiceConnection.dispatcher) return;
-        // else queue.play(message);
+        if(message.guild.voiceConnection && message.guild.voiceConnection.dispatcher) return;        
+        queue.play(message);
     }
     /**
      * 
@@ -106,18 +99,15 @@ class List extends commando.Command {
      * @param {Queue} queue 
      */
     async addPlaylist(message, args, ID, queue) {
-        var pos;
+        var songs = await getYt.Playlist(ID, message);
         if(args.position === 0){
-            pos = null;
+            queue.add(songs);
         }
         else {
-            pos = args.position;
+            queue.add(songs, args.position);
         }
-        var songs = await getYt.Playlist(ID, message);
-        queue.addList(message, songs, pos);
-        queue.autoplay(message);
-        // if(message.guild.voiceConnection.dispatcher) return;
-        // else queue.play(message);
+        if(message.guild.voiceConnection && message.guild.voiceConnection.dispatcher) return;
+        queue.play(message);
     }
     /**
      * 

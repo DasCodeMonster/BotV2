@@ -22,6 +22,9 @@ class LyricsAPI extends EventEmitter {
         this.db;
         this.events = {ready: "ready"}
         this.init();
+        this.on("error", error=>{
+            console.error("%s".error, error);
+        });
     }
     async init(){
         this.db = await sqlite.open("lyrics.sqlite", {promise: Promise});

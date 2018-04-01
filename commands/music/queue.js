@@ -3,6 +3,7 @@ const {Message, ReactionCollector} = require("discord.js");
 const Audioworker = require("../../audioworker");
 const util = require("util");
 const colors = require("colors");
+const Logger = require("../../logger");
 colors.setTheme({
     info: "green",
     debug: "cyan",
@@ -35,6 +36,16 @@ class Queuecommand extends commando.Command {
      * @param {*} args 
      */
     async run(message, args){
+        if(this.client.loggers.has(message.guild.id)){
+            /**
+             * @type {Logger}
+             */
+            var logger = this.client.loggers.get(message.guild.id);
+        }else{
+            var logger = new Logger(message.guild.id);
+            this.client.loggers.set(message.guild.id, logger);
+        }
+        logger.log(message.author.username+"#"+message.author.discriminator, "("+message.author.id+")", "used", this.name, "command in channel:", message.channel.name, "("+message.channel.id+")\nArguments:", util.inspect(args));
         /** 
          * @type {Audioworker}
          */
@@ -45,65 +56,7 @@ class Queuecommand extends commando.Command {
         else{
             var queue = audioworker.queues.get(message.guild.id);
         }
-        await queue.updateQueueMessage();
-        var reactions = queue.getQueue(args.page-1, message).reactions;
-        /**
-         * @type {Message}
-         */
-        var reply = await message.channel.send({embed: await queue.getQueue(args.page-1).embed, split:false});
-        var collector = new ReactionCollector(reply, (reaction, user)=>{
-            if(this.client.user.id === user.id){
-                return false;
-            }
-            var ret = reactions.includes(reaction.emoji.name);
-            reply.reactions.get(reaction.emoji.name).remove(user);
-            return ret;
-        }, {time: 60000});
-        collector.on("collect", async (element, collector)=>{
-            var name = element.emoji.name
-            if(name === "🔁"){
-                if (queue.loop.list) await queue.setLoopList(false);
-                else await queue.setLoopList(true);
-                await reply.edit({embed: await queue.getQueue(args.page-1).embed});
-                await reply.reactions.clear();
-                await this.react(await queue.getQueue(args.page-1).reactions, reply);
-            }
-            if(name === "🔂"){
-                if(queue.loop.song) await queue.setLoopSong(false);
-                else await queue.setLoopSong(true);
-                await reply.edit({embed: await queue.getQueue(args.page-1).embed});
-                await reply.reactions.clear();
-                await this.react(await queue.getQueue(args.page-1).reactions, reply);
-            }
-            if(name === "🔀"){
-                await queue.shuffle();
-                await reply.edit({embed: await queue.getQueue(args.page-1).embed});
-                await reply.reactions.clear();
-                await this.react(await queue.getQueue(args.page-1).reactions, reply);
-            }
-            if(name === "ℹ"){
-                var embed = await queue.songinfo(message, 0);
-                await message.channel.send({embed: embed});
-            }
-            if(name === "⏭"){
-                await queue.skip();
-                await queue.play(message);
-            }
-        });
-        collector.once("end", async (collected, reason)=>{
-            await reply.reactions.forEach((val, key, map)=>{
-                val.users.forEach(async (user, ukey, map)=>{
-                    await val.remove(user);
-                });
-            });
-            console.debug("%s".debug, reason);
-        });
-        collector.on("error", (error)=>{
-            console.error("%s".error, util.inspect(error));
-        });
-        if(reactions.length !== 0){
-            await this.react(reactions, reply);
-        }
+        await queue.sendQueueEmbed(message, args);
     }
     /**
      * 

@@ -3,6 +3,8 @@ const {Message, Collection} = require("discord.js");
 const LyricsAPI = require("../../lyricsAPI");
 const Lyrics = require("../../lyrics");
 const YT = require("../../ytsong");
+const Logger = require("../../logger");
+const util = require("util");
 
 class AddLyrics extends commando.Command {
     constructor(client){
@@ -49,6 +51,16 @@ class AddLyrics extends commando.Command {
      * @param {*} args 
      */
     async run(message, Args){
+        if(this.client.loggers.has(message.guild.id)){
+            /**
+             * @type {Logger}
+             */
+            var logger = this.client.loggers.get(message.guild.id);
+        }else{
+            var logger = new Logger(message.guild.id);
+            this.client.loggers.set(message.guild.id, logger);
+        }
+        logger.log(message.author.username+"#"+message.author.discriminator, "("+message.author.id+")", "used", this.name, "command in channel:", message.channel.name, "("+message.channel.id+")\nArguments:", util.inspect(args));
         var args = {
             /**
              * @type {String}

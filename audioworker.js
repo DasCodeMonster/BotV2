@@ -3,6 +3,7 @@ const QueueConfig = require("./queueConfig");
 const Queue = require("./myQueue");
 const colors = require("colors");
 const sqlite = require("sqlite");
+const {EventEmitter} = require("events");
 
 colors.setTheme({
     info: "green",
@@ -10,27 +11,33 @@ colors.setTheme({
     error: "red",
     warn: "yellow"
 });
-class Audioworker {
+class Audioworker extends EventEmitter{
     /**
      * 
      * @param {Collection<String, QueueConfig>} queueConfigs 
      */
     constructor(client, intervall=60000){
+        super();
         /**
          * @type {Collection<String, Queue>}
          */
         this.queues = new Collection();
         this.intervall = intervall;
-        this.init();
         this.db;
         this.client = client;
+        this.on("error", error=>{
+            console.error("%s".error, error);
+        });
+        this.init().catch(reason=>{
+          this.emit("error", reason);  
+        });
     }
     /**
      * Add a queue for a guild to the audioworker
      * @param {Guild} guild 
      */
     add(guild){
-        var coll = this.queues.set(guild.id, new Queue(new QueueConfig(guild.id)));
+        var coll = this.queues.set(guild.id, new Queue(new QueueConfig(guild.id), this.client));
         return coll.get(guild.id);
     }
     /**
@@ -50,6 +57,7 @@ class Audioworker {
         setInterval((queues, db)=>{
             this.save(queues, db);
         }, this.intervall, this.queues, this.db);
+        this.emit("ready");
     }
     async save(queues, db){
         /** 

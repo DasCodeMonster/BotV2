@@ -3,6 +3,8 @@ const getYt = require("../../ytsong");
 const Queue = require("../../myQueue");
 const Audioworker = require("../../audioworker");
 const {Message} = require("discord.js");
+const Logger = require("../../logger");
+const util = require("util");
 
 class Play extends commando.Command {
     constructor(client) {
@@ -27,6 +29,16 @@ class Play extends commando.Command {
      * @param {Object} args 
      */
     async run(message, args) {
+        if(this.client.loggers.has(message.guild.id)){
+            /**
+             * @type {Logger}
+             */
+            var logger = this.client.loggers.get(message.guild.id);
+        }else{
+            var logger = new Logger(message.guild.id);
+            this.client.loggers.set(message.guild.id, logger);
+        }
+        logger.log(message.author.username+"#"+message.author.discriminator, "("+message.author.id+")", "used", this.name, "command in channel:", message.channel.name, "("+message.channel.id+")\nArguments:", util.inspect(args));
         var ID = args.link.id;
         /** 
          * @type {Audioworker}
@@ -38,50 +50,24 @@ class Play extends commando.Command {
         else{
             var queue = audioworker.queues.get(message.guild.id);
         }
-        if (message.guild.voiceConnection) {
-            if (args.link.type ==="single") {
-                this.addSingle(ID, message, args, queue);
-            }
-            else {
-                this.addPlaylist(message, args, ID, queue);
-            }
+        if (args.link.type ==="single") {
+            // this.addSingle(ID, message, args, queue);
+            var song = await getYt.Single(args.link.link, message).catch(reason=>{
+                queue.logger.error(reason);
+            });
+            await queue.play(message, song).catch(reason=>{
+                queue.logger.error(reason);
+            });
         }
         else {
-            if (message.member.voiceChannel) {
-                message.member.voiceChannel.join();
-                if (args.link.type === "single") {
-                    this.addSingle(ID, message, args, queue);
-                }
-                else {
-                    this.addPlaylist(message, args, ID, queue);
-                }              
-            }
-            else {
-                message.reply("you need to join a voicechannel first");
-            }
+            // this.addPlaylist(message, args, ID, queue);
+            var songs = await getYt.Playlist(ID, message).catch(reason=>{
+                queue.logger.error(reason);
+            });
+            await queue.play(message, songs).catch(reason=>{
+                queue.logger.error(reason);
+            });
         }
-    }
-    /**
-     *  
-     * @param {*} ID 
-     * @param {Message} message
-     * @param {Object} args
-     * @param {Queue} queue
-     */
-    async addSingle(ID, message, args, queue) {
-        var song = await getYt.Single(args.link.link, message);
-        queue.playNow(song, message);
-    }
-    /**
-     * 
-     * @param {Message} message 
-     * @param {Object} args 
-     * @param {*} ID 
-     * @param {Queue} queue 
-     */
-    async addPlaylist(message, args, ID, queue) {
-        var songs = await getYt.Playlist(ID, message);
-        queue.playNowList(songs, message);
     }
     /**
      * 

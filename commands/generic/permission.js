@@ -3,6 +3,8 @@ const {Message} = require("discord.js");
 const commando = require("discord.js-commando");
 const { oneLine, stripIndents } = require('common-tags');
 const disambiguation = require("../../node_modules/discord.js-commando/src/util");
+const Logger = require("../../logger");
+const util = require("util");
 
 class Permission extends commando.Command {
     /**
@@ -62,7 +64,16 @@ class Permission extends commando.Command {
      * @param {*} args 
      */
     async run(message, args) {
-        console.log(args);
+        if(this.client.loggers.has(message.guild.id)){
+            /**
+             * @type {Logger}
+             */
+            var logger = this.client.loggers.get(message.guild.id);
+        }else{
+            var logger = new Logger(message.guild.id);
+            this.client.loggers.set(message.guild.id, logger);
+        }
+        logger.log(message.author.username+"#"+message.author.discriminator, "("+message.author.id+")", "used", this.name, "command in channel:", message.channel.name, "("+message.channel.id+")\nArguments:", util.inspect(args));
         if (args.cmdOrGrp.type === "command"){
             var command = await this.client.provider.get(message.guild, args.cmdOrGrp.value.name, {true:[], false:[], channel: {true: [], false: []}, role:{true: [], false: []}});
             var name = args.cmdOrGrp.value.name;

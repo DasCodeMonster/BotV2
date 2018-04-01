@@ -1,4 +1,6 @@
 const commando = require("discord.js-commando");
+const Logger = require("../../logger");
+const util = require("util");
 
 class JoinRole extends commando.Command {
     constructor(client) {
@@ -20,7 +22,16 @@ class JoinRole extends commando.Command {
         this.roles = [];
     }
     async run(message, args) {
-        console.log(args.role);
+        if(this.client.loggers.has(message.guild.id)){
+            /**
+             * @type {Logger}
+             */
+            var logger = this.client.loggers.get(message.guild.id);
+        }else{
+            var logger = new Logger(message.guild.id);
+            this.client.loggers.set(message.guild.id, logger);
+        }
+        logger.log(message.author.username+"#"+message.author.discriminator, "("+message.author.id+")", "used", this.name, "command in channel:", message.channel.name, "("+message.channel.id+")\nArguments:", util.inspect(args));
         if (this.client.provider.get(message.guild, "joinableRoles")) this.roles = this.client.provider.get(message.guild, "joinableRoles");
         if (this.roles.indexOf(args.role)>-1){
             message.member.addRole(args.role);
