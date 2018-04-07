@@ -31,7 +31,7 @@ class Queue extends EventEmitter {
         this.guildID = queueConfig.guildID;
         if(!this.client.guilds.has(this.guildID)){
             console.log("huh? No guild found");
-            return;
+            // return;
         }
         this.guild = this.client.guilds.get(this.guildID);
         if(this.client.loggers.has(this.guildID)){
@@ -255,7 +255,6 @@ class Queue extends EventEmitter {
         if(this.qReactionCollector !== null){
             this.updateQueueMessage();
         }
-        console.log(1);
         if(this.channel){
             await this.channel.send(`Now playing: ${this.queue.get(0).title}`);
         }else if(this.lastMessage !== null && this.lastMessage !== message){
@@ -263,7 +262,6 @@ class Queue extends EventEmitter {
         }else{
             await message.channel.send(`Now playing: ${this.queue.get(0).title}`);
         }
-        console.log(2);
         await message.guild.voiceConnection.dispatcher.once("end", reason => {
             if (reason) {
                 console.debug("%s".debug, reason);
