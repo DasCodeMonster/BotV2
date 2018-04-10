@@ -1,5 +1,5 @@
 const commando = require("discord.js-commando");
-const {Message, RichEmbed, MessageCollector} = require("discord.js");
+const {Message, MessageEmbed, MessageCollector} = require("discord.js");
 const getYT = require("../../ytsong");
 const Queue = require("../../myQueue");
 const Audioworker = require("../../audioworker");
@@ -50,7 +50,7 @@ class Search extends commando.Command {
             var queue = audioworker.queues.get(message.guild.id);
         }
         var songs = await getYT.search(message, args.query);
-        var embed = new RichEmbed({
+        var embed = new MessageEmbed({
             title: "Search result:"
         }).setTimestamp(new Date()).setDescription("Type the number of the song you want to play **NOW** or copy the link, `cancel` the command, and add it to the queue manually")
         .setColor(666);

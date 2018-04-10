@@ -1,8 +1,8 @@
 const ArgumentType = require("../node_modules/discord.js-commando/src/types/base");
 
-class CommandArgument extends ArgumentType {
+class MyCommandArgument extends ArgumentType {
     constructor(client) {
-        super(client, "command");
+        super(client, "mycommand");
     }
     validate(value, msg) {
         if (value.split(":").length === 2 &&value.split(":")[0] !== value && value.split(":")[1] !== value) {
@@ -55,4 +55,4 @@ class CommandArgument extends ArgumentType {
         if (isCommand == true) return Command;
     }
 }
-module.exports = CommandArgument;
+module.exports = MyCommandArgument;

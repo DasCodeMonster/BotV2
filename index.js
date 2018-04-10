@@ -10,36 +10,39 @@ const Audioworker = require("./audioworker");
 const LyricsAPI = require("./lyricsAPI");
 const colors = require("colors");
 const Logger = require("./logger");
+
+const MYoption = require("./Types/option");
+// console.log(new MYoption("h") instanceof Commando.ArgumentType);
 colors.setTheme({
     info: "green",
     debug: "cyan",
     error: "red",
     warn: "yellow"
 });
-/**
- * @type {Client}
- */
+// /**
+//  * @type {Client}
+//  */
 const client = new Commando.Client({
     owner: keys.OwnerID,
-    unknownCommandResponse: false,
+    unknownCommandResponse: false
 });
 process.title = "MyBotV2";
 client.registry.registerGroup("music", "Music commands");
-client.registry.registerGroup("fun", "Fun commands");
+// client.registry.registerGroup("fun", "Fun commands");
 client.registry.registerGroup("other", "other commands");
 client.registry.registerGroup("points", "Commands related to your points");
 client.registry.registerGroup("generic", "Generic commands");
 client.registry.registerGroup("test", "only for testing");
 client.registry.registerDefaults();
-client.registry.registerType("option");
-client.registry.registerType("search");
+// client.registry.registerType("option");
+// client.registry.registerType("search");
 //client.registry.registerType("role_or_user_or_channel");
 //client.registry.registerType("commandname");
 // client.registry.registerType("song_or_list");
 // client.registry.registerType("optionalbool");
 // client.registry.registerType("commandgroup");
 // client.registry.registerType("command");
-client.registry.registerType("ytlink");
+// client.registry.registerType("ytlink");
 client.registry.registerTypesIn(path.join(__dirname, "Types"));
 client.registry.registerCommandsIn(path.join(__dirname, 'commands'));
 client.setProvider(
@@ -108,7 +111,7 @@ client.on("clientUserSettingsUpdate", clientUserSettings => {
 
 });
 client.on("debug", info => {
-
+    // console.log(info);
 });
 client.on("disconnect", event => {
 
@@ -229,7 +232,7 @@ process.once('SIGINT', () => {
 });
 process.on("uncaughtException", (error)=>{
     console.error(error);
-})
+});
 process.on('unhandledRejection', (reason, p) => {
     console.error("Unhandled Rejection at:".error);
     console.error("%s".error, util.inspect(p));

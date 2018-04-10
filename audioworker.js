@@ -42,6 +42,18 @@ class Audioworker extends EventEmitter{
     }
     /**
      * 
+     * @param {String} guildID 
+     */
+    delete(guildID){
+        console.log(this.queues, guildID);
+        if(this.queues.has(guildID)){
+            return this.queues.delete(guildID);
+        }else{
+            return false;
+        }
+    }
+    /**
+     * 
      * @param {Function} callback 
      */
     async init(){
@@ -55,10 +67,17 @@ class Audioworker extends EventEmitter{
             });
         }
         setInterval((queues, db)=>{
-            this.save(queues, db);
+            this.save(queues, db).catch(error=>{
+                console.error("%s".error, error);
+            });
         }, this.intervall, this.queues, this.db);
         this.emit("ready");
     }
+    /**
+     * 
+     * @param {Collection<String, Queue>} queues 
+     * @param {*} db 
+     */
     async save(queues, db){
         /** 
          * @type {Collection<String, QueueConfig>}

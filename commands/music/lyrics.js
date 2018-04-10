@@ -1,5 +1,5 @@
 const commando = require("discord.js-commando");
-const {Message, Collection, RichEmbed, Util, MessageCollector} = require("discord.js");
+const {Message, Collection, MessageEmbed, Util, MessageCollector} = require("discord.js");
 const LyricsAPI = require("../../lyricsAPI");
 const Lyrics = require("../../lyrics");
 const util = require("util");
@@ -74,7 +74,7 @@ class LyricsCommand extends commando.Command {
             var lyrics = this.client.LyricsAPI.searchTitle(args.q);
         }
         if(lyrics.length !== 0){
-            var embed = new RichEmbed({
+            var embed = new MessageEmbed({
                 title: "Search result:"
             }).setTimestamp(new Date()).setDescription("Type the number of the lyrics you want to display")
             .setColor(666);
@@ -105,7 +105,7 @@ class LyricsCommand extends commando.Command {
                 var split = Util.splitMessage(lyrics[num-1].lyrics, {maxLength: 2047, char: "\n"});
                 if (util.isArray(split)){
                     split.forEach((text, index, array)=>{
-                        let embed = new RichEmbed().setColor(666).setTimestamp(new Date()).setTitle(`Lyrics: ${lyrics[num-1].title}`).setDescription(text).setFooter(`Requested by ${message.author.username} || Page ${index+1} of ${split.length}`, message.author.avatarURL);
+                        let embed = new MessageEmbed().setColor(666).setTimestamp(new Date()).setTitle(`Lyrics: ${lyrics[num-1].title}`).setDescription(text).setFooter(`Requested by ${message.author.username} || Page ${index+1} of ${split.length}`, message.author.avatarURL);
                         if(lyrics[num-1].links.length !== 0){
                             embed.setURL(`https://www.youtube.com/watch?v=${lyrics[num-1].links[0]}`);
                         }
@@ -114,7 +114,7 @@ class LyricsCommand extends commando.Command {
                     console.log(lyrics[num-1].id);
                 }
                 else {
-                    let embed = new RichEmbed().setColor(666).setTimestamp(new Date()).setTitle(`Lyrics: ${lyrics[num-1].title}`).setDescription(lyrics[num-1].lyrics).setFooter(`Requested by ${message.author.username}`, message.author.avatarURL);
+                    let embed = new MessageEmbed().setColor(666).setTimestamp(new Date()).setTitle(`Lyrics: ${lyrics[num-1].title}`).setDescription(lyrics[num-1].lyrics).setFooter(`Requested by ${message.author.username}`, message.author.avatarURL);
                     if(lyrics[num-1].links.length !== 0){
                         embed.setURL(`https://www.youtube.com/watch?v=${lyrics[num-1].links[0]}`);
                     }

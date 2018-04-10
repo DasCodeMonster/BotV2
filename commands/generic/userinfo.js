@@ -1,5 +1,5 @@
 const commando = require("discord.js-commando");
-const {Message, RichEmbed} = require("discord.js");
+const {Message, MessageEmbed} = require("discord.js");
 const Logger = require("../../logger");
 const util = require("util");
 
@@ -51,7 +51,7 @@ class Userinfo extends commando.Command {
         roles.forEach((role, index, array)=>{
             roleString += role.toString()+"\n";
         });
-        var embed = new RichEmbed()
+        var embed = new MessageEmbed()
         .setAuthor(user.username+"#"+user.discriminator, user.displayAvatarURL)
         .setColor(666)
         .setThumbnail(user.displayAvatarURL)
