@@ -51,7 +51,7 @@ client.dispatcher.addInhibitor(msg=>{
 });
 
 client.on("ready", () => {
-    let PM = new PermissionManager(client);
+    const PM = new PermissionManager(client);
     try{
     /**
      * @type {Collection<String,Logger>}

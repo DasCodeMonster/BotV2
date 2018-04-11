@@ -24,7 +24,7 @@
     "colors": "^1.2.1",
     "curl": "^0.1.4",
     "discord.js": "github:discordjs/discord.js",
-    "discord.js-commando": "github:discordjs/Commando",
+    "discord.js-commando": "github:discordjs/discord.js-commando",
     "eslint": "^4.19.1",
     "googleapis": "^26.0.1",
     "libsodium-wrappers": "^0.7.3",
