@@ -1,5 +1,5 @@
 const {Collection, Client} = require("discord.js");
-const Commando = require('discord.js-commando');
+const {CommandoClient, SQLiteProvider} = require('discord.js-commando');
 const time = require("node-datetime");
 const path = require('path');
 const sqlite = require('sqlite');
@@ -10,9 +10,7 @@ const Audioworker = require("./audioworker");
 const LyricsAPI = require("./lyricsAPI");
 const colors = require("colors");
 const Logger = require("./logger");
-
-const MYoption = require("./Types/option");
-// console.log(new MYoption("h") instanceof Commando.ArgumentType);
+const PermissionManager = require("./permissionManager");
 colors.setTheme({
     info: "green",
     debug: "cyan",
@@ -22,7 +20,7 @@ colors.setTheme({
 // /**
 //  * @type {Client}
 //  */
-const client = new Commando.Client({
+const client = new CommandoClient({
     owner: keys.OwnerID,
     unknownCommandResponse: false
 });
@@ -46,13 +44,15 @@ client.registry.registerDefaults();
 client.registry.registerTypesIn(path.join(__dirname, "Types"));
 client.registry.registerCommandsIn(path.join(__dirname, 'commands'));
 client.setProvider(
-    sqlite.open(path.join(__dirname, 'settings.sqlite3')).then(db => new Commando.SQLiteProvider(db))
+    sqlite.open(path.join(__dirname, 'settings.sqlite3')).then(db => new SQLiteProvider(db))
 ).catch(console.error);
 client.dispatcher.addInhibitor(msg=>{
     // if(msg.author.id === "221047590681051152") return "Test!"
 });
 
 client.on("ready", () => {
+    let PM = new PermissionManager(client);
+    try{
     /**
      * @type {Collection<String,Logger>}
      */
@@ -68,6 +68,9 @@ client.on("ready", () => {
             console.info(colors.info("bot startet"));
         });
     });
+    }catch(e){
+        console.log(e);
+    }
     // function repeatEvery(func, interval) {
     //     // Check current time and calculate the delay until next interval
     //     var now = new Date(),
