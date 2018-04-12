@@ -11,6 +11,7 @@ const LyricsAPI = require("./lyricsAPI");
 const colors = require("colors");
 const Logger = require("./logger");
 const PermissionManager = require("./permissionManager");
+const {BotToken, OwnerID, YoutubeAPIKey} = require("./tokens");
 colors.setTheme({
     info: "green",
     debug: "cyan",
@@ -21,7 +22,7 @@ colors.setTheme({
 //  * @type {Client}
 //  */
 const client = new CommandoClient({
-    owner: keys.OwnerID,
+    owner: OwnerID,
     unknownCommandResponse: false
 });
 process.title = "MyBotV2";
@@ -51,23 +52,25 @@ client.dispatcher.addInhibitor(msg=>{
 });
 
 client.on("ready", () => {
-    const PM = new PermissionManager(client);
     try{
-    /**
-     * @type {Collection<String,Logger>}
-     */
-    let loggers = new Collection();
-    client.guilds.forEach((guild, ID)=>{
-        loggers.set(ID, new Logger(ID));
-    });
-    client.loggers = loggers
-    client.Audioworker = new Audioworker(client, 60000);
-    client.Audioworker.once("ready", ()=>{
-        client.LyricsAPI = new LyricsAPI();
-        client.LyricsAPI.once("ready", ()=>{
-            console.info(colors.info("bot startet"));
+        client.YoutubeAPIKey = YoutubeAPIKey;
+        const PM = new PermissionManager(client);
+        client.PM = PM;
+        /**
+         * @type {Collection<String,Logger>}
+         */
+        let loggers = new Collection();
+        client.guilds.forEach((guild, ID)=>{
+            loggers.set(ID, new Logger(ID));
         });
-    });
+        client.loggers = loggers
+        client.Audioworker = new Audioworker(client, 60000);
+        client.Audioworker.once("ready", ()=>{
+            client.LyricsAPI = new LyricsAPI();
+            client.LyricsAPI.once("ready", ()=>{
+                console.info(colors.info("bot startet"));
+            });
+        });
     }catch(e){
         console.log(e);
     }
@@ -223,7 +226,7 @@ client.on("warn", info => {
     console.warn("%s".warn, info);
 });
 console.info(colors.info("bot is logging in..."));
-client.login(keys.BotToken).catch(console.error);
+client.login(BotToken).catch(console.error);
 console.info(colors.info("bot is logged in"));
 
 process.once('SIGINT', () => {

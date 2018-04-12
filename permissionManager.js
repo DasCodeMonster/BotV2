@@ -1,5 +1,6 @@
 const {Collection, Client, User, GuildMember} = require("discord.js");
 const {CommandoClient, Command} = require("discord.js-commando");
+const {standardCommandPermissions} = require("./tokens");
 
 class PermissionManager {
     /**
@@ -13,53 +14,7 @@ class PermissionManager {
         this.commands = client.registry.commands;
         this.guilds = client.guilds;
         this.permissions = new Collection();
-        this.standards = {
-            disable: false,
-            enable: false,
-            groups: false,
-            load: false,
-            reload: false,
-            unload: false,
-
-            eval: false,
-            help: true,
-            ping: true,
-            prefix: false,
-
-            addrole: false,
-            ban: false,
-            invite: true,
-            joinrole: true,
-            leaverole: true,
-            permission: false,
-            removerole: false,
-            twitch: true,
-            userinfo: true,
-
-            addlyrics: true,
-            join: true,
-            leave: true,
-            loop: true,
-            lyrics: true,
-            pause: true,
-            play: true,
-            queueremove: true,
-            queue: true,
-            queueadd: true,
-            record: false,
-            removelyrics: false,
-            resetmusicchannel: true,
-            resume: true,
-            search: true,
-            setmusicchannel: true,
-            setvolume: true,
-            shuffle: true,
-            skip: true,
-            songinfo: true,
-
-            give: true,
-            points: true
-        };
+        this.standards = standardCommandPermissions;
         this.alwaysTrue = [];
         this.users.forEach(user=>{
             let obj = {};           
@@ -114,6 +69,7 @@ class PermissionManager {
             obj[key] = val;
         });
         this.client.provider.set(member.guild, "Permissions", obj);
+        return true;
     }
     /**
      * 

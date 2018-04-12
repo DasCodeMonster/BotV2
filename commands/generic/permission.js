@@ -1,10 +1,11 @@
-const {CommandArgument, CommandoClient, CommandMessage } = require("discord.js-commando");
-const {Message} = require("discord.js");
+const {CommandArgument, CommandoClient, CommandMessage, CommandGroup, Command, Argument, ArgumentCollector} = require("discord.js-commando");
+const {Message, Role, Channel, GuildMember, GuildChannel, TextChannel} = require("discord.js");
 const commando = require("discord.js-commando");
 const { oneLine, stripIndents } = require('common-tags');
 const disambiguation = require("../../node_modules/discord.js-commando/src/util");
 const Logger = require("../../logger");
 const util = require("util");
+const PermissionManager = require("../../permissionManager");
 
 class Permission extends commando.Command {
     /**
@@ -20,34 +21,36 @@ class Permission extends commando.Command {
             description: "you can decide which users can use which commands.",
             guildOnly: true,
             args:[{
-                key: 'cmdOrGrp',
+                key: 'commandORgroup',
 				label: 'command/group',
-				prompt: 'Which command or group would you like to change the permissions?',
-				validate: val => {
-					if(!val) return false;
-					const groups = this.client.registry.findGroups(val);
-					if(groups.length === 1) return true;
-					const commands = this.client.registry.findCommands(val);
-					if(commands.length === 1) return true;
-					if(commands.length === 0 && groups.length === 0) return false;
-					return stripIndents`
-						${commands.length > 1 ? disambiguation(commands, 'commands') : ''}
-						${groups.length > 1 ? disambiguation(groups, 'groups') : ''}
-					`;
-				},
-				parse: val => {
-                    if(this.client.registry.findGroups(val)[0]){
-                        return {type: "group", value: this.client.registry.findGroups(val)[0]};
-                    }
-                    else if(this.client.registry.findCommands(val)[0]){
-                        return {type: "command", value: this.client.registry.findCommands(val)[0]};
-                    }
-                }
+                prompt: 'Which command or group would you like to change the permissions?',
+                type: "command|group",
+                // validate: val=>true
+				// validate: val => {
+				// 	if(!val) return false;
+				// 	const groups = this.client.registry.findGroups(val);
+				// 	if(groups.length === 1) return true;
+				// 	const commands = this.client.registry.findCommands(val);
+				// 	if(commands.length === 1) return true;
+				// 	if(commands.length === 0 && groups.length === 0) return false;
+				// 	return stripIndents`
+				// 		${commands.length > 1 ? disambiguation(commands, 'commands') : ''}
+				// 		${groups.length > 1 ? disambiguation(groups, 'groups') : ''}
+				// 	`;
+				// },
+				// parse: val => {
+                //     if(this.client.registry.findGroups(val)[0]){
+                //         return {type: "group", value: this.client.registry.findGroups(val)[0]};
+                //     }
+                //     else if(this.client.registry.findCommands(val)[0]){
+                //         return {type: "command", value: this.client.registry.findCommands(val)[0]};
+                //     }
+                // }
             }, {
-                key: "group",
-                label: "role/user",
-                prompt: "you need to mention a role or user",
-                type: "role_or_user_or_channel"
+                key: "roleORmemberORchannel",
+                label: "role/member",
+                prompt: "you need to mention a role or user or name a textchannel",
+                type: "role|member|textchannel"
             }, {
                 key: "boolean",
                 label: "boolean",
@@ -74,6 +77,49 @@ class Permission extends commando.Command {
             this.client.loggers.set(message.guild.id, logger);
         }
         logger.log(message.author.username+"#"+message.author.discriminator, "("+message.author.id+")", "used", this.name, "command in channel:", message.channel.name, "("+message.channel.id+")\nArguments:", util.inspect(args));
+        return;
+        /**
+         * @type {PermissionManager}
+         */
+        const PM = this.client.PM;
+        if(args.commandORgroup instanceof CommandGroup){
+            /**
+             * @type {CommandGroup}
+             */
+            let group = args.commandORgroup;
+            group.commands.forEach(command=>{
+                if(args.roleORmemberORchannel instanceof GuildMember){
+                    /**
+                     * @type {GuildMember}
+                     */
+                    let member = args.roleORmemberORchannel;
+                    let res = PM.set(command, member, args.boolean);
+                    if(res !== true){
+                        logger.warn(res);
+                    }
+                }else if(args.roleORmemberORchannel instanceof Role){
+                    /**
+                     * @type {Role}
+                     */
+                    let role = args.roleORmemberORchannel;
+                    role.members.forEach(member=>{
+                        let res = PM.set(command, member, args.boolean);
+                        if(res !== true){
+                            logger.warn(res);
+                        }
+                    });
+                }else if(args.roleORmemberORchannel instanceof Channel){
+                    /**
+                     * @type {TextChannel}
+                     */
+                    let channel = args.roleORmemberORchannel;
+
+                }
+            });
+        }
+        PM.set()
+
+        return;
         if (args.cmdOrGrp.type === "command"){
             var command = await this.client.provider.get(message.guild, args.cmdOrGrp.value.name, {true:[], false:[], channel: {true: [], false: []}, role:{true: [], false: []}});
             var name = args.cmdOrGrp.value.name;

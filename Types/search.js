@@ -6,7 +6,7 @@ class Search extends ArgumentType {
         this.option = new Set(["-s"]);
     }
     validate(value, msg , arg) {
-        console.log(arg);
+        // console.log(arg);
         const lc = value.toLowerCase();
         return this.option.has(lc);
     }
