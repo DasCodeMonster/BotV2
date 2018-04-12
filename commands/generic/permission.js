@@ -77,7 +77,6 @@ class Permission extends commando.Command {
             this.client.loggers.set(message.guild.id, logger);
         }
         logger.log(message.author.username+"#"+message.author.discriminator, "("+message.author.id+")", "used", this.name, "command in channel:", message.channel.name, "("+message.channel.id+")\nArguments:", util.inspect(args));
-        return;
         /**
          * @type {PermissionManager}
          */
@@ -113,7 +112,7 @@ class Permission extends commando.Command {
                      * @type {TextChannel}
                      */
                     let channel = args.roleORmemberORchannel;
-
+                    PM.set(command, channel, args.boolean);
                 }
             });
         }
