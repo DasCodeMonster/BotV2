@@ -81,6 +81,8 @@ class Permission extends commando.Command {
          * @type {PermissionManager}
          */
         const PM = this.client.PM;
+        PM.set(args.commandORgroup, args.roleORmemberORchannel, args.boolean);
+        return;
         if(args.commandORgroup instanceof CommandGroup){
             /**
              * @type {CommandGroup}
@@ -112,7 +114,7 @@ class Permission extends commando.Command {
                      * @type {TextChannel}
                      */
                     let channel = args.roleORmemberORchannel;
-                    PM.set(command, channel, args.boolean);
+                    PM.set()
                 }
             });
         }
@@ -207,21 +209,36 @@ class Permission extends commando.Command {
     }
     /**
      * 
-     * @param {Message} message 
-     * @param {*} args 
-     * @returns {boolean}
+     * @param {CommandMessage} message 
      */
-    hasPermission(message, args){
-        var command = this.client.provider.get(message.guild, this.name, {true:[], false:[], channel: {true: [], false: []}, role:{true: [], false: []}})
-        // if (message.member.hasPermission("ADMINISTRATOR")|| command.true.indexOf(message.author.id) != -1 || command.channel.true.indexOf(message.channel.id)>-1 || role(message, command)){
-        if(message.member.hasPermission("ADMINISTRATOR")){
-            return true;
-        }
-        if(command.false.indexOf(message.author.id)>-1||command.channel.false.indexOf(message.channel.id)>-1||role(message, command)) return false;
-        else {
-            return true;
-        }
+    hasPermission(message){
+        /**
+        * @type {PermissionManager}
+        */
+        const PM = this.client.PM;
+        return PM.get(message.command, message.member) || "You dont have enough permissions" ;
     }
+    // /**
+    //  * 
+    //  * @param {Message} message 
+    //  * @returns {boolean}
+    //  */
+    // hasPermission(message, args){ 
+    //     /**
+    //     * @type {PermissionManager}
+    //     */
+    //     const PM = this.client.PM;
+    //     return PM.get()
+    // //     var command = this.client.provider.get(message.guild, this.name, {true:[], false:[], channel: {true: [], false: []}, role:{true: [], false: []}})
+    // //     // if (message.member.hasPermission("ADMINISTRATOR")|| command.true.indexOf(message.author.id) != -1 || command.channel.true.indexOf(message.channel.id)>-1 || role(message, command)){
+    // //     if(message.member.hasPermission("ADMINISTRATOR")){
+    // //         return true;
+    // //     }
+    // //     if(command.false.indexOf(message.author.id)>-1||command.channel.false.indexOf(message.channel.id)>-1||role(message, command)) return false;
+    // //     else {
+    // //         return true;
+    // //     }
+    // }
 }
 /**
  * @param {*} command

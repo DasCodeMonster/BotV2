@@ -6,3 +6,4 @@ settings.sqlite3
 localToken.json
 .vscode
 Logs/
+tokens.js

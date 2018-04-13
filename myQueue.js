@@ -221,7 +221,7 @@ class Queue extends EventEmitter {
         if(message.guild.voiceConnection.dispatcher){
             message.guild.voiceConnection.dispatcher.end("skip");
         }else{
-            await message.guild.voiceConnection.play(ytdl(this.queue.get(0).ID, {filter: "audioonly"}), {volume: this.volume/100});
+            await message.guild.voiceConnection.play(ytdl(this.queue.get(0).ID, {filter: "audioonly"}), {volume: this.volume/100, passes: 2});
             if(this.channel){
                 await this.channel.send(`Now playing: ${this.queue.get(0).title}`);
             }else if(this.lastMessage !== null && this.lastMessage !== message){
@@ -253,7 +253,11 @@ class Queue extends EventEmitter {
             this.updateQueueMessage();
             return;
         }
-        await message.guild.voiceConnection.play(ytdl(this.queue.get(0).ID, {filter: "audioonly"}), {volume: this.volume/100});
+        if(!message.guild.voiceConnection){
+            this.logger.error(new Error("No voiceConnection"))
+            return;
+        }
+        await message.guild.voiceConnection.play(ytdl(this.queue.get(0).ID, {filter: "audioonly"}), {volume: this.volume/100, passes: 2});
         if(this.qReactionCollector !== null){
             this.updateQueueMessage();
         }
@@ -703,21 +707,28 @@ class Queue extends EventEmitter {
     record(user){
         // if(!user.voiceChannel) return false;
         // if(!user.voiceChannel.connection) return false;
+        // const Opus = require("node-opus");
+        // const {spawn} = require("child_process");
+        // const {FFmpeg, opus, OggOpusDemuxer} = require("prism-media");
+        // // let encoder = new opus.Encoder();
+        // let ffmpeg = new FFmpeg(["./file.mp3"]);
+        // let demuxer = new OggOpusDemuxer()
+        // let encoder = new Opus.Encoder(48000, 2 , 480);
+        // let decoder = new Opus.Decoder(48000, 2, 480);
         const fs = require("fs");
-        let file = fs.createWriteStream("./file.opus");
+        let file = fs.createWriteStream("./file.ogg");
         let receiver = user.voiceChannel.connection.createReceiver();
-        receiver.on("opus", (user, buffer)=>{
-            file.write(buffer);
+        let stream = receiver.createStream(user, {mode: "opus"});
+        stream.on("data", data=>{
+            console.log(data);
+            // file.write(data);
         });
-        receiver.createStream(user, {mode: "opus"});
-        // receiver.createPCMStream(user);
-        // receiver.on("pcm", (user, buffer)=>{
-        //     file.write(buffer);
+        stream.pipe(file);
+        // stream.on("close", ()=>{
+        //     spawn("ffmpeg -i ./file.opus -y ./file.mp3");
         // });
-        receiver.on("warn", (reason, message)=>{
-            console.log(reason, message);
-        });
-        // let write = stream.pipe(file);
+        // stream.setEncoding("binary");
+        // stream.pipe(file);
     }
 }
 module.exports = Queue;
