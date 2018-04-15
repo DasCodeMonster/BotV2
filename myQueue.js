@@ -219,7 +219,7 @@ class Queue extends EventEmitter {
         }
         this.lastMessage = message;
         if(message.guild.voiceConnection.dispatcher){
-            message.guild.voiceConnection.dispatcher.end("skip");
+            message.guild.voiceConnection.dispatcher.emit("finish", "skip");
         }else{
             await message.guild.voiceConnection.play(ytdl(this.queue.get(0).ID, {filter: "audioonly"}), {volume: this.volume/100, passes: 2});
             if(this.channel){
@@ -229,7 +229,7 @@ class Queue extends EventEmitter {
             }else{
                 await message.channel.send(`Now playing: ${this.queue.get(0).title}`);
             }
-            await message.guild.voiceConnection.dispatcher.once("end", reason=>{
+            await message.guild.voiceConnection.dispatcher.once("finish", reason=>{
                 if(reason){
                     console.debug("%s".debug, reason);
                     if(reason === "disconnect"){
@@ -268,7 +268,7 @@ class Queue extends EventEmitter {
         }else{
             await message.channel.send(`Now playing: ${this.queue.get(0).title}`);
         }
-        await message.guild.voiceConnection.dispatcher.once("end", reason => {
+        await message.guild.voiceConnection.dispatcher.once("finish", reason => {
             if (reason) {
                 console.debug("%s".debug, reason);
                 if(reason === "disconnect"){
@@ -705,30 +705,93 @@ class Queue extends EventEmitter {
      * @param {GuildMember} user 
      */
     record(user){
-        // if(!user.voiceChannel) return false;
-        // if(!user.voiceChannel.connection) return false;
-        // const Opus = require("node-opus");
-        // const {spawn} = require("child_process");
-        // const {FFmpeg, opus, OggOpusDemuxer} = require("prism-media");
-        // // let encoder = new opus.Encoder();
-        // let ffmpeg = new FFmpeg(["./file.mp3"]);
-        // let demuxer = new OggOpusDemuxer()
-        // let encoder = new Opus.Encoder(48000, 2 , 480);
-        // let decoder = new Opus.Decoder(48000, 2, 480);
-        const fs = require("fs");
-        let file = fs.createWriteStream("./file.ogg");
-        let receiver = user.voiceChannel.connection.createReceiver();
-        let stream = receiver.createStream(user, {mode: "opus"});
-        stream.on("data", data=>{
-            console.log(data);
-            // file.write(data);
-        });
-        stream.pipe(file);
-        // stream.on("close", ()=>{
-        //     spawn("ffmpeg -i ./file.opus -y ./file.mp3");
-        // });
-        // stream.setEncoding("binary");
-        // stream.pipe(file);
+        try{
+
+            // if(!user.voiceChannel) return false;
+            // if(!user.voiceChannel.connection) return false;
+            const {OpusEncoder, Decoder, Encoder} = require("node-opus");
+            // const {spawn} = require("child_process");
+            const {FFmpeg, opus, OggOpusDemuxer} = require("prism-media");
+            // // let encoder = new opus.Encoder();
+            // let ffmpeg = new FFmpeg(["./file.mp3"]);
+            // let demuxer = new OggOpusDemuxer()
+            let opusencoder = new OpusEncoder(48000);
+            // let decoder = new Opus.Decoder(48000, 2, 480);
+            const ogg = require("ogg");
+            const fs = require("fs");
+            let file = fs.createWriteStream("./file.opus");
+            let receiver = user.voiceChannel.connection.createReceiver();
+            let stream = receiver.createStream(user, {mode: "pcm"});
+            let buffer;
+            let rate = 48000
+            let encoder = new Encoder(rate, 2, rate/2);
+            let decoder = new Decoder(rate, 2, rate/2);
+            let oggEncoder = new ogg.Encoder()
+            let prismEncoder = new opus.Encoder({channels:2, rate: 48000, frameSize: 960});
+            let bufs = [];
+            stream.on("data", data=>{
+                console.log("raw:");
+                console.log(data);
+                // bufs.push(data);
+                // let oggstream = oggEncoder.stream();
+                prismEncoder.write(data);
+                // encoder.write(data);
+                // if(!buffer){
+                    //     buffer = new Buffer(data.toString());
+                    // }else{
+                        //     buffer.write(data.toString());
+                        //     console.log(buffer);
+                        // }
+                        // file.write(data, "utf16le");
+                        // file.write(data);
+                    });
+                    // encoder.pipe(file);
+                    // stream.pipe( prismEncoder );
+            prismEncoder.on("data", data=>{
+                console.log("prism:");
+                console.log(data)
+                bufs.push(data);
+                // file.write(data);
+            });
+            prismEncoder.on("end", ()=>{
+                console.log("end");
+                let buffer = Buffer.concat(bufs);
+                file.write(buffer);
+            })
+            stream.on("end", ()=>{
+                prismEncoder.end();
+                // let buffer = Buffer.concat(bufs);
+                // file.write(buffer);
+            });
+            // stream.pipe(prismEncoder).pipe(file);
+            // stream.pipe(prismEncoder).pipe(oggEncoder.stream());
+            // oggEncoder.pipe(file);
+            // console.log(oggEncoder.use(encoder));
+            // let oggEncoderstream  = new Encoder().stream();
+            // stream.on("end", ()=>{
+            //     console.log("end");
+            //     console.log(encoder);
+            //     O
+            //     let encoded = opusencoder.encode(buffer);
+            //     console.log(encoded);
+            //     file.write(encoded);
+            // });
+            // stream.on("close", ()=>{
+            //     console.log("close");
+            //     let encoded = encoder.encode(buffer);
+            //     console.log(encoded);
+            //     file.write(encoded);
+            // });
+            // console.log(oggEncoderstream);
+            // stream.pipe(oggEncoderstream).pipe(file);
+            // stream.on("close", ()=>{
+                //     spawn("ffmpeg -i ./file.opus -y ./file.mp3");
+                // });
+                // stream.setEncoding("binary");
+                // stream.pipe(file);
+        }catch(e){
+            console.log(e);
+        }
     }
 }
 module.exports = Queue;

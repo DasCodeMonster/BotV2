@@ -32,6 +32,7 @@
     "moment-duration-format": "^2.2.2",
     "node-datetime": "^2.0.6",
     "node-opus": "^0.2.7",
+    "ogg": "^1.2.5",
     "prism-media": "github:hydrabolt/prism-media",
     "q": "^1.5.1",
     "sifter": "^0.5.3",
