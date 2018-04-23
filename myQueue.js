@@ -7,6 +7,9 @@ const colors = require("colors");
 const util = require("util");
 const {EventEmitter} = require("events");
 const Logger = require("./logger");
+const {spawn} = require("child_process");
+const fs = require("fs");
+
 colors.setTheme({
     info: "green",
     debug: "cyan",
@@ -702,93 +705,67 @@ class Queue extends EventEmitter {
     }
     /**
      * 
-     * @param {GuildMember} user 
+     * @param {GuildMember} member
+     * @param {String} name
+     * @param {Message} message
      */
-    record(user){
+    async record(member, name, message){
         try{
+            if(name.endsWith(".opus")){
+                name = name.split(".opus")[0];
+            }
+            if(!name.match("^[a-zA-Z0-9]{1,20}$")){
+                return new Error("No special characters allowed");
+            }
+            if(!fs.existsSync("./Audio")){
+                fs.mkdirSync("./Audio");
+            }
+            if(!fs.existsSync("./Audio/"+member.guild.id)){
+                fs.mkdirSync("./Audio/"+member.guild.id);
+            }
+            if(fs.existsSync("./Audio/"+member.guild.id+"/"+name+".opus")){
+                let reply = await message.reply("A file with this name does already exist! Do you want to overwrite it?");
+                reply.react("❌");
+                reply.react("✅");
+                let validReactions = ["❌", "✅"];
+                let collector = new ReactionCollector(reply, (reaction, user)=>{
+                    return user.id === member.id && validReactions.includes(reaction.emoji.name);
+                }, {time: 15000, maxEmojis: 1});
+                collector.on("collect", (reaction, user)=>{
+                    reply.delete();
+                    if(reaction.emoji.name === "✅"){
+                        this.transcode(member, name);
+                    }else{
+                        return;
+                    }
+                });
+                collector.on("end", ()=>{
+                    reply.delete();
+                });
+                return;
+            }
+            this.transcode(member, name); 
+        }catch(e){
+            console.log(e);
+        }
+    }
+    /**
+     * 
+     * @param {GuildMember} member 
+     */
+    transcode(member, name){
+        try{
+            let receiver = member.voiceChannel.connection.createReceiver();
+            let stream = receiver.createStream(member, {mode: "pcm"});
+            receiver.on("debug", info=>{
+                console.log(info);
+            });
 
-            // if(!user.voiceChannel) return false;
-            // if(!user.voiceChannel.connection) return false;
-            const {OpusEncoder, Decoder, Encoder} = require("node-opus");
-            // const {spawn} = require("child_process");
-            const {FFmpeg, opus, OggOpusDemuxer} = require("prism-media");
-            // // let encoder = new opus.Encoder();
-            // let ffmpeg = new FFmpeg(["./file.mp3"]);
-            // let demuxer = new OggOpusDemuxer()
-            let opusencoder = new OpusEncoder(48000);
-            // let decoder = new Opus.Decoder(48000, 2, 480);
-            const ogg = require("ogg");
-            const fs = require("fs");
-            let file = fs.createWriteStream("./file.opus");
-            let receiver = user.voiceChannel.connection.createReceiver();
-            let stream = receiver.createStream(user, {mode: "pcm"});
-            let buffer;
-            let rate = 48000
-            let encoder = new Encoder(rate, 2, rate/2);
-            let decoder = new Decoder(rate, 2, rate/2);
-            let oggEncoder = new ogg.Encoder()
-            let prismEncoder = new opus.Encoder({channels:2, rate: 48000, frameSize: 960});
-            let bufs = [];
-            stream.on("data", data=>{
-                console.log("raw:");
-                console.log(data);
-                // bufs.push(data);
-                // let oggstream = oggEncoder.stream();
-                prismEncoder.write(data);
-                // encoder.write(data);
-                // if(!buffer){
-                    //     buffer = new Buffer(data.toString());
-                    // }else{
-                        //     buffer.write(data.toString());
-                        //     console.log(buffer);
-                        // }
-                        // file.write(data, "utf16le");
-                        // file.write(data);
-                    });
-                    // encoder.pipe(file);
-                    // stream.pipe( prismEncoder );
-            prismEncoder.on("data", data=>{
-                console.log("prism:");
-                console.log(data)
-                bufs.push(data);
-                // file.write(data);
+            let pr = spawn("ffmpeg", ["-y", "-codec", "pcm_s16le", "-i", "pipe:0", "-codec", "opus", "./Audio/"+member.guild.id+"/"+name+".opus"]);
+            pr.on("exit", (code, signal)=>{
+                console.log("finished converting with exitcode "+code+" and signal "+signal);
             });
-            prismEncoder.on("end", ()=>{
-                console.log("end");
-                let buffer = Buffer.concat(bufs);
-                file.write(buffer);
-            })
-            stream.on("end", ()=>{
-                prismEncoder.end();
-                // let buffer = Buffer.concat(bufs);
-                // file.write(buffer);
-            });
-            // stream.pipe(prismEncoder).pipe(file);
-            // stream.pipe(prismEncoder).pipe(oggEncoder.stream());
-            // oggEncoder.pipe(file);
-            // console.log(oggEncoder.use(encoder));
-            // let oggEncoderstream  = new Encoder().stream();
-            // stream.on("end", ()=>{
-            //     console.log("end");
-            //     console.log(encoder);
-            //     O
-            //     let encoded = opusencoder.encode(buffer);
-            //     console.log(encoded);
-            //     file.write(encoded);
-            // });
-            // stream.on("close", ()=>{
-            //     console.log("close");
-            //     let encoded = encoder.encode(buffer);
-            //     console.log(encoded);
-            //     file.write(encoded);
-            // });
-            // console.log(oggEncoderstream);
-            // stream.pipe(oggEncoderstream).pipe(file);
-            // stream.on("close", ()=>{
-                //     spawn("ffmpeg -i ./file.opus -y ./file.mp3");
-                // });
-                // stream.setEncoding("binary");
-                // stream.pipe(file);
+            stream.pipe(pr.stdin);
         }catch(e){
             console.log(e);
         }

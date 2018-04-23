@@ -4,6 +4,7 @@ const {Message, GuildMember, User} = require("discord.js");
 const Audioworker = require("../../audioworker");
 const Logger = require("../../logger");
 const util = require("util");
+const fs = require("fs");
 
 class Record extends commando.Command {
     constructor(client) {
@@ -18,6 +19,11 @@ class Record extends commando.Command {
                 label: "user",
                 prompt: "Which user would you like to record? Just mention him!",
                 type: "user"
+            }, {
+                key: "name",
+                label: "name",
+                prompt: "How should I name your record?",
+                type: "string"
             }]
         });
     }
@@ -47,7 +53,10 @@ class Record extends commando.Command {
         else{
             var queue = audioworker.queues.get(message.guild.id);
         }
-        queue.record(message.guild.member(args.user));
+        let err = await queue.record(message.guild.member(args.user), args.name, message);
+        if(err){
+            logger.error(err);
+        }
     }
 }
 module.exports = Record;
