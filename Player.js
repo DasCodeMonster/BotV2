@@ -19,7 +19,7 @@ class Player extends EventEmitter {
          * @type {Song[]}
          */
         let _queue = client.provider.get(guild.id, "queue", []);
-        this.queue = new Queue(client, this.voiceConnection);
+        this.queue = new Queue(client, guild, this.voiceConnection);
         if(_queue.length > 0){
             this.queue.add(_queue);
         }
@@ -55,7 +55,7 @@ class Player extends EventEmitter {
         let joined = await this.join(message);
         if(!joined) return;
         if(songs){
-            console.log(this.queue.get(0));
+            console.log(this.queue.get(0), "l.58:Player");
             await this.queue.add(songs, 1);
             // await this.add(songs, 1);
             if(this.queue.get(0)!==songs){
@@ -100,7 +100,7 @@ class Player extends EventEmitter {
             // this.logger.error(new Error("No voiceConnection"))
             return;
         }
-        await this.voiceConnection.play(ytdl(song.ID, {filter: "audioonly"}), {volume: this.volume/100, passes: 2});
+        await this.voiceConnection.play(ytdl(song.ID, {filter: "audioonly"}), {volume: 5/100, passes: 2});
         // if(this.qReactionCollector !== null){
         //     this.updateQueueMessage();
         // }
