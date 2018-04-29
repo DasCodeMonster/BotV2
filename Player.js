@@ -57,6 +57,7 @@ class Player extends EventEmitter {
         if(songs){
             console.log(this.queue.get(0), "l.58:Player");
             await this.queue.add(songs, 1);
+            console.log(this.queue.list);
             // await this.add(songs, 1);
             if(this.queue.get(0)!==songs){
                 await this.queue.skip();
@@ -66,6 +67,7 @@ class Player extends EventEmitter {
             }
         }
         let song = this.queue.get(0);
+        console.log(song);
         await this.voiceConnection.play(ytdl(song.ID, {filter: "audioonly"}), {volume: 5/100, passes: 2}); //this.volume
         if(this.channel){
             await this.channel.send(`Now playing: ${song.title}`);
@@ -79,6 +81,7 @@ class Player extends EventEmitter {
                     return;
                 }
             }
+            if(this.queue.isEmpty()) return;
             this.onEnd(message, reason);
         });
     }

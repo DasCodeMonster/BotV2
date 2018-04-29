@@ -53,6 +53,7 @@ client.dispatcher.addInhibitor(msg=>{
 
 client.on("ready", () => {
     try{
+        client.VoiceModules = new Collection();
         client.YoutubeAPIKey = YoutubeAPIKey;
         const PM = new PermissionManager(client);
         client.PM = PM;

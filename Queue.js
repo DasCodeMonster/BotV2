@@ -34,6 +34,7 @@ class Queue extends EventEmitter {
      * THIS IS NOT A STRING TO SAVE THIS IN A DATABASE AND CONVERT BACK TO JSON!
      */
     toString(){
+        console.log(this.list.size);
         if (this.list.size <= 1) {
             return null;
         }
@@ -52,7 +53,7 @@ class Queue extends EventEmitter {
     }
     _update(){
         let listStr = this.toString();
-        if(listStr){
+        if(listStr !== null){
             if(util.isArray(listStr)){
                 listStr.forEach((str, index, arr)=>{
                     this._queueMessage.set(index+1, str);
@@ -60,6 +61,8 @@ class Queue extends EventEmitter {
             }else{
                 this._queueMessage.set(1, listStr);
             }
+        }else{
+            this._queueMessage.clear();
         }
         let length;
         this.list.some((song, key)=>{
@@ -136,6 +139,7 @@ class Queue extends EventEmitter {
         //     this.skip();
         // }
         // this.updatelistMessage();
+        console.log(this.list, "142:Queue");
         this._update();
         this.emit("add");
     }
@@ -217,7 +221,7 @@ class Queue extends EventEmitter {
         return removed;
     }
     shuffle(){
-        let before = this.queue.filterArray((song, key, coll)=>{
+        let before = this.list.filterArray((song, key, coll)=>{
             return key > 0
         });
         var queue = before;
@@ -236,7 +240,7 @@ class Queue extends EventEmitter {
         }
         let after = queue;
         queue.forEach((song, index, arr)=>{
-            this.queue.set(index+1, song);
+            this.list.set(index+1, song);
         });
         this._update();
         // this.emit(this.events.shuffle, before, after);
@@ -249,32 +253,32 @@ class Queue extends EventEmitter {
     _getQueueEmbed(page=1, message=null){
         var reactions = [];
         if (page >= this._queueMessage.size) page = this._queueMessage.size-1;
-        if (this._queueMessage.size === 0 && this.queue.get(0) === null){
+        if (this._queueMessage.size === 0 && this.get(0) === null){
             return {
                 embed: new MessageEmbed().setTitle("Queue").setDescription("**The queue is empty!**").setTimestamp(new Date()).setColor(666).setFooter(`Requested by ${message.author.username}`, message.author.displayAvatarURL),
                 reactions: reactions
             }
         }
-        else if((page<this._queueMessage.size) || (this._queueMessage.size === 0 && this.queue.get(0) !== null)){
+        else if((page<this._queueMessage.size) || (this._queueMessage.size === 0 && this.get(0) !== null)){
             reactions.push("🔁");
             reactions.push("🔂");
             reactions.push("ℹ");
-            if (this.queue.get(0) !== null){
-                var embed = new MessageEmbed().setTitle("Queue").setColor(666).addField("Now Playing:", this.queue.get(0).title, false).addField("Channel:", this.queue.get(0).author, true);
+            if (this.list.get(0) !== null){
+                var embed = new MessageEmbed().setTitle("Queue").setColor(666).addField("Now Playing:", this.list.get(0).title, false).addField("Channel:", this.list.get(0).author, true);
                 if (message.guild.voiceConnection && message.guild.voiceConnection.dispatcher) {
-                    embed.addField("Songlength:", `${moment.duration(message.guild.voiceConnection.dispatcher.streamTime, "milliseconds").format(moment.defaultFormat)}/${moment.duration(this.queue.get(0).length, "seconds").format()}`, true).setTimestamp(new Date());
+                    embed.addField("Songlength:", `${moment.duration(message.guild.voiceConnection.dispatcher.streamTime, "milliseconds").format()}/${moment.duration(this.list.get(0).length, "seconds").format()}`, true).setTimestamp(new Date());
                 }else{
-                    embed.addField("Songlength:", `0:00/${moment.duration(this.queue.get(0).length, "seconds").format()}`, true);
+                    embed.addField("Songlength:", `0:00/${moment.duration(this.list.get(0).length, "seconds").format()}`, true);
                 }
-                embed.addField("Queued by:", this.client.guilds.get(this.guildID).member(this.queue.get(0).queuedBy).user.toString(), true);
+                embed.addField("Queued by:", this.client.guilds.get(this.guild.id).member(this.list.get(0).queuedBy).user.toString(), true);
             }
             if(this._queueMessage.size !== 0){
-                this.updateLength();
+                console.log(this._queueMessage);
                 embed.addField(`Queue (Page: ${page+1})`, this._queueMessage.get(page), false)
                 .addField("Total pages:", this._queueMessage.size, true)
-                .addField("Total songs in queue:", this.queue.size-1, true)
+                .addField("Total songs in queue:", this.list.size-1, true)
                 .addField("Total queue length:", moment.duration(this.length, "seconds").format() , true);
-                if(this.queue.size > 2) reactions.push("🔀");
+                if(this.list.size > 2) reactions.push("🔀");
                 reactions.push("⏭");
             }
             if(!embed) throw new Error("Queuemessage unavailable");
@@ -368,8 +372,11 @@ class Queue extends EventEmitter {
         return embed;
     }
     get(position){
-        if(position>this.list.size);
-        return this.list.get(position);
+        if(position>this.list.size); position = this.list.size-1;
+        return this.list.get(position) || null;
+    }
+    isEmpty(){
+        return this.list.size === 0;
     }
 }
 module.exports = Queue;

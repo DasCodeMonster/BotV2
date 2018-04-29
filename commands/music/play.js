@@ -5,6 +5,7 @@ const Audioworker = require("../../audioworker");
 const {Message} = require("discord.js");
 const Logger = require("../../logger");
 const util = require("util");
+const VoiceModule = require("../../VoiceModule");
 
 class Play extends commando.Command {
     constructor(client) {
@@ -40,33 +41,47 @@ class Play extends commando.Command {
         }
         logger.log(message.author.username+"#"+message.author.discriminator, "("+message.author.id+")", "used", this.name, "command in channel:", message.channel.name, "("+message.channel.id+")\nArguments:", util.inspect(args));
         var ID = args.link.id;
-        /** 
-         * @type {Audioworker}
+        // /** 
+        //  * @type {Audioworker}
+        //  */
+        // var audioworker = this.client.Audioworker;
+        // if(!audioworker.queues.has(message.guild.id)){
+        //     var queue = audioworker.add(message.guild);
+        // }
+        // else{
+        //     var queue = audioworker.queues.get(message.guild.id);
+        // }
+        /**
+         * @type {VoiceModule}
          */
-        var audioworker = this.client.Audioworker;
-        if(!audioworker.queues.has(message.guild.id)){
-            var queue = audioworker.add(message.guild);
-        }
-        else{
-            var queue = audioworker.queues.get(message.guild.id);
+        let voiceModule;
+        if(this.client.VoiceModules.has(message.guild.id)){
+            voiceModule = this.client.VoiceModules.get(message.guild.id);
+        }else {
+            voiceModule = new VoiceModule(this.client, message.guild);
+            this.client.VoiceModules.set(message.guild.id, voiceModule);
         }
         if (args.link.type ==="single") {
             // this.addSingle(ID, message, args, queue);
             var song = await getYt.Single(args.link.link, message).catch(reason=>{
-                queue.logger.error(reason);
+                logger.error(reason);
             });
-            await queue.play(message, song).catch(reason=>{
-                queue.logger.error(reason);
-            });
+            // await queue.play(message, song).catch(reason=>{
+            //     logger.error(reason);
+            // });
+            console.log(song);
+            await voiceModule.player.play(message, song);
         }
         else {
             // this.addPlaylist(message, args, ID, queue);
             var songs = await getYt.Playlist(ID, message).catch(reason=>{
-                queue.logger.error(reason);
+                logger.error(reason);
             });
-            await queue.play(message, songs).catch(reason=>{
-                queue.logger.error(reason);
-            });
+            // await queue.play(message, songs).catch(reason=>{
+            //     queue.logger.error(reason);
+            // });
+
+            await voiceModule.player.play(message, songs);
         }
     }
     /**
