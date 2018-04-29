@@ -23,7 +23,6 @@ class Queue extends EventEmitter {
          * @type {Collection<Number,Song>}
          */
         this.list = new Collection();
-        this.list.set(0, null);
         this.loop = {
             song: false,
             list: false
@@ -133,16 +132,16 @@ class Queue extends EventEmitter {
                 this.list.set(this.list.size, song);
             });
         }
-        if(this.list.get(0) ===null){
-            this.skip();
-        }
+        // if(this.list.get(0) ===null){
+        //     this.skip();
+        // }
         // this.updatelistMessage();
         this._update();
         this.emit("add");
     }
     next(){
         if(this.loop.song){
-            return this.list.get(0);
+            return this.list.get(0) || null;
         }
         var newQ = new Collection();
         this.list.forEach((val, key, map)=>{
@@ -157,9 +156,6 @@ class Queue extends EventEmitter {
         if(newQ.has(-1)){
             newQ.delete(-1);
         }
-        if(newQ.size === 0){
-            newQ.set(0, null);
-        }
         this.list = newQ;
         // this.updatelistMessage();
         this.emit("updated");
@@ -168,10 +164,9 @@ class Queue extends EventEmitter {
     }
     skip(){
         if(this.list.size === 1){
-            if(!this.loop.list){
-                this.list.set(0, null);
+            if(this.loop.list){
+                return this.list.get(0) || null;
             }
-            return this.list.get(0);
         }
         var newQ = new Collection();
         this.list.forEach((val, key, map)=>{
@@ -199,6 +194,12 @@ class Queue extends EventEmitter {
      * @param {number} count How many songs after the start(included) should be deleted
      */
     remove(start=0, count=1){
+        if(this.list.size === 0) return;
+        if(start > this.list.size){
+            start = this.list.size-1;
+            count = 1;
+            console.log(new Error("Number to high deleting last element!"));
+        }
         var nowPlaying = this.list.get(0);
         var list = this.list.filterArray((song, key, coll)=>{
             return key>0;
