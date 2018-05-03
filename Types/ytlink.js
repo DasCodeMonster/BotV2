@@ -1,9 +1,9 @@
-const ArgumentType = require("../node_modules/discord.js-commando/src/types/base");
+const {ArgumentType} = require("discord.js-commando");
 const ytdl = require("ytdl-core");
-const keys = require('./../Token&Keys');
+const keys = require('./../tokens');
 const {google} = require('googleapis');
 const youtubeV3 = google.youtube({version: "v3", auth: keys.YoutubeAPIKey});
-const Q = require("q")
+// const Q = require("q")
 
 class YTlink extends ArgumentType {
     constructor(client) {
@@ -36,19 +36,20 @@ class YTlink extends ArgumentType {
 }
 
 function tube(ID) {
-    var deferred = Q.defer();
-    youtubeV3.playlistItems.list({
-        part: "snippet",
-        playlistId: ID,
-        maxResults: "5"
-    }, (err, data) => {
-        if(err) {
-            deferred.resolve(false)
-        }
-        if(data){
-            deferred.resolve(true)
-        }
+    let prom = new Promise((res, rej)=>{
+        youtubeV3.playlistItems.list({
+            part: "snippet",
+            playlistId: ID,
+            maxResults: "5"
+        }, (err, data) => {
+            if(err) {
+                res(false);
+            }
+            if(data){
+                res(true);
+            }
+        });
     });
-    return deferred.promise
+    return prom;
 }
 module.exports = YTlink;
