@@ -30,6 +30,7 @@ class Player extends EventEmitter {
         }
         this.guild = guild;
         this.volume = 5;
+        this.stopped = true;
     }
     /**
      * 
@@ -79,18 +80,26 @@ class Player extends EventEmitter {
                 }
             }
             let song = this.queue.get(0);
+            this.stopped = false;
             await this.voiceConnection.play(ytdl(song.ID, {filter: "audioonly"}), {volume: 5/100, passes: 2}); //this.volume
             if(this.channel){
                 await this.channel.send(`Now playing: ${song.title}`);
             }else{
                 await message.channel.send(`Now playing: ${song.title}`);
             }
+            this.voiceConnection.dispatcher.once("error", error=>{
+                console.log(error);
+            });
             await this.voiceConnection.dispatcher.once("finish", reason=>{
-                if(reason){
-                    console.debug("%s", reason);
-                    if(reason === "stop"){
-                        return;
-                    }
+                // if(reason){
+                //     console.debug("%s", reason);
+                //     if(reason === "stop"){
+                //         return;
+                //     }
+                // }
+                if(this.stopped){
+                    this.voiceConnection.player.destroy();
+                    return;
                 }
                 if(this.queue.isEmpty()){
                     return;
@@ -120,6 +129,7 @@ class Player extends EventEmitter {
                 // this.logger.error(new Error("No voiceConnection"))
                 return;
             }
+            this.stopped = false;
             await this.voiceConnection.play(ytdl(song.ID, {filter: "audioonly"}), {volume: 5/100, passes: 2});
             // if(this.qReactionCollector !== null){
             //     this.updateQueueMessage();
@@ -130,11 +140,15 @@ class Player extends EventEmitter {
                 await message.channel.send(`Now playing: ${this.queue.list.get(0).title}`);
             }
             await this.voiceConnection.dispatcher.once("finish", reason => {
-                if (reason) {
-                    console.debug("%s", reason);
-                    if(reason === "stop"){
-                        return;
-                    }
+                // if (reason) {
+                //     console.debug("%s", reason);
+                //     if(reason === "stop"){
+                //         return;
+                //     }
+                // }
+                if(this.stopped){
+                    this.voiceConnection.player.destroy();
+                    return;
                 }
                 if(this.queue.isEmpty()){
                     return;
@@ -161,7 +175,8 @@ class Player extends EventEmitter {
     stop(){
         try{
             if(!this.voiceConnection) return;
-            this.voiceConnection.dispatcher.emit("finish", "stop");
+            this.stopped = true;
+            this.voiceConnection.dispatcher.end();
         }catch(e){
             console.log(e);
         }
