@@ -22,13 +22,13 @@ class YTlink extends ArgumentType {
             var ID = value.split(/(v=)+/)[2];
             ID = ID.split(/([&])+/)[0];
             // return [ID, "single"];
-            return {"type":"single", "id":ID, "link":retvar}
+            return {type: "single", id: ID, link: retvar}
         } 
         else {
             if (this.validate(value)) {
                 ID = value.split(/(list=)+/)[2];
                 // return [ID, "list"];
-                return {"type":"list", "id":ID}
+                return {type: "list", id: ID}
             }
             else throw new Error("Invalid link!");
         }

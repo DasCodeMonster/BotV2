@@ -54,7 +54,7 @@ class Queue extends EventEmitter {
     _update(){
         let listStr = this.toString();
         if(listStr !== null){
-            if(util.isArray(listStr)){
+            if(listStr instanceof Array){
                 listStr.forEach((str, index, arr)=>{
                     this._queueMessage.set(index+1, str);
                 });
@@ -84,6 +84,9 @@ class Queue extends EventEmitter {
             this.emit("error", new Error("Position must be at least 1"));
             return;
         }
+        if(position > this.list.size){
+            return new Error("Position is to high");
+        }
         if(position === null){
             if (songs instanceof Song){
                 this.list.set(this.list.size, songs);                
@@ -94,52 +97,40 @@ class Queue extends EventEmitter {
             }else if(songs instanceof Playlist){
                 this.list.concat(songs.list);
             }
-
-            // if(util.isArray(songs)){
-            //     songs.forEach((song, index, array)=>{
-            //         this.list.set(this.list.size, song);
-            //     });
-            // }else{
-            //     this.list.set(this.list.size, songs);
-            // }
-
         }else{
             var afterpos = this.list.filter((song, key, coll)=>{
                 if(key>=position){
                     return true;
                 }
+                return false;
             });
-            afterpos.forEach((song, key, map)=>{
-                this.list.delete(key);
-            });
-
+            
             if (songs instanceof Song){
-                this.list.set(this.list.size, songs);                
+                this.list.set(position, songs);                
+                afterpos.array().forEach((song, key)=>{
+                    this.list.set(key+1, song);
+                });
             }else if(songs instanceof Array){
+                afterpos.forEach((song, key)=>{
+                    this.list.delete(key);
+                });
                 songs.forEach((song, index, array)=>{
                     this.list.set(this.list.size, song);
                 });
+                afterpos.array().forEach((song, key)=>{
+                    this.list.set(key+songs.length, song);
+                });
             }else if(songs instanceof Playlist){
+                afterpos.forEach((song, key)=>{
+                    this.list.delete(key);
+                });
                 this.list.concat(songs.list);
+                afterpos.forEach((song, key)=>{
+                    this.list.set(this.list.size, song);
+                });
             }
-
-            // if(util.isArray(songs)){
-            //     songs.forEach((song, index, array)=>{
-            //         this.list.set(this.list.size, song);
-            //     });
-            // }else{
-            //     this.list.set(this.list.size, songs);
-            // }
-
-            afterpos.forEach((song, key, map)=>{
-                this.list.set(this.list.size, song);
-            });
         }
-        // if(this.list.get(0) ===null){
-        //     this.skip();
-        // }
-        // this.updatelistMessage();
-        console.log(this.list, "142:Queue");
+        console.log(this.list, "130:Queue");
         this._update();
         this.emit("add");
     }
@@ -148,18 +139,25 @@ class Queue extends EventEmitter {
             return this.list.get(0) || null;
         }
         var newQ = new Collection();
-        this.list.forEach((val, key, map)=>{
-            if(key === 0 && val === null) return;
-            newQ.set(key-1, val);
+        this.list.forEach((song, key)=>{
+            if(key === 0) return;
+            newQ.set(newQ.size, song);
         });
-        if (this.loop.list){
-            if(newQ.has(-1)){
-                newQ.set(newQ.size-1, newQ.get(-1));
-            }
+        if(this.loop.list){
+            newQ.set(newQ.size, this.list.get(0));
         }
-        if(newQ.has(-1)){
-            newQ.delete(-1);
-        }
+        // this.list.forEach((val, key, map)=>{
+        //     if(key === 0 && val === null) return;
+        //     newQ.set(key-1, val);
+        // });
+        // if (this.loop.list){
+        //     if(newQ.has(-1)){
+        //         newQ.set(newQ.size-1, newQ.get(-1));
+        //     }
+        // }
+        // if(newQ.has(-1)){
+        //     newQ.delete(-1);
+        // }
         this.list = newQ;
         // this.updatelistMessage();
         this.emit("updated");
@@ -173,20 +171,15 @@ class Queue extends EventEmitter {
             }
         }
         var newQ = new Collection();
-        this.list.forEach((val, key, map)=>{
-            if(key === 0 && val === null) return;
-            newQ.set(key-1, val);
+        this.list.forEach((song, key)=>{
+            if(key === 0) return;
+            newQ.set(newQ.size, song);
         });
         if(this.loop.list){
-            if(newQ.has(-1)){
-                newQ.set(newQ.size-1, newQ.get(-1));
-            }
-        }
-        if(newQ.has(-1)){
-            newQ.delete(-1);
+            newQ.set(newQ.size, this.list.get(0));
         }
         this.list = newQ;
-        console.log(this.list, " l.193:Queue");
+        console.log(this.list, " l.182:Queue");
         // this.updatelistMessage();
         this.emit("updated");
         this._update();  
@@ -197,7 +190,8 @@ class Queue extends EventEmitter {
      * @param {number} start Where to start deleting songs 
      * @param {number} count How many songs after the start(included) should be deleted
      */
-    remove(start=0, count=1){
+    remove(start=1, count=1){
+        start -= 1;
         if(this.list.size === 0) return;
         if(start > this.list.size){
             start = this.list.size-1;

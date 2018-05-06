@@ -41,16 +41,6 @@ class Play extends commando.Command {
         }
         logger.log(message.author.username+"#"+message.author.discriminator, "("+message.author.id+")", "used", this.name, "command in channel:", message.channel.name, "("+message.channel.id+")\nArguments:", util.inspect(args));
         var ID = args.link.id;
-        // /** 
-        //  * @type {Audioworker}
-        //  */
-        // var audioworker = this.client.Audioworker;
-        // if(!audioworker.queues.has(message.guild.id)){
-        //     var queue = audioworker.add(message.guild);
-        // }
-        // else{
-        //     var queue = audioworker.queues.get(message.guild.id);
-        // }
         /**
          * @type {VoiceModule}
          */

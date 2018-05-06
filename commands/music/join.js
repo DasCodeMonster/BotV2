@@ -1,6 +1,6 @@
 const commando = require("discord.js-commando");
 const {Message} = require("discord.js");
-const Audioworker = require("../../audioworker");
+const VoiceModule = require("../../VoiceModule");
 const Logger = require("../../logger");
 const util = require("util");
 
@@ -11,7 +11,14 @@ class joinVoicechannelCommand extends commando.Command {
             group: 'music',
             memberName: 'join',
             description: 'Let the Bot join your Voicechannel.',
-            guildOnly: true
+            guildOnly: true,
+            args: [{
+                key: "channel",
+                label: "channel",
+                prompt: "Which channel should i join?",
+                type: "voicechannel",
+                default: "undefined"
+            }]
         });
     }
     /**
@@ -20,28 +27,31 @@ class joinVoicechannelCommand extends commando.Command {
      * @param {*} args 
      */
     async run(message, args) {
-        if(this.client.loggers.has(message.guild.id)){
+        try{
+            if(this.client.loggers.has(message.guild.id)){
+                /**
+                 * @type {Logger}
+                 */
+                var logger = this.client.loggers.get(message.guild.id);
+            }else{
+                var logger = new Logger(message.guild.id);
+                this.client.loggers.set(message.guild.id, logger);
+            }
+            logger.log(message.author.username+"#"+message.author.discriminator, "("+message.author.id+")", "used", this.name, "command in channel:", message.channel.name, "("+message.channel.id+")\nArguments:", util.inspect(args));
             /**
-             * @type {Logger}
+             * @type {VoiceModule}
              */
-            var logger = this.client.loggers.get(message.guild.id);
-        }else{
-            var logger = new Logger(message.guild.id);
-            this.client.loggers.set(message.guild.id, logger);
+            let voiceModule;
+            if(this.client.VoiceModules.has(message.guild.id)){
+                voiceModule = this.client.VoiceModules.get(message.guild.id);
+            }else {
+                voiceModule = new VoiceModule(this.client, message.guild);
+                this.client.VoiceModules.set(message.guild.id, voiceModule);
+            }
+            await voiceModule.join(message, args.channel === "undefined"?undefined:args.channel);
+        }catch(e){
+            console.log(e);
         }
-        logger.log(message.author.username+"#"+message.author.discriminator, "("+message.author.id+")", "used", this.name, "command in channel:", message.channel.name, "("+message.channel.id+")\nArguments:", util.inspect(args));
-        var ID = args.link.id;
-        /** 
-         * @type {Audioworker}
-         */
-        var audioworker = this.client.Audioworker;
-        if(!audioworker.queues.has(message.guild.id)){
-            var queue = audioworker.add(message.guild);
-        }
-        else{
-            var queue = audioworker.queues.get(message.guild.id);
-        }
-        await queue.autoplay(message);
     }
     /**
      * 

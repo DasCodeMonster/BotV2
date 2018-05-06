@@ -5,6 +5,7 @@ const getYt = require("../../ytsong");
 const Audioworker = require("../../audioworker");
 const Logger = require("../../logger");
 const util = require("util");
+const VoiceModule = require("../../VoiceModule");
 
 class List extends commando.Command {
     constructor(client) {
@@ -48,29 +49,21 @@ class List extends commando.Command {
         }
         logger.log(message.author.username+"#"+message.author.discriminator, "("+message.author.id+")", "used", this.name, "command in channel:", message.channel.name, "("+message.channel.id+")\nArguments:", util.inspect(args));
         var ID = args.link.id;
-        /** 
-         * @type {Audioworker}
+       /**
+         * @type {VoiceModule}
          */
-        var audioworker = this.client.Audioworker;
-        if(!audioworker.queues.has(message.guild.id)){
-           var queue = audioworker.add(message.guild);
-        }
-        else{
-            var queue = audioworker.queues.get(message.guild.id);
-        }
-        if(args.position !== 0){
-            if (queue.queue.length !== 0){
-                if(args.position > queue.queue.length) {
-                    message.reply("Position is too high! I will add the Song to the end of the queue.");
-                    args.position = queue.queue.length;
-                }
-            }
+        let voiceModule;
+        if(this.client.VoiceModules.has(message.guild.id)){
+            voiceModule = this.client.VoiceModules.get(message.guild.id);
+        }else {
+            voiceModule = new VoiceModule(this.client, message.guild);
+            this.client.VoiceModules.set(message.guild.id, voiceModule);
         }
         if (args.link.type ==="single") {
-            this.addSingle(ID, message, args, queue);
+            this.addSingle(ID, message, args, voiceModule);
         }
         else {
-            this.addPlaylist(message, args, ID, queue);
+            this.addPlaylist(message, args, ID, voiceModule);
         }
     }
     /**
@@ -78,36 +71,36 @@ class List extends commando.Command {
      * @param {*} ID 
      * @param {Message} message
      * @param {Object} args
-     * @param {Queue} queue
+     * @param {VoiceModule} voiceModule
      */
-    async addSingle(ID, message, args, queue) {
+    async addSingle(ID, message, args, voiceModule) {
         var song = await getYt.Single(args.link.link, message);
         if(args.position === 0){
-            queue.add(song);
+            voiceModule.player.queue.add(song);
         }
         else {
-            queue.add(song, args.position);
+            voiceModule.player.queue.add(song, args.position);
         }
         if(message.guild.voiceConnection && message.guild.voiceConnection.dispatcher) return;        
-        queue.play(message);
+        voiceModule.join(message);
     }
     /**
      * 
      * @param {Message} message 
      * @param {Object} args 
      * @param {*} ID 
-     * @param {Queue} queue 
+     * @param {VoiceModule} voiceModule 
      */
-    async addPlaylist(message, args, ID, queue) {
+    async addPlaylist(message, args, ID, voiceModule) {
         var songs = await getYt.Playlist(ID, message);
         if(args.position === 0){
-            queue.add(songs);
+            voiceModule.player.queue.add(songs);
         }
         else {
-            queue.add(songs, args.position);
+            voiceModule.player.queue.add(songs, args.position);
         }
         if(message.guild.voiceConnection && message.guild.voiceConnection.dispatcher) return;
-        queue.play(message);
+        voiceModule.join(message);
     }
     /**
      * 
