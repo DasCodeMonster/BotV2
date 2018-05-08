@@ -12,6 +12,7 @@ const colors = require("colors");
 const Logger = require("./logger");
 const PermissionManager = require("./permissionManager");
 const {BotToken, OwnerID, YoutubeAPIKey} = require("./tokens");
+const VoiceClient = require("./VoiceClient");
 colors.setTheme({
     info: "green",
     debug: "cyan",
@@ -21,10 +22,10 @@ colors.setTheme({
 // /**
 //  * @type {Client}
 //  */
-const client = new CommandoClient({
+const client = new VoiceClient({
     owner: OwnerID,
     unknownCommandResponse: false
-});
+}, YoutubeAPIKey);
 process.title = "MyBotV2";
 client.registry.registerGroup("music", "Music commands");
 // client.registry.registerGroup("fun", "Fun commands");
@@ -53,25 +54,7 @@ client.dispatcher.addInhibitor(msg=>{
 
 client.on("ready", () => {
     try{
-        client.VoiceModules = new Collection();
-        client.YoutubeAPIKey = YoutubeAPIKey;
-        const PM = new PermissionManager(client);
-        client.PM = PM;
-        /**
-         * @type {Collection<String,Logger>}
-         */
-        let loggers = new Collection();
-        client.guilds.forEach((guild, ID)=>{
-            loggers.set(ID, new Logger(ID));
-        });
-        client.loggers = loggers
-        client.Audioworker = new Audioworker(client, 60000);
-        client.Audioworker.once("ready", ()=>{
-            client.LyricsAPI = new LyricsAPI();
-            client.LyricsAPI.once("ready", ()=>{
-                console.info(colors.info("bot startet"));
-            });
-        });
+        console.info("Bot started".info);
     }catch(e){
         console.log(e);
     }
