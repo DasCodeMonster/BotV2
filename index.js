@@ -215,7 +215,7 @@ console.info(colors.info("bot is logged in"));
 
 process.once('SIGINT', () => {
     console.info(colors.info("exiting now"));
-    client.Audioworker.close();
+    // client.Audioworker.close();
     // client.LyricsAPI.close();
     client.destroy();
     process.exit(0);

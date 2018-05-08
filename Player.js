@@ -24,13 +24,13 @@ class Player extends EventEmitter {
          * @type {Song[]}
          */
         let _queue = client.provider.get(guild.id, "queue", []);
-        this.queue = new Queue(client, guild, this.voiceConnection);
         if(_queue.length > 0){
             this.queue.add(_queue);
         }
         this.guild = guild;
         this.volume = 5;
         this.stopped = true;
+        this.queue = new Queue(client, guild, this.voiceConnection, this);
     }
     /**
      * 

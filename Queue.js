@@ -5,19 +5,23 @@ const {EventEmitter} = require("events");
 const Song = require("./Song");
 const moment = require("moment");
 const util = require("util");
+const QueueMessage = require("./QueueMessage");
+const Player = require("./Player");
 
 class Queue extends EventEmitter {
     /**
      * 
      * @param {CommandoClient} client
      * @param {Guild} guild
-     * @param {VoiceConnection} voiceConnection 
+     * @param {VoiceConnection} voiceConnection
+     * @param {Player} player
      */
-    constructor(client, guild, voiceConnection){
+    constructor(client, guild, voiceConnection, player){
         super();
         this.client = client;
         this.guild = guild;
-        this._queueMessage = new Collection();
+        this.player = player;
+        this._queueMessage = new QueueMessage(client, guild, player);
         this.voiceConnection = voiceConnection || null;
          /**
          * @type {Collection<Number,Song>}
@@ -34,36 +38,35 @@ class Queue extends EventEmitter {
      * THIS IS NOT A STRING TO SAVE THIS IN A DATABASE AND CONVERT BACK TO JSON!
      */
     toString(){
-        console.log(this.list.size);
+        /**
+         * @type {Collection<Number,String>}
+         */
+        let collection = new Collection();
         if (this.list.size <= 1) {
-            return null;
+            return collection;
         }
         else {
-            var firstLine = "```";
-            var messageBuilder = "";
+            let firstLine = "```";
+            let messageBuilder = "";
             this.list.forEach((song, index) => {
                 if(index===0)return;
                 messageBuilder += (index)+" Title: "+song.title + " | Channel: "+ song.author + "\n";
             });
             firstLine += messageBuilder;
             firstLine += "```";
-            var built = Util.splitMessage(firstLine, {maxLength: 1000, char: "\n", prepend: "```", append: "```"});
-            return built;
+            let built = Util.splitMessage(firstLine, {maxLength: 1000, char: "\n", prepend: "```", append: "```"});
+            if (built instanceof Array){
+                built.forEach((page, index)=>{
+                    collection.set(index+1, page);
+                });
+            }else{
+                collection.set(0, built);
+            }
+            return collection;
         }
     }
     _update(){
-        let listStr = this.toString();
-        if(listStr !== null){
-            if(listStr instanceof Array){
-                listStr.forEach((str, index, arr)=>{
-                    this._queueMessage.set(index+1, str);
-                });
-            }else{
-                this._queueMessage.set(1, listStr);
-            }
-        }else{
-            this._queueMessage.clear();
-        }
+        this._queueMessage._update();
         let length;
         this.list.some((song, key)=>{
             if(key === 0)return false;
@@ -287,6 +290,9 @@ class Queue extends EventEmitter {
                 reactions: reactions
             }
         }
+    }
+    async sendEmbed(message){
+        await this._queueMessage.create(message);
     }
     /**
      * Sets the loop settings for the Song.
