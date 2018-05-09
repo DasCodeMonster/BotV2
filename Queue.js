@@ -22,6 +22,7 @@ class Queue extends EventEmitter {
         this.client = client;
         this.guild = guild;
         this._queueMessage = null;
+        this.queueText = new Collection();
         this.voiceConnection = voiceConnection || null;
          /**
          * @type {Collection<Number,Song>}
@@ -66,12 +67,16 @@ class Queue extends EventEmitter {
         }
     }
     _update(){
-        let length;
+        this.queueText = this.toString();
+        let length = 0;
         this.list.some((song, key)=>{
             if(key === 0)return false;
             length += song.length;
         });
         this.length = length;
+        if(this._queueMessage){
+            this._queueMessage.update();
+        }
         this.client.provider.set(this.guild.id, "queue", this.list.array());
     }
     /**
@@ -290,14 +295,16 @@ class Queue extends EventEmitter {
             }
         }
     }
+    /**
+     * @param {Message} message
+     */
     async sendEmbed(message){
         try{
-            console.log("sendEmbed");
             // await this._queueMessage.create(message);
             if(this._queueMessage){
                 this._queueMessage.create(message);
             }else{
-                this._queueMessage = new QueueMessage(this.client, this.guild, this.toString());
+                this._queueMessage = new QueueMessage(this.client, this.guild, this);
                 this._queueMessage.create(message);
             }
         }catch(e){
@@ -374,15 +381,15 @@ class Queue extends EventEmitter {
         .addField("listd by", message.guild.member(this.list.get(position).listdBy).user.toString(), true)
         .addField("listd at", this.list.get(position).listdAt, true);
         if(position === 0){
-            embed.addField("ETA:", newDate+"\n"+moment.duration(seconds, "seconds").format());
-        }else{
             embed.addField("ETA:", "Now playing!");
+        }else{
+            embed.addField("ETA:", newDate+"\n"+moment.duration(seconds, "seconds").format());
         }
         embed.addField("Thumbnail", this.list.get(position).thumbnailURL);
         return embed;
     }
     get(position){
-        if(position>this.list.size); position = this.list.size-1;
+        if(position>this.list.size) position = this.list.size-1;
         return this.list.get(position) || null;
     }
     isEmpty(){

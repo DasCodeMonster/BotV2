@@ -2,6 +2,7 @@ const {TextChannel, Guild, Message, MessageEmbed, MessageReaction, ReactionColle
 const {CommandoClient} = require("discord.js-commando");
 const {EventEmitter} = require("events");
 const VoiceClient = require("./VoiceClient");
+const Queue = require("./Queue");
 const Player = require("./Player");
 const moment = require("moment");
 var momentDurationFormatSetup = require("moment-duration-format");
@@ -11,12 +12,14 @@ class QueueMessage extends EventEmitter {
      * 
      * @param {VoiceClient} client 
      * @param {Guild} guild 
-     * @param {Player} player
+     * @param {TextChannel} textChannel
+     * @param {Queue} queue 
      */
-    constructor(client, guild, text){
+    constructor(client, guild, queue){
         super();
         this.client = client;
         this.guild = guild;
+        this.queue = queue;
         /**
          * @type {TextChannel}
          */
@@ -25,7 +28,6 @@ class QueueMessage extends EventEmitter {
          * @type {Message}
          */
         this.message;
-        this.text = text; // add function
         this.page = 1;
         /**
          * @type {GuildMember}
@@ -36,23 +38,9 @@ class QueueMessage extends EventEmitter {
          */
         this.lastEditedFrom = null;
         this.created = false;
-        this.player = null;
     }
     makeEmbed(){
-        this.player = this.client.VoiceModules.get(this.guild.id).player;
         try{
-            if(this.page > this.text.size) this.page = this.text.size;
-            if(this.text.size === 0){
-                return new MessageEmbed().setTitle("Queue").setDescription("**The queue is empty!**").setTimestamp(new Date()).setColor(666).setFooter(`Requested by ${message.author.username}`, message.author.displayAvatarURL);
-            }
-            if(this.page <= 0) return;
-            let song = this.player.queue.get(0);
-            let songlengthField;
-            if(this.guild.voiceConnection && this.guild.voiceConnection.dispatcher){
-                songlengthField = `${moment.duration(this.guild.voiceConnection.dispatcher.streamTime, "milliseconds").format()}/${moment.duration(song.length, "seconds").format()}`;
-            }else{
-                songlengthField = `0:00/${moment.duration(song.length, "seconds").format()}`;
-            }
             let footer;
             if(this.lastEditedFrom != null){
                 footer = {
@@ -65,17 +53,27 @@ class QueueMessage extends EventEmitter {
                     icon: this.requestedBy.user.displayAvatarURL()
                 }
             }
+            if(this.page > this.queue.queueText.size) this.page = this.queue.queueText.size;
+            if(this.queue.queueText.size === 0 && this.queue.list.size === 0){
+                return new MessageEmbed().setTitle("Queue").setDescription("**The queue is empty!**").setTimestamp(new Date()).setColor(666).setFooter(footer.text, footer.icon);
+            }
+            let song = this.queue.get(0);
+            let songlengthField;
+            if(this.guild.voiceConnection && this.guild.voiceConnection.dispatcher){
+                songlengthField = `${moment.duration(this.guild.voiceConnection.dispatcher.streamTime, "milliseconds").format()}/${moment.duration(song.length, "seconds").format()}`;
+            }else{
+                songlengthField = `0:00/${moment.duration(song.length, "seconds").format()}`;
+            }
             let loopmode;
-            if(this.player.queue.loop.song && this.player.queue.loop.list){
+            if(this.queue.loop.song && this.queue.loop.list){
                 loopmode = "🔂🔁";
-            }else if(this.player.queue.loop.song){
+            }else if(this.queue.loop.song){
                 loopmode = "🔂";
-            }else if(this.player.queue.loop.list){
+            }else if(this.queue.loop.list){
                 loopmode = "🔁";
             }else{
                 loopmode = null;
             }
-            console.log(this.page);
             let embed = new MessageEmbed()
             .setTitle("Queue")
             .setColor(666)
@@ -83,13 +81,13 @@ class QueueMessage extends EventEmitter {
             .addField("Channel:", song.author, true)
             .addField("Songlength:", songlengthField, true)
             .addField("Queued by:", this.guild.member(song.queuedBy).user.toString(), true);
-            if(this.text.get(this.page)){
-                embed.addField("Queue (Page: "+this.page, this.text.get(this.page), false);
+            if(this.queue.queueText.get(this.page)){
+                embed.addField("Queue (Page: "+this.page, this.queue.queueText.get(this.page), false)
+                .addField("Total pages:", this.queue.queueText.size, true)
+                .addField("Total songs:", this.queue.list.size-1, true)
+                .addField("Total length:", moment.duration(this.queue.length, "seconds").format())
             }
-            embed.addField("Total pages:", this.text.size, true)
-            .addField("Total songs:", this.player.queue.list.size, true)
-            .addField("Total length:", moment.duration(this.player.queue.length, "seconds").format())
-            .setFooter(footer.text, footer.icon)
+            embed.setFooter(footer.text, footer.icon)
             if(loopmode !== null){
                 embed.addField("Loop mode:", loopmode, true);
             }
@@ -99,18 +97,15 @@ class QueueMessage extends EventEmitter {
             console.log(e);
         }
     }
-    /**
-     * 
-     * @param {GuildMember} member
-     */
-    async update(page=1, member=null){
-        if(!this.created) throw new Error("Use #Create() first!");
-        this.page = page;
-        if(message !== null){
-            this.lastEditedFrom = message.member;
+    async update(page=1){
+        try{
+            if(!this.created) throw new Error("Use #Create() first!");
+            this.page = page;
+            let embed = this.makeEmbed();
+            await this.message.edit(embed);
+        }catch(e){
+            console.log(e);
         }
-        let embed = this.makeEmbed();
-        await this.message.edit(embed);
     }
     /**
      * 
@@ -124,7 +119,6 @@ class QueueMessage extends EventEmitter {
             this.requestedBy = message.member;
             this.textChannel = message.channel;
             this.page = page;
-            console.log(this.textChannel);
             this.message = await this.textChannel.send(this.makeEmbed());
         }catch(e){
             console.log(e);
@@ -132,7 +126,7 @@ class QueueMessage extends EventEmitter {
     }
 
     _update(){
-        
+
     }
 }
 module.exports = QueueMessage;

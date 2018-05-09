@@ -106,6 +106,11 @@ class Player extends EventEmitter {
                 }
                 this.onEnd(message, reason);
             });
+            this.voiceConnection.dispatcher.on("start", ()=>{
+                setTimeout(()=>{
+                    this.queue._queueMessage.update();
+                }, 200);
+            });
         }catch(e){
             console.log(e);
         }
