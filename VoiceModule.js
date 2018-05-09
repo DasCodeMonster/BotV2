@@ -34,8 +34,10 @@ class VoiceModule extends EventEmitter {
                 this.voiceConnection.once("disconnect", reason=>{
                     this.voiceConnection = undefined;
                 });
-                if(this.voiceConnection && !this.voiceConnection.dispatcher){
-                    await this.player.play(message);
+                if(this.voiceConnection){
+                    if(this.voiceConnection.dispatcher === null || this.voiceConnection.dispatcher.finished){
+                        await this.player.play(message);
+                    }
                 }
             }else{
                 if(!message.member.voiceChannel){
@@ -46,9 +48,10 @@ class VoiceModule extends EventEmitter {
                     this.voiceConnection.once("disconnect", reason=>{
                         this.voiceConnection = undefined;
                     });
-                    console.log(this.voiceConnection.dispatcher);
-                    if(this.voiceConnection && !this.voiceConnection.dispatcher){
-                        await this.player.play(message);
+                    if(this.voiceConnection){
+                        if(this.voiceConnection.dispatcher === null || this.voiceConnection.dispatcher.finished){
+                            await this.player.play(message);
+                        }
                     }
                 }
             }
