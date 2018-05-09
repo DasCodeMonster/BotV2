@@ -70,8 +70,9 @@ class Queuecommand extends commando.Command {
             voiceModule = new VoiceModule(this.client, message.guild);
             this.client.VoiceModules.set(message.guild.id, voiceModule);
         }
-        let embed = await voiceModule.player.queue._getQueueEmbed(1, message);
-        await message.channel.send({embed: embed.embed});
+        voiceModule.player.queue.sendEmbed(message);
+        // let embed = await voiceModule.player.queue._getQueueEmbed(1, message);
+        // await message.channel.send({embed: embed.embed});
     }
     /**
      * 

@@ -59,7 +59,6 @@ class Play extends commando.Command {
             // await queue.play(message, song).catch(reason=>{
             //     logger.error(reason);
             // });
-            console.log(song);
             await voiceModule.player.play(message, song);
         }
         else {

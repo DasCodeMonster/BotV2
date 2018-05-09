@@ -20,6 +20,7 @@ class Player extends EventEmitter {
                 this.voiceConnection = undefined;
             });
         }
+        this.queue = new Queue(client, guild, this.voiceConnection);
         /**
          * @type {Song[]}
          */
@@ -30,7 +31,6 @@ class Player extends EventEmitter {
         this.guild = guild;
         this.volume = 5;
         this.stopped = true;
-        this.queue = new Queue(client, guild, this.voiceConnection, this);
     }
     /**
      * 
@@ -70,7 +70,7 @@ class Player extends EventEmitter {
             if(songs){
                 console.log(this.queue.get(0), "l.58:Player");
                 await this.queue.add(songs, 1);
-                console.log(this.queue.list);
+                console.log(this.queue.get(0));
                 // await this.add(songs, 1);
                 if(this.queue.get(0)!==songs){
                     await this.queue.skip();

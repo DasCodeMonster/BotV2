@@ -1,6 +1,7 @@
 const Playlist = require("./Playlist");
 const {Collection, Util, MessageEmbed, VoiceConnection, Guild} = require("discord.js");
 const {CommandoClient} = require("discord.js-commando");
+const VoiceClient = require("./VoiceClient");
 const {EventEmitter} = require("events");
 const Song = require("./Song");
 const moment = require("moment");
@@ -11,17 +12,16 @@ const Player = require("./Player");
 class Queue extends EventEmitter {
     /**
      * 
-     * @param {CommandoClient} client
+     * @param {VoiceClient} client
      * @param {Guild} guild
      * @param {VoiceConnection} voiceConnection
      * @param {Player} player
      */
-    constructor(client, guild, voiceConnection, player){
+    constructor(client, guild, voiceConnection){
         super();
         this.client = client;
         this.guild = guild;
-        this.player = player;
-        this._queueMessage = new QueueMessage(client, guild, player);
+        this._queueMessage = null;
         this.voiceConnection = voiceConnection || null;
          /**
          * @type {Collection<Number,Song>}
@@ -60,13 +60,12 @@ class Queue extends EventEmitter {
                     collection.set(index+1, page);
                 });
             }else{
-                collection.set(0, built);
+                collection.set(1, built);
             }
             return collection;
         }
     }
     _update(){
-        this._queueMessage._update();
         let length;
         this.list.some((song, key)=>{
             if(key === 0)return false;
@@ -110,7 +109,7 @@ class Queue extends EventEmitter {
             
             if (songs instanceof Song){
                 this.list.set(position, songs);                
-                afterpos.array().forEach((song, key)=>{
+                afterpos.forEach((song, key)=>{
                     this.list.set(key+1, song);
                 });
             }else if(songs instanceof Array){
@@ -120,7 +119,7 @@ class Queue extends EventEmitter {
                 songs.forEach((song, index, array)=>{
                     this.list.set(this.list.size, song);
                 });
-                afterpos.array().forEach((song, key)=>{
+                afterpos.forEach((song, key)=>{
                     this.list.set(key+songs.length, song);
                 });
             }else if(songs instanceof Playlist){
@@ -292,7 +291,18 @@ class Queue extends EventEmitter {
         }
     }
     async sendEmbed(message){
-        await this._queueMessage.create(message);
+        try{
+            console.log("sendEmbed");
+            // await this._queueMessage.create(message);
+            if(this._queueMessage){
+                this._queueMessage.create(message);
+            }else{
+                this._queueMessage = new QueueMessage(this.client, this.guild, this.toString());
+                this._queueMessage.create(message);
+            }
+        }catch(e){
+            console.log(e);
+        }
     }
     /**
      * Sets the loop settings for the Song.

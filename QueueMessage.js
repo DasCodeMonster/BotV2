@@ -13,7 +13,7 @@ class QueueMessage extends EventEmitter {
      * @param {Guild} guild 
      * @param {Player} player
      */
-    constructor(client, guild, player){
+    constructor(client, guild, text){
         super();
         this.client = client;
         this.guild = guild;
@@ -25,8 +25,7 @@ class QueueMessage extends EventEmitter {
          * @type {Message}
          */
         this.message;
-        this.player = player;
-        this.text = this.player.queue.toString(); // add function
+        this.text = text; // add function
         this.page = 1;
         /**
          * @type {GuildMember}
@@ -37,8 +36,10 @@ class QueueMessage extends EventEmitter {
          */
         this.lastEditedFrom = null;
         this.created = false;
+        this.player = null;
     }
     makeEmbed(){
+        this.player = this.client.VoiceModules.get(this.guild.id).player;
         try{
             if(this.page > this.text.size) this.page = this.text.size;
             if(this.text.size === 0){
@@ -74,15 +75,18 @@ class QueueMessage extends EventEmitter {
             }else{
                 loopmode = null;
             }
+            console.log(this.page);
             let embed = new MessageEmbed()
             .setTitle("Queue")
             .setColor(666)
             .addField("Now Playing:", song.title, false)
             .addField("Channel:", song.author, true)
             .addField("Songlength:", songlengthField, true)
-            .addField("Queued by:", this.guild.member(song.queuedBy).user.toString(), true)
-            .addField("Queue (Page: "+this.page, this.text.get(this.page), false)
-            .addField("Total pages:", this.text.size, true)
+            .addField("Queued by:", this.guild.member(song.queuedBy).user.toString(), true);
+            if(this.text.get(this.page)){
+                embed.addField("Queue (Page: "+this.page, this.text.get(this.page), false);
+            }
+            embed.addField("Total pages:", this.text.size, true)
             .addField("Total songs:", this.player.queue.list.size, true)
             .addField("Total length:", moment.duration(this.player.queue.length, "seconds").format())
             .setFooter(footer.text, footer.icon)
@@ -117,7 +121,7 @@ class QueueMessage extends EventEmitter {
             // if(this.created) throw new Error("Can only use this once!");
             if(!(message.channel instanceof TextChannel)) throw new Error("Must be TextChannel!");
             this.created = true;
-            this.requestedBy = member
+            this.requestedBy = message.member;
             this.textChannel = message.channel;
             this.page = page;
             console.log(this.textChannel);
