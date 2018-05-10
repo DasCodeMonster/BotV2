@@ -38,8 +38,7 @@ class getYoutube{
         var songs = [];
         var ids = [];
         var nextPageToken;
-        var ytitems = await util.promisify(youtubeV3.playlistItems.list);
-        var ytdata = await ytitems({
+        var ytdata = await youtubeV3.playlistItems.list({
             part: "snippet",
             playlistId: playlistID,
             maxResults: "50"
@@ -49,8 +48,7 @@ class getYoutube{
         ytdata.data.items.forEach(item=>{
             ids.push(item.snippet.resourceId.videoId);
         });
-        var vidDatafn = await util.promisify(youtubeV3.videos.list);
-        var vidData = await vidDatafn({
+        var vidData = await youtubeV3.videos.list({
             part: "snippet, contentDetails",
             id: ids.length>1?ids.join(", "):ids[0]
         });
@@ -59,7 +57,7 @@ class getYoutube{
         });
         while(nextPageToken){
             let ids = [];
-            let ytdata = await ytitems({
+            let ytdata = await youtubeV3.playlistItems.list({
                 part: "snippet",
                 playlistId: playlistID,
                 maxResults: "50",
@@ -69,8 +67,7 @@ class getYoutube{
             ytdata.data.items.forEach(item=>{
                 ids.push(item.snippet.resourceId.videoId);
             });
-            let vidDatafn = await util.promisify(youtubeV3.videos.list);
-            let vidData = await vidDatafn({
+            let vidData = await youtubeV3.videos.list({
                 part: "snippet, contentDetails",
                 id: ids.join(", ")
             });
@@ -86,8 +83,7 @@ class getYoutube{
      * @param {String} query 
      */
     static async search(message, query){
-        var svidfn = await util.promisify(youtubeV3.search.list);
-        var sresult = await svidfn({
+        var sresult = await youtubeV3.search.list({
             part: "snippet",
             type: "video",
             maxResults: 5,
@@ -98,8 +94,7 @@ class getYoutube{
         sresult.data.items.forEach(item=>{
             ids.push(item.id.videoId);
         });
-        let vidDatafn = await util.promisify(youtubeV3.videos.list);
-        let vidData = await vidDatafn({
+        let vidData = await youtubeV3.videos.list({
             part: "snippet, contentDetails",
             id: ids.join(", ")
         });
@@ -131,4 +126,4 @@ function song(item, message) {
     else if(item.snippet.thumbnails.default) thumbnail = item.snippet.thumbnails.url;
     var song = new Song(item.id, item.snippet.title, item.snippet.description, item.snippet.channelTitle, item.snippet.channelId, duration, thumbnail, message.member.id);
     return song;
-}
+} 

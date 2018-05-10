@@ -67,17 +67,21 @@ class Queue extends EventEmitter {
         }
     }
     _update(){
-        this.queueText = this.toString();
-        let length = 0;
-        this.list.some((song, key)=>{
-            if(key === 0)return false;
-            length += song.length;
-        });
-        this.length = length;
-        if(this._queueMessage){
-            this._queueMessage.update();
+        try {
+            this.queueText = this.toString();
+            let length = 0;
+            this.list.some((song, key)=>{
+                if(key === 0)return false;
+                length += song.length;
+            });
+            this.length = length;
+            if(this._queueMessage){
+                this._queueMessage.update();
+            }
+            this.client.provider.set(this.guild.id, "queue", this.list.array());
+        } catch (e) {
+            console.log(e);
         }
-        this.client.provider.set(this.guild.id, "queue", this.list.array());
     }
     /**
      * Adds a List of Songs (or one) to the current list in the order they are given.
@@ -86,111 +90,123 @@ class Queue extends EventEmitter {
      * @param {Number} position Position to insert the new songs
      */
     add(songs, position=null){
-        if(position && position<1) {
-            // console.error("error while running add()".error);
-            this.emit("error", new Error("Position must be at least 1"));
-            return;
-        }
-        if(position > this.list.size){
-            return new Error("Position is to high");
-        }
-        if(position === null){
-            if (songs instanceof Song){
-                this.list.set(this.list.size, songs);                
-            }else if(songs instanceof Array){
-                songs.forEach((song, index, array)=>{
-                    this.list.set(this.list.size, song);
-                });
-            }else if(songs instanceof Playlist){
-                this.list.concat(songs.list);
+        try {
+            if(position && position<1) {
+                // console.error("error while running add()".error);
+                this.emit("error", new Error("Position must be at least 1"));
+                return;
             }
-        }else{
-            var afterpos = this.list.filter((song, key, coll)=>{
-                if(key>=position){
-                    return true;
+            if(position > this.list.size){
+                return new Error("Position is to high");
+            }
+            if(position === null){
+                if (songs instanceof Song){
+                    this.list.set(this.list.size, songs);                
+                }else if(songs instanceof Array){
+                    songs.forEach((song, index, array)=>{
+                        this.list.set(this.list.size, song);
+                    });
+                }else if(songs instanceof Playlist){
+                    this.list.concat(songs.list);
                 }
-                return false;
-            });
-            
-            if (songs instanceof Song){
-                this.list.set(position, songs);                
-                afterpos.forEach((song, key)=>{
-                    this.list.set(key+1, song);
+            }else{
+                var afterpos = this.list.filter((song, key, coll)=>{
+                    if(key>=position){
+                        return true;
+                    }
+                    return false;
                 });
-            }else if(songs instanceof Array){
-                afterpos.forEach((song, key)=>{
-                    this.list.delete(key);
-                });
-                songs.forEach((song, index, array)=>{
-                    this.list.set(this.list.size, song);
-                });
-                afterpos.forEach((song, key)=>{
-                    this.list.set(key+songs.length, song);
-                });
-            }else if(songs instanceof Playlist){
-                afterpos.forEach((song, key)=>{
-                    this.list.delete(key);
-                });
-                this.list.concat(songs.list);
-                afterpos.forEach((song, key)=>{
-                    this.list.set(this.list.size, song);
-                });
+                
+                if (songs instanceof Song){
+                    this.list.set(position, songs);                
+                    afterpos.forEach((song, key)=>{
+                        this.list.set(key+1, song);
+                    });
+                }else if(songs instanceof Array){
+                    afterpos.forEach((song, key)=>{
+                        this.list.delete(key);
+                    });
+                    songs.forEach((song, index, array)=>{
+                        this.list.set(this.list.size, song);
+                    });
+                    afterpos.forEach((song, key)=>{
+                        this.list.set(key+songs.length, song);
+                    });
+                }else if(songs instanceof Playlist){
+                    afterpos.forEach((song, key)=>{
+                        this.list.delete(key);
+                    });
+                    this.list.concat(songs.list);
+                    afterpos.forEach((song, key)=>{
+                        this.list.set(this.list.size, song);
+                    });
+                }
             }
+            console.log(this.list, "130:Queue");
+            this._update();
+            this.emit("add");
+        } catch (e) {
+            console.log(e);
         }
-        console.log(this.list, "130:Queue");
-        this._update();
-        this.emit("add");
     }
     next(){
-        if(this.loop.song){
-            return this.list.get(0) || null;
-        }
-        var newQ = new Collection();
-        this.list.forEach((song, key)=>{
-            if(key === 0) return;
-            newQ.set(newQ.size, song);
-        });
-        if(this.loop.list){
-            newQ.set(newQ.size, this.list.get(0));
-        }
-        // this.list.forEach((val, key, map)=>{
-        //     if(key === 0 && val === null) return;
-        //     newQ.set(key-1, val);
-        // });
-        // if (this.loop.list){
-        //     if(newQ.has(-1)){
-        //         newQ.set(newQ.size-1, newQ.get(-1));
-        //     }
-        // }
-        // if(newQ.has(-1)){
-        //     newQ.delete(-1);
-        // }
-        this.list = newQ;
-        // this.updatelistMessage();
-        this.emit("updated");
-        this._update();            
-        return this.list.get(0);
-    }
-    skip(){
-        if(this.list.size === 1){
-            if(this.loop.list){
+        try {
+            if(this.loop.song){
                 return this.list.get(0) || null;
             }
+            var newQ = new Collection();
+            this.list.forEach((song, key)=>{
+                if(key === 0) return;
+                newQ.set(newQ.size, song);
+            });
+            if(this.loop.list){
+                newQ.set(newQ.size, this.list.get(0));
+            }
+            // this.list.forEach((val, key, map)=>{
+            //     if(key === 0 && val === null) return;
+            //     newQ.set(key-1, val);
+            // });
+            // if (this.loop.list){
+            //     if(newQ.has(-1)){
+            //         newQ.set(newQ.size-1, newQ.get(-1));
+            //     }
+            // }
+            // if(newQ.has(-1)){
+            //     newQ.delete(-1);
+            // }
+            this.list = newQ;
+            // this.updatelistMessage();
+            this.emit("updated");
+            this._update();            
+            return this.list.get(0);
+        } catch (e) {
+            console.log(e);
         }
-        var newQ = new Collection();
-        this.list.forEach((song, key)=>{
-            if(key === 0) return;
-            newQ.set(newQ.size, song);
-        });
-        if(this.loop.list){
-            newQ.set(newQ.size, this.list.get(0));
+    }
+    skip(){
+        try {
+            if(this.list.size === 1){
+                if(this.loop.list){
+                    return this.list.get(0) || null;
+                }
+            }
+            var newQ = new Collection();
+            this.list.forEach((song, key)=>{
+                if(key === 0) return;
+                newQ.set(newQ.size, song);
+            });
+            if(this.loop.list){
+                newQ.set(newQ.size, this.list.get(0));
+            }
+            this.list = newQ;
+            console.log(this.list, " l.182:Queue");
+            // this.updatelistMessage();
+            this.emit("updated");
+            this._update();  
+            return this.list.get(0);
+        } catch (e) {
+            console.log(e);
         }
-        this.list = newQ;
-        console.log(this.list, " l.182:Queue");
-        // this.updatelistMessage();
-        this.emit("updated");
-        this._update();  
-        return this.list.get(0);
     }
     /**
      * Removes a number of songs
@@ -245,55 +261,6 @@ class Queue extends EventEmitter {
         });
         this._update();
         // this.emit(this.events.shuffle, before, after);
-    }
-    /**
-     * Returns an embed representing the current queue
-     * @param {Number} page
-     * @param {Message} message 
-     */
-    _getQueueEmbed(page=1, message=null){
-        var reactions = [];
-        if (page >= this._queueMessage.size) page = this._queueMessage.size-1;
-        if (this._queueMessage.size === 0 && this.get(0) === null){
-            return {
-                embed: new MessageEmbed().setTitle("Queue").setDescription("**The queue is empty!**").setTimestamp(new Date()).setColor(666).setFooter(`Requested by ${message.author.username}`, message.author.displayAvatarURL),
-                reactions: reactions
-            }
-        }
-        else if((page<this._queueMessage.size) || (this._queueMessage.size === 0 && this.get(0) !== null)){
-            reactions.push("🔁");
-            reactions.push("🔂");
-            reactions.push("ℹ");
-            if (this.list.get(0) !== null){
-                var embed = new MessageEmbed().setTitle("Queue").setColor(666).addField("Now Playing:", this.list.get(0).title, false).addField("Channel:", this.list.get(0).author, true);
-                if (message.guild.voiceConnection && message.guild.voiceConnection.dispatcher) {
-                    embed.addField("Songlength:", `${moment.duration(message.guild.voiceConnection.dispatcher.streamTime, "milliseconds").format()}/${moment.duration(this.list.get(0).length, "seconds").format()}`, true).setTimestamp(new Date());
-                }else{
-                    embed.addField("Songlength:", `0:00/${moment.duration(this.list.get(0).length, "seconds").format()}`, true);
-                }
-                embed.addField("Queued by:", this.client.guilds.get(this.guild.id).member(this.list.get(0).queuedBy).user.toString(), true);
-            }
-            if(this._queueMessage.size !== 0){
-                console.log(this._queueMessage);
-                embed.addField(`Queue (Page: ${page+1})`, this._queueMessage.get(page), false)
-                .addField("Total pages:", this._queueMessage.size, true)
-                .addField("Total songs in queue:", this.list.size-1, true)
-                .addField("Total queue length:", moment.duration(this.length, "seconds").format() , true);
-                if(this.list.size > 2) reactions.push("🔀");
-                reactions.push("⏭");
-            }
-            if(!embed) throw new Error("Queuemessage unavailable");
-            if(this.loop.list && this.loop.song) embed.addField("Loop mode:", "🔁🔂");
-            else {
-                if(this.loop.list) embed.addField("Loop mode:", "🔁");
-                if(this.loop.song) embed.addField("Loop mode:", "🔂");
-            }
-            embed.setFooter(`Requested by ${message.author.username}`, message.author.displayAvatarURL);
-            return {
-                embed: embed,
-                reactions: reactions
-            }
-        }
     }
     /**
      * @param {Message} message

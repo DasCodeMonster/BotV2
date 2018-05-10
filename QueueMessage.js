@@ -1,4 +1,4 @@
-const {TextChannel, Guild, Message, MessageEmbed, MessageReaction, ReactionCollector, GuildMember} = require("discord.js");
+const {TextChannel, Guild, Message, MessageEmbed, MessageReaction, ReactionCollector, GuildMember, User} = require("discord.js");
 const {CommandoClient} = require("discord.js-commando");
 const {EventEmitter} = require("events");
 const VoiceClient = require("./VoiceClient");
@@ -53,17 +53,6 @@ class QueueMessage extends EventEmitter {
                     icon: this.requestedBy.user.displayAvatarURL()
                 }
             }
-            if(this.page > this.queue.queueText.size) this.page = this.queue.queueText.size;
-            if(this.queue.queueText.size === 0 && this.queue.list.size === 0){
-                return new MessageEmbed().setTitle("Queue").setDescription("**The queue is empty!**").setTimestamp(new Date()).setColor(666).setFooter(footer.text, footer.icon);
-            }
-            let song = this.queue.get(0);
-            let songlengthField;
-            if(this.guild.voiceConnection && this.guild.voiceConnection.dispatcher){
-                songlengthField = `${moment.duration(this.guild.voiceConnection.dispatcher.streamTime, "milliseconds").format()}/${moment.duration(song.length, "seconds").format()}`;
-            }else{
-                songlengthField = `0:00/${moment.duration(song.length, "seconds").format()}`;
-            }
             let loopmode;
             if(this.queue.loop.song && this.queue.loop.list){
                 loopmode = "🔂🔁";
@@ -73,6 +62,21 @@ class QueueMessage extends EventEmitter {
                 loopmode = "🔁";
             }else{
                 loopmode = null;
+            }
+            if(this.page > this.queue.queueText.size) this.page = this.queue.queueText.size;
+            if(this.queue.queueText.size === 0 && this.queue.list.size === 0){
+                let empty = new MessageEmbed().setTitle("Queue").setDescription("**The queue is empty!**").setTimestamp(new Date()).setColor(666).setFooter(footer.text, footer.icon);
+                if(loopmode !== null){
+                    empty.addField("Loop mode:", loopmode, true);
+                }
+                return empty;
+            }
+            let song = this.queue.get(0);
+            let songlengthField;
+            if(this.guild.voiceConnection && this.guild.voiceConnection.dispatcher){
+                songlengthField = `${moment.duration(this.guild.voiceConnection.dispatcher.streamTime, "milliseconds").format()}/${moment.duration(song.length, "seconds").format()}`;
+            }else{
+                songlengthField = `0:00/${moment.duration(song.length, "seconds").format()}`;
             }
             let embed = new MessageEmbed()
             .setTitle("Queue")
@@ -97,10 +101,35 @@ class QueueMessage extends EventEmitter {
             console.log(e);
         }
     }
+    async react(){
+        try {
+            if(!this.created) throw new Error("Use #Create() first!");
+            await this.message.reactions.removeAll();
+            await this.message.react("🔁");
+            await this.message.react("🔂");
+            if(this.queue.list.size > 0) await this.message.react("ℹ");
+            if(this.queue.list.size > 1) await this.message.react("⏭");
+            if(this.queue.list.size > 2) await this.message.react("🔀");
+            if(this.queue.queueText.size > 1) {
+                if(this.page !== this.queue.queueText.size && this.page !== 1){
+                    await this.message.react("◀");
+                    await this.message.react("▶");
+                }else if(this.page === this.queue.queueText.size){
+                    await this.message.react("◀");
+                }
+                else if(this.page === 1){
+                    await this.message.react("▶");
+                }
+            }
+        } catch (error) {
+            console.log(error);
+        }
+    }
     async update(page=1){
         try{
             if(!this.created) throw new Error("Use #Create() first!");
             this.page = page;
+            this.react();
             let embed = this.makeEmbed();
             await this.message.edit(embed);
         }catch(e){
@@ -120,11 +149,28 @@ class QueueMessage extends EventEmitter {
             this.textChannel = message.channel;
             this.page = page;
             this.message = await this.textChannel.send(this.makeEmbed());
+            await this.react();
+            this._handle();
         }catch(e){
             console.log(e);
         }
     }
-
+    _handle(){
+        try {
+            if(!this.created) throw new Error("Use #Create() first!");
+            const Collector = new ReactionCollector(this.message,
+                /**
+                 * @param {MessageReaction} reaction
+                 * @param {User} user
+                 * @param {Collection} collection
+                 */
+                (reaction, user, collection)=>{
+                    
+            });
+        } catch (error) {
+            console.log(error);
+        }
+    }
     _update(){
 
     }

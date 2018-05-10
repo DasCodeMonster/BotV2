@@ -1,4 +1,5 @@
 const commando = require("discord.js-commando");
+const VoiceModule = require("../../VoiceModule");
 const Audioworker = require("../../audioworker");
 const {Message} = require("discord.js");
 const Logger = require("../../logger");
@@ -30,17 +31,17 @@ class Shuffle extends commando.Command {
             this.client.loggers.set(message.guild.id, logger);
         }
         logger.log(message.author.username+"#"+message.author.discriminator, "("+message.author.id+")", "used", this.name, "command in channel:", message.channel.name, "("+message.channel.id+")\nArguments:", util.inspect(args));
-        /** 
-         * @type {Audioworker}
+        /**
+         * @type {VoiceModule}
          */
-        var audioworker = this.client.Audioworker;
-        if(!audioworker.queues.has(message.guild.id)){
-           var queue = audioworker.add(message.guild);
+        let voiceModule;
+        if(this.client.VoiceModules.has(message.guild.id)){
+            voiceModule = this.client.VoiceModules.get(message.guild.id);
+        }else {
+            voiceModule = new VoiceModule(this.client, message.guild);
+            this.client.VoiceModules.set(message.guild.id, voiceModule);
         }
-        else{
-            var queue = audioworker.queues.get(message.guild.id);
-        }
-        queue.shuffle(message);
+        voiceModule.player.queue.shuffle();
         message.reply("ok i shuffeled the queue!");
     }
     

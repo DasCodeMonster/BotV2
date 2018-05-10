@@ -3,6 +3,7 @@ const {Message} = require("discord.js");
 const Audioworker = require("../../audioworker");
 const Logger = require("../../logger");
 const util = require("util");
+const VoiceModule = require("../../VoiceModule");
 
 class Loop extends commando.Command {
     constructor(client) {
@@ -45,16 +46,28 @@ class Loop extends commando.Command {
             this.client.loggers.set(message.guild.id, logger);
         }
         logger.log(message.author.username+"#"+message.author.discriminator, "("+message.author.id+")", "used", this.name, "command in channel:", message.channel.name, "("+message.channel.id+")\nArguments:", util.inspect(args));
-        /** 
-         * @type {Audioworker}
+        // /** 
+        //  * @type {Audioworker}
+        //  */
+        // var audioworker = this.client.Audioworker;
+        // if(!audioworker.queues.has(message.guild.id)){
+        //     var queue = audioworker.add(message.guild);
+        // }
+        // else{
+        //     var queue = audioworker.queues.get(message.guild.id);
+        // }
+        /**
+         * @type {VoiceModule}
          */
-        var audioworker = this.client.Audioworker;
-        if(!audioworker.queues.has(message.guild.id)){
-            var queue = audioworker.add(message.guild);
+        let voiceModule;
+        if(this.client.VoiceModules.has(message.guild.id)){
+            voiceModule = this.client.VoiceModules.get(message.guild.id);
+        }else {
+            voiceModule = new VoiceModule(this.client, message.guild);
+            this.client.VoiceModules.set(message.guild.id, voiceModule);
         }
-        else{
-            var queue = audioworker.queues.get(message.guild.id);
-        }
+        voiceModule.player.setLoop()
+        return
         if (args.songorlist === "default" && args.boolean === "default") {
             message.reply(`Current settings for list: ${queue.loop.list}\nCurrent settings for song: ${queue.loop.song}`);
             

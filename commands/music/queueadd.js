@@ -74,15 +74,19 @@ class List extends commando.Command {
      * @param {VoiceModule} voiceModule
      */
     async addSingle(ID, message, args, voiceModule) {
-        var song = await getYt.Single(args.link.link, message);
-        if(args.position === 0){
-            voiceModule.player.queue.add(song);
+        try {
+            var song = await getYt.Single(args.link.link, message);
+            if(args.position === 0){
+                voiceModule.player.queue.add(song);
+            }
+            else {
+                voiceModule.player.queue.add(song, args.position);
+            }
+            if(message.guild.voiceConnection && message.guild.voiceConnection.dispatcher) return;        
+            voiceModule.join(message);
+        } catch (e) {
+            console.log(e);
         }
-        else {
-            voiceModule.player.queue.add(song, args.position);
-        }
-        if(message.guild.voiceConnection && message.guild.voiceConnection.dispatcher) return;        
-        voiceModule.join(message);
     }
     /**
      * 
@@ -92,15 +96,19 @@ class List extends commando.Command {
      * @param {VoiceModule} voiceModule 
      */
     async addPlaylist(message, args, ID, voiceModule) {
-        var songs = await getYt.Playlist(ID, message);
-        if(args.position === 0){
-            voiceModule.player.queue.add(songs);
+        try {
+            var songs = await getYt.Playlist(ID, message);
+            if(args.position === 0){
+                voiceModule.player.queue.add(songs);
+            }
+            else {
+                voiceModule.player.queue.add(songs, args.position);
+            }
+            if(message.guild.voiceConnection && message.guild.voiceConnection.dispatcher) return;
+            voiceModule.join(message);
+        } catch (e) {
+            console.log(e);
         }
-        else {
-            voiceModule.player.queue.add(songs, args.position);
-        }
-        if(message.guild.voiceConnection && message.guild.voiceConnection.dispatcher) return;
-        voiceModule.join(message);
     }
     /**
      * 
