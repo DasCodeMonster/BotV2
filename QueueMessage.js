@@ -6,6 +6,17 @@ const Queue = require("./Queue");
 const Player = require("./Player");
 const moment = require("moment");
 var momentDurationFormatSetup = require("moment-duration-format");
+function customTemplate(){
+    if(this.duration.asSeconds() >= 86400){
+        return "d [days] h:m:ss";
+    }
+    if(this.duration.asSeconds() >= 3600){
+        return "h:m:ss";
+    }
+    if(this.duration.asSeconds() < 3600){
+        return "m:ss";
+    }
+}
 
 class QueueMessage extends EventEmitter {
     /**
@@ -38,6 +49,8 @@ class QueueMessage extends EventEmitter {
          */
         this.lastEditedFrom = null;
         this.created = false;
+        this._resetTime = false;
+        this.reactions = [];
     }
     makeEmbed(){
         try{
@@ -73,10 +86,11 @@ class QueueMessage extends EventEmitter {
             }
             let song = this.queue.get(0);
             let songlengthField;
-            if(this.guild.voiceConnection && this.guild.voiceConnection.dispatcher){
-                songlengthField = `${moment.duration(this.guild.voiceConnection.dispatcher.streamTime, "milliseconds").format()}/${moment.duration(song.length, "seconds").format()}`;
+            if(this.guild.voiceConnection && this.guild.voiceConnection.dispatcher && !this._resetTime){
+                songlengthField = `${moment.duration(this.guild.voiceConnection.dispatcher.streamTime, "milliseconds").format(customTemplate, {trim: false})}/${moment.duration(song.length, "seconds").format(customTemplate, {trim: false})}`;
             }else{
-                songlengthField = `0:00/${moment.duration(song.length, "seconds").format()}`;
+                songlengthField = `0:00/${moment.duration(song.length, "seconds").format(customTemplate, {trim: false})}`;
+                this._resetTime = false;
             }
             let embed = new MessageEmbed()
             .setTitle("Queue")
@@ -89,7 +103,7 @@ class QueueMessage extends EventEmitter {
                 embed.addField("Queue (Page: "+this.page, this.queue.queueText.get(this.page), false)
                 .addField("Total pages:", this.queue.queueText.size, true)
                 .addField("Total songs:", this.queue.list.size-1, true)
-                .addField("Total length:", moment.duration(this.queue.length, "seconds").format())
+                .addField("Total length:", moment.duration(this.queue.length, "seconds").format(customTemplate, {trim: false}));
             }
             embed.setFooter(footer.text, footer.icon)
             if(loopmode !== null){
@@ -104,31 +118,50 @@ class QueueMessage extends EventEmitter {
     async react(){
         try {
             if(!this.created) throw new Error("Use #Create() first!");
-            await this.message.reactions.removeAll();
-            await this.message.react("🔁");
-            await this.message.react("🔂");
-            if(this.queue.list.size > 0) await this.message.react("ℹ");
-            if(this.queue.list.size > 1) await this.message.react("⏭");
-            if(this.queue.list.size > 2) await this.message.react("🔀");
+            let reactions = ["🔁","🔂"];
+            // await this.message.react("🔁");
+            // await this.message.react("🔂");
+            if(this.queue.list.size > 0) {
+                // await this.message.react("ℹ");
+                reactions.push("ℹ");
+            }
+            if(this.queue.list.size > 1) {
+                // await this.message.react("⏭");
+                reactions.push("⏭");
+            }
+            if(this.queue.list.size > 2) {
+                // await this.message.react("🔀");
+                reactions.push("🔀");
+            }
             if(this.queue.queueText.size > 1) {
                 if(this.page !== this.queue.queueText.size && this.page !== 1){
-                    await this.message.react("◀");
-                    await this.message.react("▶");
+                    // await this.message.react("◀");
+                    // await this.message.react("▶");
+                    reactions.push(["◀", "▶"]);
                 }else if(this.page === this.queue.queueText.size){
-                    await this.message.react("◀");
+                    // await this.message.react("◀");
+                    reactions.push("◀");
                 }
                 else if(this.page === 1){
-                    await this.message.react("▶");
+                    // await this.message.react("▶");
+                    reactions.push("▶");
                 }
             }
+            if(reactions === this.reactions) return;
+            await this.message.reactions.removeAll();
+            for (var i=0; i<reactions.length; i++){
+                await this.message.react(reactions[i]);
+            }
+            this.reactions = reactions;
         } catch (error) {
             console.log(error);
         }
     }
-    async update(page=1){
+    async update(page=1, resetTime=false){
         try{
             if(!this.created) throw new Error("Use #Create() first!");
             this.page = page;
+            this._resetTime = resetTime;
             this.react();
             let embed = this.makeEmbed();
             await this.message.edit(embed);
@@ -165,7 +198,8 @@ class QueueMessage extends EventEmitter {
                  * @param {Collection} collection
                  */
                 (reaction, user, collection)=>{
-                    
+                    if(!reaction.me) return false;
+                    reaction.users.remove(user);
             });
         } catch (error) {
             console.log(error);

@@ -66,20 +66,20 @@ class Player extends EventEmitter {
     async play(message, songs=null){
         try{
             let joined = await this.join(message);
-            if(!joined) return;
+            if(!joined) {
+                throw new Error("Could not join VoiceChannel");
+            };
             if(songs){
-                console.log(this.queue.get(0), "l.58:Player");
                 await this.queue.add(songs, 1);
-                console.log(this.queue.get(0));
-                // await this.add(songs, 1);
-                if(this.queue.get(0)!==songs){
-                    await this.queue.skip();
-                }
-                if(this.voiceConnection.dispatcher){
-                    this.voiceConnection.dispatcher.emit("finish", "skip");
-                }
+                console.log(this.queue.get(1));
+                this.skip(message);
+                return;
             }
             let song = this.queue.get(0);
+            if(!song) {
+                message.reply("Add some song to the queue!");
+                return;
+            }
             this.stopped = false;
             await this.voiceConnection.play(ytdl(song.ID, {filter: "audioonly"}), {volume: 5/100, passes: 2}); //this.volume
             if(this.channel){
@@ -90,13 +90,7 @@ class Player extends EventEmitter {
             this.voiceConnection.dispatcher.once("error", error=>{
                 console.log(error);
             });
-            await this.voiceConnection.dispatcher.once("finish", reason=>{
-                // if(reason){
-                //     console.debug("%s", reason);
-                //     if(reason === "stop"){
-                //         return;
-                //     }
-                // }
+            await this.voiceConnection.dispatcher.once("finish", () =>{
                 if(this.stopped){
                     this.voiceConnection.player.destroy();
                     return;
@@ -104,12 +98,12 @@ class Player extends EventEmitter {
                 if(this.queue.isEmpty()){
                     return;
                 }
-                this.onEnd(message, reason);
+                this.onEnd(message);
             });
             this.voiceConnection.dispatcher.on("start", ()=>{
-                setTimeout(()=>{
+                if(this.queue._queueMessage){
                     this.queue._queueMessage.update();
-                }, 200);
+                }
             });
         }catch(e){
             console.log(e);
@@ -120,37 +114,21 @@ class Player extends EventEmitter {
      * @param {Message} message Message which invoked the command
      * @param {String} reason Why the stream ended
      */
-    async onEnd(message, reason){
+    async onEnd(message){
         try{
-            let song;
-            if(reason === "skip"){
-                song = await this.queue.skip();
-            }else{
-                song = await this.queue.next();
-            }
+            let song = await this.queue.next();
             if(!song) return;
             if(!this.voiceConnection){
-                console.error(new Error("No voiceConnection"));
-                // this.logger.error(new Error("No voiceConnection"))
-                return;
+                throw new Error("No voiceConnection");
             }
             this.stopped = false;
             await this.voiceConnection.play(ytdl(song.ID, {filter: "audioonly"}), {volume: 5/100, passes: 2});
-            // if(this.qReactionCollector !== null){
-            //     this.updateQueueMessage();
-            // }
             if(this.channel){
                 await this.channel.send(`Now playing: ${this.queue.list.get(0).title}`);
             }else{
                 await message.channel.send(`Now playing: ${this.queue.list.get(0).title}`);
             }
-            await this.voiceConnection.dispatcher.once("finish", reason => {
-                // if (reason) {
-                //     console.debug("%s", reason);
-                //     if(reason === "stop"){
-                //         return;
-                //     }
-                // }
+            await this.voiceConnection.dispatcher.once("finish", () => {
                 if(this.stopped){
                     this.voiceConnection.player.destroy();
                     return;
@@ -158,7 +136,7 @@ class Player extends EventEmitter {
                 if(this.queue.isEmpty()){
                     return;
                 }
-                this.onEnd(message, reason);
+                this.onEnd(message);
             });
         }catch(e){
             console.log(e);
@@ -191,7 +169,7 @@ class Player extends EventEmitter {
      * @param {Message} message 
      * @param {Number} vol Number in Percent to set the volume to
      */
-    async setVolume(vol, message=null){
+    async setVolume(vol, message){
         try{
             let before = this.volume;
             this.volume = vol;

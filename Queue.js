@@ -142,7 +142,6 @@ class Queue extends EventEmitter {
                     });
                 }
             }
-            console.log(this.list, "130:Queue");
             this._update();
             this.emit("add");
         } catch (e) {
@@ -199,7 +198,6 @@ class Queue extends EventEmitter {
                 newQ.set(newQ.size, this.list.get(0));
             }
             this.list = newQ;
-            console.log(this.list, " l.182:Queue");
             // this.updatelistMessage();
             this.emit("updated");
             this._update();  
