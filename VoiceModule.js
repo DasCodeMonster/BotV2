@@ -49,7 +49,7 @@ class VoiceModule extends EventEmitter {
                         this.voiceConnection = undefined;
                     });
                     if(this.voiceConnection){
-                        if(this.voiceConnection.dispatcher === null || this.voiceConnection.dispatcher.finished){
+                        if(this.voiceConnection.dispatcher === null || this.voiceConnection.dispatcher.finished || !this.voiceConnection.dispatcher){
                             await this.player.play(message);
                         }
                     }

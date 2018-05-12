@@ -93,11 +93,11 @@ class Queue extends EventEmitter {
         try {
             if(position && position<1) {
                 // console.error("error while running add()".error);
-                this.emit("error", new Error("Position must be at least 1"));
-                return;
+                throw new Error("Position must be at least 1");
             }
             if(position > this.list.size){
-                return new Error("Position is to high");
+                // throw new Error("Position is to high");
+                position = null;
             }
             if(position === null){
                 if (songs instanceof Song){

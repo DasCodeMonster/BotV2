@@ -71,9 +71,15 @@ class Player extends EventEmitter {
             };
             if(songs){
                 await this.queue.add(songs, 1);
-                console.log(this.queue.get(1));
-                this.skip(message);
-                return;
+                if(songs instanceof Song && this.queue.get(0) !== songs){
+                    this.skip(message);
+                    return;
+                }else if(songs instanceof Array && this.queue.get(0) !== songs[0]){
+                    this.skip(message);
+                    return;
+                }else if(songs instanceof Playlist) {
+                    throw new Error("Not supported yet!");
+                }
             }
             let song = this.queue.get(0);
             if(!song) {
@@ -91,8 +97,9 @@ class Player extends EventEmitter {
                 console.log(error);
             });
             await this.voiceConnection.dispatcher.once("finish", () =>{
+                if(!this.voiceConnection) throw new Error("No voiceConnection");
+                this.voiceConnection.player.destroy();
                 if(this.stopped){
-                    this.voiceConnection.player.destroy();
                     return;
                 }
                 if(this.queue.isEmpty()){
@@ -147,6 +154,10 @@ class Player extends EventEmitter {
             let joined = await this.join(message);
             if(!joined) return;
             this.queue.skip();
+            if(!this.queue.get(0)){
+                this.stop();
+                return;
+            }
             this.play(message)
         }catch(e){
             console.log(e);
