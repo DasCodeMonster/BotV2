@@ -50,6 +50,9 @@ class QueueMessage extends EventEmitter {
         this.lastEditedFrom = null;
         this.created = false;
         this._resetTime = false;
+        /**
+         * @type {Array}
+         */
         this.reactions = [];
     }
     makeEmbed(){
@@ -124,6 +127,7 @@ class QueueMessage extends EventEmitter {
             if(this.queue.list.size > 0) {
                 // await this.message.react("ℹ");
                 reactions.push("ℹ");
+                reactions.push("⏹");
             }
             if(this.queue.list.size > 1) {
                 // await this.message.react("⏭");
@@ -198,8 +202,33 @@ class QueueMessage extends EventEmitter {
                  * @param {Collection} collection
                  */
                 (reaction, user, collection)=>{
-                    if(!reaction.me) return false;
+                    if(user.id === this.client.user.id) return false;
                     reaction.users.remove(user);
+                    if(!this.reactions.includes(reaction.emoji.name)) return false;
+                    return true;
+            });
+            Collector.on("collect", (reaction, user)=>{
+                if(reaction.emoji.name === "🔁"){
+                    this.queue.setLoopList(!this.queue.loop.list);
+                }else if(reaction.emoji.name === "🔂"){
+                    this.queue.setLoopSong(!this.queue.loop.song);
+                }else if(reaction.emoji.name === "ℹ"){
+                    // this.queue.songInfo()
+                    console.log("Not ready yet!");
+                }else if(reaction.emoji.name === "⏭"){
+                    console.log("Not ready yet!");
+                }else if(reaction.emoji.name === "🔀"){
+                    this.queue.shuffle();
+                }else if(reaction.emoji.name === "◀"){
+                    this.update(this.page-1, false);
+                }else if(reaction.emoji.name === "▶"){
+                    this.update(this.page+1, false);
+                }else if(reaction.emoji.name === "⏹"){
+                    console.log("not ready yet!");
+                }
+            });
+            Collector.on("error", e=>{
+                console.log(e);
             });
         } catch (error) {
             console.log(error);
