@@ -1,5 +1,5 @@
 const Playlist = require("./Playlist");
-const {Collection, Util, MessageEmbed, VoiceConnection, Guild} = require("discord.js");
+const {Collection, Util, MessageEmbed, VoiceConnection, Guild, Message} = require("discord.js");
 const {CommandoClient} = require("discord.js-commando");
 const VoiceClient = require("./VoiceClient");
 const {EventEmitter} = require("events");
@@ -305,6 +305,28 @@ class Queue extends EventEmitter {
         this.emit("updated");
         this._update();
         return this.loop;
+    }
+    /**
+     * @argument {Message} message
+     */
+    getLoop(message){
+        let text = "";
+        if(this.loop.song){
+            text += "🔂";
+        }
+        if(this.loop.list){
+            text += "🔁";
+        }
+        if(!this.loop.song && !this.loop.list){
+            text += "The queue is not looped";
+        }
+        let embed = new MessageEmbed()
+        .setTitle("Loop Mode")
+        .setColor(666)
+        .setDescription(text)
+        .setFooter(`Requested by ${message.member.displayName}`)
+        .setTimestamp(new Date());
+        return embed;
     }
     /**
      * Returns an embed with information about a song

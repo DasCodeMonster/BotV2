@@ -4,6 +4,7 @@ const Audioworker = require("../../audioworker");
 const Logger = require("../../logger");
 const util = require("util");
 const VoiceModule = require("../../VoiceModule");
+const VoiceClient = require("../../VoiceClient");
 
 class Loop extends commando.Command {
     constructor(client) {
@@ -17,7 +18,8 @@ class Loop extends commando.Command {
                 key: "songorlist",
                 label: "song Or List",
                 prompt: "invalid option",
-                type: "song_or_list",
+                oneOf: ["song", "list"],
+                type: "string",
                 default: "default",
                 infinite: false
             }, {
@@ -31,9 +33,15 @@ class Loop extends commando.Command {
         });
     }
     /**
+     * @typedef {Object} Argument
+     * @property {String} songorlist
+     * @property {Boolean|String} boolean
+     */
+
+    /**
      * 
      * @param {Message} message 
-     * @param {*} args 
+     * @param {Argument} args 
      */
     async run(message, args) {
         if(this.client.loggers.has(message.guild.id)){
@@ -46,16 +54,6 @@ class Loop extends commando.Command {
             this.client.loggers.set(message.guild.id, logger);
         }
         logger.log(message.author.username+"#"+message.author.discriminator, "("+message.author.id+")", "used", this.name, "command in channel:", message.channel.name, "("+message.channel.id+")\nArguments:", util.inspect(args));
-        // /** 
-        //  * @type {Audioworker}
-        //  */
-        // var audioworker = this.client.Audioworker;
-        // if(!audioworker.queues.has(message.guild.id)){
-        //     var queue = audioworker.add(message.guild);
-        // }
-        // else{
-        //     var queue = audioworker.queues.get(message.guild.id);
-        // }
         /**
          * @type {VoiceModule}
          */
@@ -63,10 +61,18 @@ class Loop extends commando.Command {
         if(this.client.VoiceModules.has(message.guild.id)){
             voiceModule = this.client.VoiceModules.get(message.guild.id);
         }else {
-            voiceModule = new VoiceModule(this.client, message.guild);
+            voiceModule = new VoiceModule(this.client, message.guild);  
             this.client.VoiceModules.set(message.guild.id, voiceModule);
         }
-        voiceModule.player.setLoop()
+        if(args.songorlist === "song" && (args.boolean instanceof Boolean || typeof args.boolean === "boolean")){
+            voiceModule.player.queue.setLoopSong(args.boolean, message);
+        }else if(args.songorlist === "list" && (args.boolean instanceof Boolean || typeof args.boolean === "boolean")){
+            voiceModule.player.queue.setLoopList(args.boolean, message);
+        }else if((args.boolean instanceof String || typeof args.boolean === "string") && args.songorlist === "default"){
+            message.channel.send(voiceModule.player.queue.getLoop(message))
+        }else {
+            message.reply("Unknown option! Please try again!");
+        }
         return
         if (args.songorlist === "default" && args.boolean === "default") {
             message.reply(`Current settings for list: ${queue.loop.list}\nCurrent settings for song: ${queue.loop.song}`);

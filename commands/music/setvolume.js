@@ -3,6 +3,7 @@ const {Message} = require("discord.js");
 const Audioworker = require("../../audioworker");
 const Logger = require("../../logger");
 const util = require("util");
+const VoiceModule = require("../../VoiceModule");
 
 class SetVolumeCommand extends commando.Command {
     constructor(client) {
@@ -44,22 +45,33 @@ class SetVolumeCommand extends commando.Command {
             this.client.loggers.set(message.guild.id, logger);
         }
         logger.log(message.author.username+"#"+message.author.discriminator, "("+message.author.id+")", "used", this.name, "command in channel:", message.channel.name, "("+message.channel.id+")\nArguments:", util.inspect(args));
-        /** 
-         * @type {Audioworker}
+        // /** 
+        //  * @type {Audioworker}
+        //  */
+        // var audioworker = this.client.Audioworker;
+        // if(!audioworker.queues.has(message.guild.id)){
+        //    var queue = audioworker.add(message.guild);
+        // }
+        // else{
+        //     var queue = audioworker.queues.get(message.guild.id);
+        // }
+        /**
+         * @type {VoiceModule}
          */
-        var audioworker = this.client.Audioworker;
-        if(!audioworker.queues.has(message.guild.id)){
-           var queue = audioworker.add(message.guild);
-        }
-        else{
-            var queue = audioworker.queues.get(message.guild.id);
+        let voiceModule;
+        if(this.client.VoiceModules.has(message.guild.id)){
+            voiceModule = this.client.VoiceModules.get(message.guild.id);
+        }else {
+            voiceModule = new VoiceModule(this.client, message.guild);
+            this.client.VoiceModules.set(message.guild.id, voiceModule);
         }
         if (args.number === -1) {
-            await message.channel.send({embed: await queue.getVolume(message).embed})
+            // await message.channel.send({embed: await queue.getVolume(message).embed})
             return;
         }else{
-            await queue.setVolume(args.number, message);
+            await voiceModule.player.setVolume(args.number, message);
         }
+
     }
     /**
      * 
