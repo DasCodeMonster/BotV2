@@ -9,33 +9,38 @@ class YTlink extends ArgumentType {
     constructor(client) {
         super(client, "ytlink");
     }
-    validate(value, msg, arg) {
+    async validate(value, msg, arg) {
         if (ytdl.validateURL(value)) return ytdl.validateURL(value);
         else {
             var ID = value.split(/(list=)+/)[2];
-            return tube(ID);
+            return await tube(ID);
         }
     }
-    parse(value) {
+    /**
+     * 
+     * @param {String} value 
+     */
+    async parse(value) {
+        let valid = await this.validate(value);
+        if(!valid) throw new Error("Not a valid Link");
         if (ytdl.validateURL(value)) {
-            var retvar = value;
-            var ID = value.split(/(v=)+/)[2];
+            let ID = value.split(/(v=)+/)[2];
             ID = ID.split(/([&])+/)[0];
             // return [ID, "single"];
-            return {type: "single", id: ID, link: retvar}
+            return {type: "single", id: ID, link: value}
         } 
         else {
-            if (this.validate(value)) {
-                ID = value.split(/(list=)+/)[2];
-                // return [ID, "list"];
-                return {type: "list", id: ID}
-            }
-            else throw new Error("Invalid link!");
+            let ID = value.split(/(list=)+/)[2];
+            // return [ID, "list"];
+            return {type: "list", id: ID, link: value}
         }
     }
 }
 
 function tube(ID) {
+    /**
+     * @type {Promise<Boolean>}
+     */
     let prom = new Promise((res, rej)=>{
         youtubeV3.playlistItems.list({
             part: "snippet",

@@ -33,9 +33,21 @@ class List extends commando.Command {
         });
     }
     /**
+     * @typedef {Object} link
+     * @property {String} type
+     * @property {String} id
+     * @property {String} link
+     */
+
+    /**
+     * @typedef {Object} argument
+     * @property {link} link
+     * @property {Number} position
+     */
+    /**
      * 
      * @param {Message} message 
-     * @param {Object} args 
+     * @param {argument} args 
      */
     async run(message, args) {
         if(this.client.loggers.has(message.guild.id)){
@@ -48,7 +60,6 @@ class List extends commando.Command {
             this.client.loggers.set(message.guild.id, logger);
         }
         logger.log(message.author.username+"#"+message.author.discriminator, "("+message.author.id+")", "used", this.name, "command in channel:", message.channel.name, "("+message.channel.id+")\nArguments:", util.inspect(args));
-        var ID = args.link.id;
        /**
          * @type {VoiceModule}
          */
@@ -60,20 +71,19 @@ class List extends commando.Command {
             this.client.VoiceModules.set(message.guild.id, voiceModule);
         }
         if (args.link.type ==="single") {
-            this.addSingle(ID, message, args, voiceModule);
+            this.addSingle(message, args, voiceModule);
         }
         else {
-            this.addPlaylist(message, args, ID, voiceModule);
+            this.addPlaylist(message, args, voiceModule);
         }
     }
     /**
      *  
-     * @param {*} ID 
      * @param {Message} message
-     * @param {Object} args
+     * @param {argument} args
      * @param {VoiceModule} voiceModule
      */
-    async addSingle(ID, message, args, voiceModule) {
+    async addSingle(message, args, voiceModule) {
         try {
             var song = await getYt.Single(args.link.link, message);
             if(args.position === 0){
@@ -82,7 +92,6 @@ class List extends commando.Command {
             else {
                 voiceModule.player.queue.add(song, args.position);
             }
-            if(message.guild.voiceConnection && message.guild.voiceConnection.dispatcher) return;        
             voiceModule.join(message);
         } catch (e) {
             console.log(e);
@@ -91,20 +100,18 @@ class List extends commando.Command {
     /**
      * 
      * @param {Message} message 
-     * @param {Object} args 
-     * @param {*} ID 
+     * @param {argument} args  
      * @param {VoiceModule} voiceModule 
      */
-    async addPlaylist(message, args, ID, voiceModule) {
+    async addPlaylist(message, args, voiceModule) {
         try {
-            var songs = await getYt.Playlist(ID, message);
+            var songs = await getYt.Playlist(args.link.id, message);
             if(args.position === 0){
                 voiceModule.player.queue.add(songs);
             }
             else {
                 voiceModule.player.queue.add(songs, args.position);
             }
-            if(message.guild.voiceConnection && message.guild.voiceConnection.dispatcher) return;
             voiceModule.join(message);
         } catch (e) {
             console.log(e);
