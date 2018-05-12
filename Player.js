@@ -87,7 +87,7 @@ class Player extends EventEmitter {
                 return;
             }
             this.stopped = false;
-            await this.voiceConnection.play(ytdl(song.ID, {filter: "audioonly"}), {volume: 5/100, passes: 2}); //this.volume
+            await this.voiceConnection.play(ytdl(song.ID, {filter: "audioonly"}), {volume: this.volume/100, passes: 2}); //this.volume
             if(this.channel){
                 await this.channel.send(`Now playing: ${song.title}`);
             }else{
@@ -129,7 +129,7 @@ class Player extends EventEmitter {
                 throw new Error("No voiceConnection");
             }
             this.stopped = false;
-            await this.voiceConnection.play(ytdl(song.ID, {filter: "audioonly"}), {volume: 5/100, passes: 2});
+            await this.voiceConnection.play(ytdl(song.ID, {filter: "audioonly"}), {volume: this.volume/100, passes: 2});
             if(this.channel){
                 await this.channel.send(`Now playing: ${this.queue.list.get(0).title}`);
             }else{
