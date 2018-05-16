@@ -120,7 +120,7 @@ class QueueMessage extends EventEmitter {
     }
     async react(){
         try {
-            if(!this.created) throw new Error("Use #Create() first!");
+            if(!this.created || !this.message) throw new Error("Use #Create() first!");
             let reactions = ["🔁","🔂"];
             // await this.message.react("🔁");
             // await this.message.react("🔂");
@@ -151,7 +151,9 @@ class QueueMessage extends EventEmitter {
                     reactions.push("▶");
                 }
             }
-            if(reactions === this.reactions) return;
+            if(ArrayEqual(reactions, this.reactions)){
+                return;
+            }
             await this.message.reactions.removeAll();
             for (var i=0; i<reactions.length; i++){
                 await this.message.react(reactions[i]);
@@ -163,7 +165,7 @@ class QueueMessage extends EventEmitter {
     }
     async update(page=1, resetTime=false){
         try{
-            if(!this.created) throw new Error("Use #Create() first!");
+            if(!this.created || !this.message) throw new Error("Use #Create() first!");
             this.page = page;
             this._resetTime = resetTime;
             this.react();
@@ -181,11 +183,11 @@ class QueueMessage extends EventEmitter {
         try{
             // if(this.created) throw new Error("Can only use this once!");
             if(!(message.channel instanceof TextChannel)) throw new Error("Must be TextChannel!");
-            this.created = true;
             this.requestedBy = message.member;
             this.textChannel = message.channel;
             this.page = page;
             this.message = await this.textChannel.send(this.makeEmbed());
+            this.created = true;
             await this.react();
             this._handle();
         }catch(e){
@@ -239,3 +241,17 @@ class QueueMessage extends EventEmitter {
     }
 }
 module.exports = QueueMessage;
+
+/**
+ * 
+ * @param {Array} arr1 
+ * @param {Array} arr2 
+ */
+function ArrayEqual(arr1, arr2) {
+    let length = arr1.length
+    if (length !== arr2.length) return false
+    for (var i = 0; i < length; i++)
+      if (arr1[i] !== arr2[i])
+        return false
+    return true
+  }

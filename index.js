@@ -54,7 +54,7 @@ client.dispatcher.addInhibitor(msg=>{
 
 client.on("ready", () => {
     try{
-        console.info("Bot started".info);
+        console.info(colors.info("Bot started"));
     }catch(e){
         console.log(e);
     }
