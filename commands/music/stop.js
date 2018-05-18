@@ -30,5 +30,8 @@ class Stop extends Command{
         }
         voiceModule.player.stop();
     }
+    hasPermission(){
+        return true;
+    }
 }
 module.exports = Stop;

@@ -134,5 +134,8 @@ class LyricsCommand extends commando.Command {
             message.reply("I did not found any lyrics matching your query :frowning:");
         }
     }
+    hasPermission(){
+        return true;
+    }
 }
 module.exports = LyricsCommand;

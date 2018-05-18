@@ -124,12 +124,12 @@ class QueueMessage extends EventEmitter {
             let reactions = ["🔁","🔂"];
             // await this.message.react("🔁");
             // await this.message.react("🔂");
-            if(this.queue.list.size > 0) {
+            if(this.queue.list.size > 0 && this.guild.voiceConnection) {
                 // await this.message.react("ℹ");
                 reactions.push("ℹ");
                 reactions.push("⏹");
             }
-            if(this.queue.list.size > 1) {
+            if(this.queue.list.size > 1 && this.guild.voiceConnection) {
                 // await this.message.react("⏭");
                 reactions.push("⏭");
             }
@@ -155,9 +155,9 @@ class QueueMessage extends EventEmitter {
                 return;
             }
             await this.message.reactions.removeAll();
-            for (var i=0; i<reactions.length; i++){
-                await this.message.react(reactions[i]);
-            }
+            await asyncForEach(reactions, async name=>{
+                await this.message.react(name);
+            });
             this.reactions = reactions;
         } catch (error) {
             console.log(error);
@@ -210,24 +210,7 @@ class QueueMessage extends EventEmitter {
                     return true;
             });
             Collector.on("collect", (reaction, user)=>{
-                if(reaction.emoji.name === "🔁"){
-                    this.queue.setLoopList(!this.queue.loop.list);
-                }else if(reaction.emoji.name === "🔂"){
-                    this.queue.setLoopSong(!this.queue.loop.song);
-                }else if(reaction.emoji.name === "ℹ"){
-                    // this.queue.songInfo()
-                    console.log("Not ready yet!");
-                }else if(reaction.emoji.name === "⏭"){
-                    console.log("Not ready yet!");
-                }else if(reaction.emoji.name === "🔀"){
-                    this.queue.shuffle();
-                }else if(reaction.emoji.name === "◀"){
-                    this.update(this.page-1, false);
-                }else if(reaction.emoji.name === "▶"){
-                    this.update(this.page+1, false);
-                }else if(reaction.emoji.name === "⏹"){
-                    console.log("not ready yet!");
-                }
+                this.emit(reaction.emoji.name, user);
             });
             Collector.on("error", e=>{
                 console.log(e);
@@ -254,4 +237,15 @@ function ArrayEqual(arr1, arr2) {
       if (arr1[i] !== arr2[i])
         return false
     return true
-  }
+}
+
+/**
+ * 
+ * @param {Array} array 
+ * @param {function(*, Number, Array)} callback 
+ */
+async function asyncForEach(array, callback) {
+    for (let index = 0; index < array.length; index++) {
+      await callback(array[index], index, array)
+    }
+}

@@ -51,5 +51,8 @@ class SetMusicChannel extends commando.Command {
         await queue.setChannel(args.channel);
         await message.reply("Ok i set the channel!");
     }
+    hasPermission(){
+        return true;
+    }
 }
 module.exports = SetMusicChannel;

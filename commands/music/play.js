@@ -25,9 +25,20 @@ class Play extends commando.Command {
         });
     }
     /**
+     * @typedef {Object} link
+     * @property {String} type
+     * @property {String} id
+     * @property {String} link
+     */
+
+    /**
+     * @typedef {Object} argument
+     * @property {link} link 
+     */
+    /**
      * 
      * @param {Message} message 
-     * @param {Object} args 
+     * @param {argument} args 
      */
     async run(message, args) {
         if(this.client.loggers.has(message.guild.id)){
@@ -40,7 +51,7 @@ class Play extends commando.Command {
             this.client.loggers.set(message.guild.id, logger);
         }
         logger.log(message.author.username+"#"+message.author.discriminator, "("+message.author.id+")", "used", this.name, "command in channel:", message.channel.name, "("+message.channel.id+")\nArguments:", util.inspect(args));
-        var ID = args.link.id;
+        let ID = args.link.id;
         /**
          * @type {VoiceModule}
          */
@@ -52,24 +63,15 @@ class Play extends commando.Command {
             this.client.VoiceModules.set(message.guild.id, voiceModule);
         }
         if (args.link.type ==="single") {
-            // this.addSingle(ID, message, args, queue);
             var song = await getYt.Single(args.link.link, message).catch(reason=>{
                 logger.error(reason);
             });
-            // await queue.play(message, song).catch(reason=>{
-            //     logger.error(reason);
-            // });
             await voiceModule.player.play(message, song);
         }
         else {
-            // this.addPlaylist(message, args, ID, queue);
             var songs = await getYt.Playlist(ID, message).catch(reason=>{
                 logger.error(reason);
             });
-            // await queue.play(message, songs).catch(reason=>{
-            //     queue.logger.error(reason);
-            // });
-
             await voiceModule.player.play(message, songs);
         }
     }
@@ -80,15 +82,16 @@ class Play extends commando.Command {
      * @returns {boolean}
      */
     hasPermission(message, args){
-        var command = this.client.provider.get(message.guild, this.name, {true:[], false:[], channel: {true: [], false: []}, role:{true: [], false: []}})
-        // if (message.member.hasPermission("ADMINISTRATOR")|| command.true.indexOf(message.author.id) != -1 || command.channel.true.indexOf(message.channel.id)>-1 || role(message, command)){
-        if(message.member.hasPermission("ADMINISTRATOR")){
-            return true;
-        }
-        if(command.false.indexOf(message.author.id)>-1||command.channel.false.indexOf(message.channel.id)>-1||role(message, command)) return false;
-        else {
-            return true;
-        }
+        return true;
+        // var command = this.client.provider.get(message.guild, this.name, {true:[], false:[], channel: {true: [], false: []}, role:{true: [], false: []}})
+        // // if (message.member.hasPermission("ADMINISTRATOR")|| command.true.indexOf(message.author.id) != -1 || command.channel.true.indexOf(message.channel.id)>-1 || role(message, command)){
+        // if(message.member.hasPermission("ADMINISTRATOR")){
+        //     return true;
+        // }
+        // if(command.false.indexOf(message.author.id)>-1||command.channel.false.indexOf(message.channel.id)>-1||role(message, command)) return false;
+        // else {
+        //     return true;
+        // }
     }
 }
 /**

@@ -32,5 +32,8 @@ class RemoveLyrics extends commando.Command {
         await this.client.LyricsAPI.remove(args.id);
         message.reply(":ok:");
     }
+    hasPermission(){
+        return true;
+    }
 }
 module.exports = RemoveLyrics;

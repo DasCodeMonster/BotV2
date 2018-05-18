@@ -21,6 +21,62 @@ class Player extends EventEmitter {
             });
         }
         this.queue = new Queue(client, guild, this.voiceConnection);
+        this.queue._queueMessage.on("🔁", user=>{
+            try {
+                this.queue.setLoopList(!this.queue.loop.list);
+            } catch (e) {
+                console.log(e);
+            }
+        });
+        this.queue._queueMessage.on("🔂", user=>{
+            try {
+                this.queue.setLoopSong(!this.queue.loop.song);
+            } catch (e) {
+                console.log(e);
+            }
+        });
+        this.queue._queueMessage.on("ℹ", user=>{
+            try {
+                this.queue._queueMessage.textChannel.send(this.queue.songInfo(0));
+            } catch (e) {
+                console.log(e);
+            }
+        });
+        this.queue._queueMessage.on("⏭", user=>{
+            try {
+                this.skip(this.queue._queueMessage.message);
+            } catch (e) {
+                console.log(e);
+            }
+        });
+        this.queue._queueMessage.on("🔀", user=>{
+            try {
+                this.queue.shuffle();
+            } catch (e) {
+                console.log(e);
+            }
+        });
+        this.queue._queueMessage.on("◀", user=>{
+            try {
+                this.queue._queueMessage.update(this.queue._queueMessage.page-1, false);
+            } catch (e) {
+                console.log(e);
+            }
+        });
+        this.queue._queueMessage.on("▶", user=>{
+            try {
+                this.queue._queueMessage.update(this.queue._queueMessage.page+1, false);
+            } catch (e) {
+                console.log(e);
+            }
+        });
+        this.queue._queueMessage.on("⏹", user=>{
+            try {
+                this.stop();
+            } catch (e) {
+                console.log(e);
+            }
+        });
         /**
          * @type {Song[]}
          */
@@ -108,7 +164,7 @@ class Player extends EventEmitter {
                 this.onEnd(message);
             });
             this.voiceConnection.dispatcher.on("start", ()=>{
-                if(this.queue._queueMessage){
+                if(this.queue._queueMessage.created){
                     this.queue._queueMessage.update();
                 }
             });

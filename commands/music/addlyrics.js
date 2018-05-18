@@ -111,5 +111,8 @@ class AddLyrics extends Command {
         await this.client.LyricsAPI.add(args.author, args.title, songtext, args.genre, ids);
         await message.reply(":ok:");
     }
+    hasPermission(){
+        return true;
+    }
 }
 module.exports = AddLyrics;

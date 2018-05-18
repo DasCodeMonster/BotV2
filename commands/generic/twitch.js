@@ -77,5 +77,8 @@ class Webhookcommand extends commando.Command {
             }
         });
     }
+    hasPermission(){
+        return true;
+    }
 }
 module.exports = Webhookcommand;

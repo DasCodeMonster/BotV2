@@ -28,9 +28,14 @@ class Record extends commando.Command {
         });
     }
     /**
+     * @typedef {Object} argument
+     * @property {User} user
+     * @property {string} name
+     */
+    /**
      * 
      * @param {Message} message 
-     * @param {*} args 
+     * @param {argument} args 
      */
     async run(message, args){
         if(this.client.loggers.has(message.guild.id)){
@@ -57,6 +62,9 @@ class Record extends commando.Command {
         if(err){
             logger.error(err);
         }
+    }
+    hasPermission(){
+        return true;
     }
 }
 module.exports = Record;

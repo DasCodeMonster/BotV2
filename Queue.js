@@ -21,10 +21,9 @@ class Queue extends EventEmitter {
         super();
         this.client = client;
         this.guild = guild;
-        this._queueMessage = null;
         this.queueText = new Collection();
         this.voiceConnection = voiceConnection || null;
-         /**
+        /**
          * @type {Collection<Number,Song>}
          */
         this.list = new Collection();
@@ -33,6 +32,7 @@ class Queue extends EventEmitter {
             list: false
         }
         this.length = 0;
+        this._queueMessage = new QueueMessage(client, guild, this);
     }
     /**
      * Return one or multiple Strings representing the queue.
@@ -75,7 +75,7 @@ class Queue extends EventEmitter {
                 length += song.length;
             });
             this.length = length;
-            if(this._queueMessage){
+            if(this._queueMessage.created){
                 this._queueMessage.update();
             }
             this.client.provider.set(this.guild.id, "queue", this.list.array());
@@ -269,8 +269,7 @@ class Queue extends EventEmitter {
             if(this._queueMessage){
                 this._queueMessage.create(message);
             }else{
-                this._queueMessage = new QueueMessage(this.client, this.guild, this);
-                this._queueMessage.create(message);
+                throw new Error("QueueMessage not initialized");
             }
         }catch(e){
             console.log(e);
@@ -281,7 +280,7 @@ class Queue extends EventEmitter {
      * If true the current Song will be repeated.
      * @param {boolean} bool 
      */
-    setLoopSong(bool, message=null){
+    setLoopSong(bool){
         let before = this.loop;
         this.loop.song = bool;
         let after = this.loop;
@@ -296,7 +295,7 @@ class Queue extends EventEmitter {
      * If true the current Song will be added to the end of the list again after it finished.
      * @param {boolean} bool 
      */
-    setLoopList(bool, message=null){
+    setLoopList(bool){
         let before = this.loop;
         this.loop.list = bool;
         let after = this.loop;
@@ -330,10 +329,9 @@ class Queue extends EventEmitter {
     }
     /**
      * Returns an embed with information about a song
-     * @param {Message} message 
      * @param {Number} position position of the song in list
      */
-    songInfo(message, position){
+    songInfo(position){
         if(position > this.list.size-1){
             position = this.list.size-1;
         }
@@ -341,8 +339,8 @@ class Queue extends EventEmitter {
             return new MessageEmbed().setColor(666).setTimestamp(new Date()).setDescription("There are not any songs in the list. You need add some first!");
         }
         var seconds = 0;
-        if (message.guild.voiceConnection && message.guild.voiceConnection.dispatcher){
-            seconds += this.list.get(0).length-Math.floor((message.guild.voiceConnection.dispatcher.time/1000));
+        if (this.voiceConnection && this.voiceConnection.dispatcher){
+            seconds += this.list.get(0).length-Math.floor((this.voiceConnection.dispatcher.time/1000));
         }
         else seconds += this.list.get(0).length;
         this.list.some((song, index) => {
@@ -365,8 +363,8 @@ class Queue extends EventEmitter {
         .addField("Channel", `[${this.list.get(position).author}](https://www.youtube.com/channel/${this.list.get(position).channelID})`, true)
         .addField("Length", moment.duration(this.list.get(position).length, "seconds").format(), true)
         .addField("Description", util.isArray(description)? description[0] : description, false)
-        .addField("listd by", message.guild.member(this.list.get(position).listdBy).user.toString(), true)
-        .addField("listd at", this.list.get(position).listdAt, true);
+        .addField("queued by", this.guild.member(this.list.get(position).queuedBy).user.toString(), true)
+        .addField("queued at", this.list.get(position).queuedAt, true);
         if(position === 0){
             embed.addField("ETA:", "Now playing!");
         }else{

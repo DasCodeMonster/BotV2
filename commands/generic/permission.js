@@ -212,11 +212,12 @@ class Permission extends commando.Command {
      * @param {CommandMessage} message 
      */
     hasPermission(message){
-        /**
-        * @type {PermissionManager}
-        */
-        const PM = this.client.PM;
-        return PM.get(message.command, message.member) || "You dont have enough permissions" ;
+        return false;
+        // /**
+        // * @type {PermissionManager}
+        // */
+        // const PM = this.client.PM;
+        // return PM.get(message.command, message.member) || "You dont have enough permissions" ;
     }
     // /**
     //  * 

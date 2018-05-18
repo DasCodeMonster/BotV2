@@ -26,9 +26,9 @@ class VoiceModule extends EventEmitter {
      * @param {Message} message 
      * @param {VoiceChannel} channel channel to join
      */
-    async join(message, channel=undefined){
+    async join(message, channel=null){
         try{
-            if(channel){
+            if(channel !== null){
                 if(!(channel instanceof VoiceChannel))return new Error("must be voiceChannel");
                 this.voiceConnection = await channel.join();
                 this.voiceConnection.once("disconnect", reason=>{

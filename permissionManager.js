@@ -242,7 +242,7 @@ class PermissionManager {
         //     this.userPermissions.set(user.id, userPerm);
         // });
         // this.logger.log(this.this.commandPermissions);
-        this.logger.log(util.inspect(this.permissions, false, null));
+        // this.logger.log(util.inspect(this.permissions, false, null));
         
         // console.log(this.userPermissions.first()["ban"].permission);
     }

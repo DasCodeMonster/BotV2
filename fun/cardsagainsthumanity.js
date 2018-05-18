@@ -34,5 +34,8 @@ class CardsAgainstHumanity extends commando.Command {
         var testgame = new CAH(4);
         testgame.run(message.channel);
     }
+    hasPermission(){
+        return true;
+    }
 }
 module.exports = CardsAgainstHumanity;

@@ -44,5 +44,8 @@ class ResetMusicChannel extends commando.Command {
         await queue.resetChannel();
         await message.reply("Ok");
     }
+    hasPermission(){
+        return true;
+    }
 }
 module.exports = ResetMusicChannel;

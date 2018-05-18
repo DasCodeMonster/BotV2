@@ -34,8 +34,8 @@ class Loop extends commando.Command {
     }
     /**
      * @typedef {Object} Argument
-     * @property {String} songorlist
-     * @property {Boolean|String} boolean
+     * @property {string} songorlist
+     * @property {boolean|string} boolean
      */
 
     /**
@@ -64,37 +64,15 @@ class Loop extends commando.Command {
             voiceModule = new VoiceModule(this.client, message.guild);  
             this.client.VoiceModules.set(message.guild.id, voiceModule);
         }
-        if(args.songorlist === "song" && (args.boolean instanceof Boolean || typeof args.boolean === "boolean")){
+        if(args.songorlist === "song" && util.isBoolean(args.boolean)){
             voiceModule.player.queue.setLoopSong(args.boolean, message);
-        }else if(args.songorlist === "list" && (args.boolean instanceof Boolean || typeof args.boolean === "boolean")){
+        }else if(args.songorlist === "list" && util.isBoolean(args.boolean)){
             voiceModule.player.queue.setLoopList(args.boolean, message);
-        }else if((args.boolean instanceof String || typeof args.boolean === "string") && args.songorlist === "default"){
+        }else if(util.isString(args.boolean) && args.songorlist === "default"){
             message.channel.send(voiceModule.player.queue.getLoop(message))
         }else {
-            message.reply("Unknown option! Please try again!");
-        }
-        return
-        if (args.songorlist === "default" && args.boolean === "default") {
-            message.reply(`Current settings for list: ${queue.loop.list}\nCurrent settings for song: ${queue.loop.song}`);
-            
-        }
-        else if (args.songorlist !== "default" && args.boolean === "default") {
-            if(args.songorlist === "song"){
-                message.reply(`Current settings for ${args.songorlist}: ${queue.loop.song}`);                
-            }
-            else if(args.songorlist === "list") {
-                message.reply(`Current settings for ${args.songorlist}: ${queue.loop.list}`);
-            }
-        } else if (args.songorlist !== "default" && args.boolean !== "default") {
-            if(args.songorlist === "song"){
-                queue.setLoopSong(args.boolean, message);
-            }
-            if(args.songorlist === "list"){
-                queue.setLoopList(args.boolean, message);
-            }
-            message.reply(`set loop ${args.songorlist} to ${args.boolean}`);
-        } else if (args.songorlist === "default" && args.boolean !== "default") {
-            message.reply(`you need to be more precise! Do you want to set loop list or loop song to ${args.boolean}`);
+            message.channel.send(voiceModule.player.queue.getLoop(message))
+            //message.reply("Unknown combination! Please try again!");
         }
     }
     /**
@@ -104,15 +82,16 @@ class Loop extends commando.Command {
      * @returns {boolean}
      */
     hasPermission(message, args){
-        var command = this.client.provider.get(message.guild, this.name, {true:[], false:[], channel: {true: [], false: []}, role:{true: [], false: []}})
-        // if (message.member.hasPermission("ADMINISTRATOR")|| command.true.indexOf(message.author.id) != -1 || command.channel.true.indexOf(message.channel.id)>-1 || role(message, command)){
-        if(message.member.hasPermission("ADMINISTRATOR")){
-            return true;
-        }
-        if(command.false.indexOf(message.author.id)>-1||command.channel.false.indexOf(message.channel.id)>-1||role(message, command)) return false;
-        else {
-            return true;
-        }
+        return true;
+        // var command = this.client.provider.get(message.guild, this.name, {true:[], false:[], channel: {true: [], false: []}, role:{true: [], false: []}})
+        // // if (message.member.hasPermission("ADMINISTRATOR")|| command.true.indexOf(message.author.id) != -1 || command.channel.true.indexOf(message.channel.id)>-1 || role(message, command)){
+        // if(message.member.hasPermission("ADMINISTRATOR")){
+        //     return true;
+        // }
+        // if(command.false.indexOf(message.author.id)>-1||command.channel.false.indexOf(message.channel.id)>-1||role(message, command)) return false;
+        // else {
+        //     return true;
+        // }
     }
 }
 /**
