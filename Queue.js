@@ -212,28 +212,32 @@ class Queue extends EventEmitter {
      * @param {number} count How many songs after the start(included) should be deleted
      */
     remove(start=1, count=1){
-        start -= 1;
-        if(this.list.size === 0) return;
-        if(start > this.list.size){
-            start = this.list.size-1;
-            count = 1;
-            console.log(new Error("Number to high deleting last element!"));
+        try {
+            start -= 1;
+            if(this.list.size === 0) return;
+            if(start > this.list.size){
+                start = this.list.size-1;
+                count = 1;
+                console.log(new Error("Number to high deleting last element!"));
+            }
+            var nowPlaying = this.list.get(0);
+            var list = this.list.filter((song, key, coll)=>{
+                return key>0;
+            }).array();
+            let removed = list.splice(start, count);
+            this.list.clear();
+            this.list.set(0, nowPlaying);
+            list.forEach((song, index, arr)=>{
+                this.list.set(this.list.size, song);
+            });
+            // this.emit(this.events.remove, removed);
+            // this.updatelistMessage();
+            this.emit("remove", removed);
+            this._update();
+            return removed;
+        } catch (e) {
+            console.log(e);
         }
-        var nowPlaying = this.list.get(0);
-        var list = this.list.filterArray((song, key, coll)=>{
-            return key>0;
-        });
-        let removed = list.splice(start, count);
-        this.list.clear();
-        this.list.set(0, nowPlaying);
-        list.forEach((song, index, arr)=>{
-            this.list.set(this.list.size, song);
-        });
-        // this.emit(this.events.remove, removed);
-        // this.updatelistMessage();
-        this.emit("remove", removed);
-        this._update();
-        return removed;
     }
     shuffle(){
         let before = this.list.filterArray((song, key, coll)=>{

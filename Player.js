@@ -193,7 +193,9 @@ class Player extends EventEmitter {
             }
             await this.voiceConnection.dispatcher.once("finish", () => {
                 if(this.stopped){
-                    this.voiceConnection.player.destroy();
+            if(this.voiceConnection && tthis.voiceConnection.play){
+                        this.voiceConnection.player.destroy();
+                    }
                     return;
                 }
                 if(this.queue.isEmpty()){
