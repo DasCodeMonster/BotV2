@@ -122,32 +122,23 @@ class QueueMessage extends EventEmitter {
         try {
             if(!this.created || !this.message) throw new Error("Use #Create() first!");
             let reactions = ["🔁","🔂"];
-            // await this.message.react("🔁");
-            // await this.message.react("🔂");
             if(this.queue.list.size > 0 && this.guild.voiceConnection) {
-                // await this.message.react("ℹ");
                 reactions.push("ℹ");
                 reactions.push("⏹");
             }
             if(this.queue.list.size > 1 && this.guild.voiceConnection) {
-                // await this.message.react("⏭");
                 reactions.push("⏭");
             }
             if(this.queue.list.size > 2) {
-                // await this.message.react("🔀");
                 reactions.push("🔀");
             }
             if(this.queue.queueText.size > 1) {
                 if(this.page !== this.queue.queueText.size && this.page !== 1){
-                    // await this.message.react("◀");
-                    // await this.message.react("▶");
                     reactions.push(["◀", "▶"]);
                 }else if(this.page === this.queue.queueText.size){
-                    // await this.message.react("◀");
                     reactions.push("◀");
                 }
                 else if(this.page === 1){
-                    // await this.message.react("▶");
                     reactions.push("▶");
                 }
             }
@@ -183,9 +174,13 @@ class QueueMessage extends EventEmitter {
         try{
             // if(this.created) throw new Error("Can only use this once!");
             if(!(message.channel instanceof TextChannel)) throw new Error("Must be TextChannel!");
+            if(this.Collector){
+                await this._stop("New handler created");
+            }
             this.requestedBy = message.member;
             this.textChannel = message.channel;
             this.page = page;
+            this.reactions = [];
             this.message = await this.textChannel.send(this.makeEmbed());
             this.created = true;
             await this.react();
@@ -197,7 +192,7 @@ class QueueMessage extends EventEmitter {
     _handle(){
         try {
             if(!this.created) throw new Error("Use #Create() first!");
-            const Collector = new ReactionCollector(this.message,
+            this.Collector = new ReactionCollector(this.message,
                 /**
                  * @param {MessageReaction} reaction
                  * @param {User} user
@@ -209,15 +204,26 @@ class QueueMessage extends EventEmitter {
                     if(!this.reactions.includes(reaction.emoji.name)) return false;
                     return true;
             });
-            Collector.on("collect", (reaction, user)=>{
+            this.Collector.on("collect", (reaction, user)=>{
                 this.emit(reaction.emoji.name, user);
             });
-            Collector.on("error", e=>{
+            this.Collector.on("error", e=>{
                 console.log(e);
+            });
+            this.Collector.on("end", (_, reason)=>{
+                console.log(reason);
             });
         } catch (error) {
             console.log(error);
         }
+    }
+    /**
+     * 
+     * @param {string} reason 
+     */
+    async _stop(reason){
+        await this.message.reactions.removeAll();
+        this.Collector.stop(reason)
     }
     _update(){
 

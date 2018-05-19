@@ -3,6 +3,7 @@ const {Collection, Clie} = require("discord.js");
 const LyricsAPI = require("./lyricsAPI");
 const VoiceModule = require("./VoiceModule");
 const Logger = require("./logger");
+const Youtube = require("./youtube");
 
 /**
  * Options for a client.
@@ -57,6 +58,7 @@ class VoiceClient extends CommandoClient {
     constructor(options, YoutubeAPIKey){
         super(options);
         this.YoutubeAPIKey = YoutubeAPIKey;
+        this.youtube = new Youtube(YoutubeAPIKey);
         this.LyricsAPI = new LyricsAPI();
         /**
          * @type {Collection<String,VoiceModule>}

@@ -2,7 +2,7 @@ const {Command, Argument} = require("discord.js-commando");
 const {Message, Collection} = require("discord.js");
 const LyricsAPI = require("../../lyricsAPI");
 const Lyrics = require("../../lyrics");
-const YT = require("../../ytsong");
+const YT = require("../../youtube");
 const Logger = require("../../logger");
 const util = require("util");
 

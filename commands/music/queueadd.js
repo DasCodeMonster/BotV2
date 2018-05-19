@@ -1,11 +1,11 @@
 const commando = require("discord.js-commando");
 const Queue = require("../../myQueue");
 const {Message} = require("discord.js");
-const getYt = require("../../ytsong");
 const Audioworker = require("../../audioworker");
 const Logger = require("../../logger");
 const util = require("util");
 const VoiceModule = require("../../VoiceModule");
+const VoiceClient = require("../../VoiceClient");
 
 class List extends commando.Command {
     constructor(client) {
@@ -31,6 +31,10 @@ class List extends commando.Command {
                 infinite: false
             }]
         });
+        /**
+         * @type {VoiceClient}
+         */
+        this.client;
     }
     /**
      * @typedef {Object} link
@@ -85,7 +89,7 @@ class List extends commando.Command {
      */
     async addSingle(message, args, voiceModule) {
         try {
-            var song = await getYt.Single(args.link.link, message);
+            var song = await this.client.youtube.single(args.link.link, message);
             if(args.position === 0){
                 voiceModule.player.queue.add(song);
             }
@@ -105,7 +109,7 @@ class List extends commando.Command {
      */
     async addPlaylist(message, args, voiceModule) {
         try {
-            var songs = await getYt.Playlist(args.link.id, message);
+            var songs = await this.client.youtube.playlist(args.link.id, message);
             if(args.position === 0){
                 voiceModule.player.queue.add(songs);
             }

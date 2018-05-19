@@ -2,7 +2,6 @@ const {Collection} = require("discord.js");
 const sqlite = require("sqlite");
 const Lyrics = require("./lyrics");
 const Sifter = require("sifter");
-const YT = require("./ytsong");
 const {EventEmitter} = require("events");
 const colors = require("colors");
 colors.setTheme({

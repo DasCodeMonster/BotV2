@@ -161,20 +161,7 @@ class Queue extends EventEmitter {
             if(this.loop.list){
                 newQ.set(newQ.size, this.list.get(0));
             }
-            // this.list.forEach((val, key, map)=>{
-            //     if(key === 0 && val === null) return;
-            //     newQ.set(key-1, val);
-            // });
-            // if (this.loop.list){
-            //     if(newQ.has(-1)){
-            //         newQ.set(newQ.size-1, newQ.get(-1));
-            //     }
-            // }
-            // if(newQ.has(-1)){
-            //     newQ.delete(-1);
-            // }
             this.list = newQ;
-            // this.updatelistMessage();
             this.emit("updated");
             this._update();            
             return this.list.get(0);
@@ -198,7 +185,6 @@ class Queue extends EventEmitter {
                 newQ.set(newQ.size, this.list.get(0));
             }
             this.list = newQ;
-            // this.updatelistMessage();
             this.emit("updated");
             this._update();  
             return this.list.get(0);
@@ -230,8 +216,6 @@ class Queue extends EventEmitter {
             list.forEach((song, index, arr)=>{
                 this.list.set(this.list.size, song);
             });
-            // this.emit(this.events.remove, removed);
-            // this.updatelistMessage();
             this.emit("remove", removed);
             this._update();
             return removed;
@@ -288,8 +272,6 @@ class Queue extends EventEmitter {
         let before = this.loop;
         this.loop.song = bool;
         let after = this.loop;
-        // this.emit(this.events.loopChange, before, after);
-        // this.updatelistMessage();
         this.emit("updated");
         this._update();
         return this.loop;
@@ -303,8 +285,6 @@ class Queue extends EventEmitter {
         let before = this.loop;
         this.loop.list = bool;
         let after = this.loop;
-        // this.emit(this.events.loopChange, before, after);
-        // this.updatelistMessage();
         this.emit("updated");
         this._update();
         return this.loop;

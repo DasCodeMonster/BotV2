@@ -1,12 +1,14 @@
 const {Guild, Message, VoiceChannel} = require("discord.js");
 const {CommandoClient} = require("discord.js-commando");
+const VoiceClient = require("./VoiceClient");
 const {EventEmitter} = require("events");
 const Player = require("./Player");
+const SearchMessage = require("./searchMessage");
 
 class VoiceModule extends EventEmitter {
     /**
      * 
-     * @param {CommandoClient} client 
+     * @param {VoiceClient} client 
      * @param {Guild} guild 
      */
     constructor(client, guild){
@@ -20,6 +22,22 @@ class VoiceModule extends EventEmitter {
                 this.voiceConnection = undefined
             });
         }
+        this.searchMessage = new SearchMessage(this.client, this.guild, this.player, this.voiceConnection);
+        this.searchMessage.on("add", song=>{
+            this.player.queue.add(song);
+        });
+        this.searchMessage.on("play", (message, song)=>{
+            console.log(song);
+            this.player.play(message, song);
+        });
+    }
+    /**
+     * 
+     * @param {Message} message
+     * @param {String} query
+     */
+    async youtubeSearch(message, query){
+        await this.searchMessage.create(message, query)
     }
     /**
      * Joins a voicechannel and starts playing music

@@ -30,9 +30,14 @@ class SetVolumeCommand extends commando.Command {
         })
     }
     /**
+     * @typedef {Object} argument
+     * @property {Number} number
+     */
+
+    /**
      * 
      * @param {Message} message 
-     * @param {*} args 
+     * @param {argument} args 
      */
     async run(message, args) {
         if(this.client.loggers.has(message.guild.id)){

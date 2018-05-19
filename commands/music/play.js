@@ -1,11 +1,11 @@
 const commando = require("discord.js-commando");
-const getYt = require("../../ytsong");
 const Queue = require("../../myQueue");
 const Audioworker = require("../../audioworker");
 const {Message} = require("discord.js");
 const Logger = require("../../logger");
 const util = require("util");
 const VoiceModule = require("../../VoiceModule");
+const VoiceClient = require("../../VoiceClient");
 
 class Play extends commando.Command {
     constructor(client) {
@@ -23,6 +23,10 @@ class Play extends commando.Command {
                 type: "ytlink"
             }]
         });
+        /**
+         * @type {VoiceClient}
+         */
+        this.client;
     }
     /**
      * @typedef {Object} link
@@ -41,38 +45,37 @@ class Play extends commando.Command {
      * @param {argument} args 
      */
     async run(message, args) {
-        if(this.client.loggers.has(message.guild.id)){
+        try {
+            if(this.client.loggers.has(message.guild.id)){
+                /**
+                 * @type {Logger}
+                 */
+                var logger = this.client.loggers.get(message.guild.id);
+            }else{
+                var logger = new Logger(message.guild.id);
+                this.client.loggers.set(message.guild.id, logger);
+            }
+            logger.log(message.author.username+"#"+message.author.discriminator, "("+message.author.id+")", "used", this.name, "command in channel:", message.channel.name, "("+message.channel.id+")\nArguments:", util.inspect(args));
             /**
-             * @type {Logger}
+             * @type {VoiceModule}
              */
-            var logger = this.client.loggers.get(message.guild.id);
-        }else{
-            var logger = new Logger(message.guild.id);
-            this.client.loggers.set(message.guild.id, logger);
-        }
-        logger.log(message.author.username+"#"+message.author.discriminator, "("+message.author.id+")", "used", this.name, "command in channel:", message.channel.name, "("+message.channel.id+")\nArguments:", util.inspect(args));
-        let ID = args.link.id;
-        /**
-         * @type {VoiceModule}
-         */
-        let voiceModule;
-        if(this.client.VoiceModules.has(message.guild.id)){
-            voiceModule = this.client.VoiceModules.get(message.guild.id);
-        }else {
-            voiceModule = new VoiceModule(this.client, message.guild);
-            this.client.VoiceModules.set(message.guild.id, voiceModule);
-        }
-        if (args.link.type ==="single") {
-            var song = await getYt.Single(args.link.link, message).catch(reason=>{
-                logger.error(reason);
-            });
-            await voiceModule.player.play(message, song);
-        }
-        else {
-            var songs = await getYt.Playlist(ID, message).catch(reason=>{
-                logger.error(reason);
-            });
-            await voiceModule.player.play(message, songs);
+            let voiceModule;
+            if(this.client.VoiceModules.has(message.guild.id)){
+                voiceModule = this.client.VoiceModules.get(message.guild.id);
+            }else {
+                voiceModule = new VoiceModule(this.client, message.guild);
+                this.client.VoiceModules.set(message.guild.id, voiceModule);
+            }
+            if (args.link.type === "single") {
+                let song = await this.client.youtube.single(args.link.link, message);
+                await voiceModule.player.play(message, song);
+            }
+            else {
+                let songs = await this.client.youtube.playlist(args.link.id, message);
+                await voiceModule.player.play(message, songs);
+            }
+        } catch (e) {
+            console.log(e);
         }
     }
     /**
