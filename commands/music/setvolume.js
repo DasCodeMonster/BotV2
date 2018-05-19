@@ -71,8 +71,7 @@ class SetVolumeCommand extends commando.Command {
             this.client.VoiceModules.set(message.guild.id, voiceModule);
         }
         if (args.number === -1) {
-            // await message.channel.send({embed: await queue.getVolume(message).embed})
-            return;
+            await message.channel.send({embed: await voiceModule.player.getVolume(message).embed});
         }else{
             await voiceModule.player.setVolume(args.number, message);
         }
