@@ -47,15 +47,16 @@ class BanCommand extends commando.Command {
         msg.guild.ban(args.user, {days: args.days, reason: args.reason});
     }
     hasPermission(message, args){
-        var command = this.client.provider.get(message.guild, this.name, {true:[], false:[], channel: {true: [], false: []}, role:{true: [], false: []}})
-        // if (message.member.hasPermission("ADMINISTRATOR")|| command.true.indexOf(message.author.id) != -1 || command.channel.true.indexOf(message.channel.id)>-1 || role(message, command)){
-        if(message.member.hasPermission("ADMINISTRATOR")){
-            return true;
-        }
-        if(command.false.indexOf(message.author.id)>-1||command.channel.false.indexOf(message.channel.id)>-1||role(message, command)) return false;
-        else {
-            return true;
-        }
+        return false;
+        // var command = this.client.provider.get(message.guild, this.name, {true:[], false:[], channel: {true: [], false: []}, role:{true: [], false: []}})
+        // // if (message.member.hasPermission("ADMINISTRATOR")|| command.true.indexOf(message.author.id) != -1 || command.channel.true.indexOf(message.channel.id)>-1 || role(message, command)){
+        // if(message.member.hasPermission("ADMINISTRATOR")){
+        //     return true;
+        // }
+        // if(command.false.indexOf(message.author.id)>-1||command.channel.false.indexOf(message.channel.id)>-1||role(message, command)) return false;
+        // else {
+        //     return true;
+        // }
     }
 }
 /**

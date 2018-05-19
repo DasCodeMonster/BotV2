@@ -1,31 +1,41 @@
 const commando = require("discord.js-commando");
-const {Message} = require("discord.js");
+const Queue = require("../../myQueue");
+const {Message, GuildMember, User} = require("discord.js");
 const Audioworker = require("../../audioworker");
 const Logger = require("../../logger");
 const util = require("util");
+const fs = require("fs");
 
-class SetMusicChannel extends commando.Command {
-    constructor(client){
+class Record extends commando.Command {
+    constructor(client) {
         super(client, {
-            name: "setmusicchannel",
-            aliases: ["setchannel", "channel"],
+            name: "record",
             group: "music",
-            memberName: "setmusicchannel",
-            description: "Sets the Textchannel of a guild, where all the non-responded messages about music will be send.",
+            memberName: "record",
+            description: "records voicedata from a user",
             guildOnly: true,
             args: [{
-                key: "channel",
-                label: "channel",
-                prompt: "You need to specify a textchannel!",
-                type: "channel",
-                wait: 30
+                key: "user",
+                label: "user",
+                prompt: "Which user would you like to record? Just mention him!",
+                type: "user"
+            }, {
+                key: "name",
+                label: "name",
+                prompt: "How should I name your record?",
+                type: "string"
             }]
         });
     }
     /**
+     * @typedef {Object} argument
+     * @property {User} user
+     * @property {string} name
+     */
+    /**
      * 
      * @param {Message} message 
-     * @param {*} args 
+     * @param {argument} args 
      */
     async run(message, args){
         if(this.client.loggers.has(message.guild.id)){
@@ -48,11 +58,13 @@ class SetMusicChannel extends commando.Command {
         else{
             var queue = audioworker.queues.get(message.guild.id);
         }
-        await queue.setChannel(args.channel);
-        await message.reply("Ok i set the channel!");
+        let err = await queue.record(message.guild.member(args.user), args.name, message);
+        if(err){
+            logger.error(err);
+        }
     }
     hasPermission(){
         return true;
     }
 }
-module.exports = SetMusicChannel;
+module.exports = Record;

@@ -3,6 +3,7 @@ const {Message} = require("discord.js");
 const Audioworker = require("../../audioworker");
 const colors = require("colors");
 const Logger = require("../../logger");
+const VoiceModule = require("../../VoiceModule");
 const util = require("util");
 colors.setTheme({
     info: "green",
@@ -32,9 +33,14 @@ class Skip extends commando.Command {
         });
     }
     /**
+     * @typedef {Object} argument
+     * @property {Number} number
+     */
+
+    /**
      * 
      * @param {Message} message 
-     * @param {*} args 
+     * @param {argument} args 
      */
     async run(message, args) {
         if(this.client.loggers.has(message.guild.id)){
@@ -47,18 +53,17 @@ class Skip extends commando.Command {
             this.client.loggers.set(message.guild.id, logger);
         }
         logger.log(message.author.username+"#"+message.author.discriminator, "("+message.author.id+")", "used", this.name, "command in channel:", message.channel.name, "("+message.channel.id+")\nArguments:", util.inspect(args));
-        /** 
-         * @type {Audioworker}
+        /**
+         * @type {VoiceModule}
          */
-        var audioworker = this.client.Audioworker;
-        if(!audioworker.queues.has(message.guild.id)){
-            var queue = audioworker.add(message.guild);
+        let voiceModule;
+        if(this.client.VoiceModules.has(message.guild.id)){
+            voiceModule = this.client.VoiceModules.get(message.guild.id);
+        }else {
+            voiceModule = new VoiceModule(this.client, message.guild);
+            this.client.VoiceModules.set(message.guild.id, voiceModule);
         }
-        else{
-            var queue = audioworker.queues.get(message.guild.id);
-        }
-        await queue.skip();
-        await queue.play(message);
+        await voiceModule.player.skip(message);
     }
     /**
      * 
@@ -67,15 +72,16 @@ class Skip extends commando.Command {
      * @returns {boolean}
      */
     hasPermission(message, args){
-        var command = this.client.provider.get(message.guild, this.name, {true:[], false:[], channel: {true: [], false: []}, role:{true: [], false: []}})
-        // if (message.member.hasPermission("ADMINISTRATOR")|| command.true.indexOf(message.author.id) != -1 || command.channel.true.indexOf(message.channel.id)>-1 || role(message, command)){
-        if(message.member.hasPermission("ADMINISTRATOR")){
-            return true;
-        }
-        if(command.false.indexOf(message.author.id)>-1||command.channel.false.indexOf(message.channel.id)>-1||role(message, command)) return false;
-        else {
-            return true;
-        }
+        return true;
+        // var command = this.client.provider.get(message.guild, this.name, {true:[], false:[], channel: {true: [], false: []}, role:{true: [], false: []}})
+        // // if (message.member.hasPermission("ADMINISTRATOR")|| command.true.indexOf(message.author.id) != -1 || command.channel.true.indexOf(message.channel.id)>-1 || role(message, command)){
+        // if(message.member.hasPermission("ADMINISTRATOR")){
+        //     return true;
+        // }
+        // if(command.false.indexOf(message.author.id)>-1||command.channel.false.indexOf(message.channel.id)>-1||role(message, command)) return false;
+        // else {
+        //     return true;
+        // }
     }
 }
 /**

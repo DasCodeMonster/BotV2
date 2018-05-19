@@ -1,12 +1,12 @@
-const commando = require("discord.js-commando");
+const {Command, Argument} = require("discord.js-commando");
 const {Message, Collection} = require("discord.js");
 const LyricsAPI = require("../../lyricsAPI");
 const Lyrics = require("../../lyrics");
-const YT = require("../../ytsong");
+const YT = require("../../youtube");
 const Logger = require("../../logger");
 const util = require("util");
 
-class AddLyrics extends commando.Command {
+class AddLyrics extends Command {
     constructor(client){
         super(client, {
             name: "addlyrics",
@@ -17,8 +17,9 @@ class AddLyrics extends commando.Command {
             args: [{
                 key: "author",
                 label: "author",
-                prompt: "author of the song",
-                type: "string"
+                prompt: "Tell me the name of the song artist",
+                type: "string",
+                wait: 60
             }, {
                 key: "title",
                 label: "title",
@@ -42,7 +43,8 @@ class AddLyrics extends commando.Command {
                 prompt: "songtext of the song",
                 type: "string",
                 infinite: true
-            }]
+            }],
+            argsSingleQuotes: true
         });
     }
     /**
@@ -51,16 +53,18 @@ class AddLyrics extends commando.Command {
      * @param {*} args 
      */
     async run(message, Args){
-        if(this.client.loggers.has(message.guild.id)){
-            /**
-             * @type {Logger}
-             */
-            var logger = this.client.loggers.get(message.guild.id);
-        }else{
-            var logger = new Logger(message.guild.id);
-            this.client.loggers.set(message.guild.id, logger);
+        if(message.guild){
+            if(this.client.loggers.has(message.guild.id)){
+                /**
+                 * @type {Logger}
+                 */
+                var logger = this.client.loggers.get(message.guild.id);
+            }else{
+                var logger = new Logger(message.guild.id);
+                this.client.loggers.set(message.guild.id, logger);
+            }
+            logger.log(message.author.username+"#"+message.author.discriminator, "("+message.author.id+")", "used", this.name, "command in channel:", message.channel.name, "("+message.channel.id+")\nArguments:", util.inspect(Args));
         }
-        logger.log(message.author.username+"#"+message.author.discriminator, "("+message.author.id+")", "used", this.name, "command in channel:", message.channel.name, "("+message.channel.id+")\nArguments:", util.inspect(args));
         var args = {
             /**
              * @type {String}
@@ -106,6 +110,9 @@ class AddLyrics extends commando.Command {
         });
         await this.client.LyricsAPI.add(args.author, args.title, songtext, args.genre, ids);
         await message.reply(":ok:");
+    }
+    hasPermission(){
+        return true;
     }
 }
 module.exports = AddLyrics;

@@ -1,7 +1,7 @@
 const commando = require("discord.js-commando");
 const {Message} = require("discord.js");
 const Tokens = require("../../Token&Keys");
-const curl = require("curl");
+// const curl = require("curl");
 const Logger = require("../../logger");
 const util = require("util");
 
@@ -28,6 +28,8 @@ class Webhookcommand extends commando.Command {
      * @returns {void} 
      */
     run(message, args){
+        console.log("not available");
+        return;
         if(this.client.loggers.has(message.guild.id)){
             /**
              * @type {Logger}
@@ -74,6 +76,9 @@ class Webhookcommand extends commando.Command {
                 })
             }
         });
+    }
+    hasPermission(){
+        return true;
     }
 }
 module.exports = Webhookcommand;

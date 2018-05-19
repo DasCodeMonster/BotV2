@@ -1,10 +1,11 @@
 const commando = require("discord.js-commando");
 const Queue = require("../../myQueue");
 const {Message} = require("discord.js");
-const getYt = require("../../ytsong");
 const Audioworker = require("../../audioworker");
 const Logger = require("../../logger");
 const util = require("util");
+const VoiceModule = require("../../VoiceModule");
+const VoiceClient = require("../../VoiceClient");
 
 class List extends commando.Command {
     constructor(client) {
@@ -30,11 +31,27 @@ class List extends commando.Command {
                 infinite: false
             }]
         });
+        /**
+         * @type {VoiceClient}
+         */
+        this.client;
     }
+    /**
+     * @typedef {Object} link
+     * @property {String} type
+     * @property {String} id
+     * @property {String} link
+     */
+
+    /**
+     * @typedef {Object} argument
+     * @property {link} link
+     * @property {Number} position
+     */
     /**
      * 
      * @param {Message} message 
-     * @param {Object} args 
+     * @param {argument} args 
      */
     async run(message, args) {
         if(this.client.loggers.has(message.guild.id)){
@@ -47,67 +64,62 @@ class List extends commando.Command {
             this.client.loggers.set(message.guild.id, logger);
         }
         logger.log(message.author.username+"#"+message.author.discriminator, "("+message.author.id+")", "used", this.name, "command in channel:", message.channel.name, "("+message.channel.id+")\nArguments:", util.inspect(args));
-        var ID = args.link.id;
-        /** 
-         * @type {Audioworker}
+       /**
+         * @type {VoiceModule}
          */
-        var audioworker = this.client.Audioworker;
-        if(!audioworker.queues.has(message.guild.id)){
-           var queue = audioworker.add(message.guild);
-        }
-        else{
-            var queue = audioworker.queues.get(message.guild.id);
-        }
-        if(args.position !== 0){
-            if (queue.queue.length !== 0){
-                if(args.position > queue.queue.length) {
-                    message.reply("Position is too high! I will add the Song to the end of the queue.");
-                    args.position = queue.queue.length;
-                }
-            }
+        let voiceModule;
+        if(this.client.VoiceModules.has(message.guild.id)){
+            voiceModule = this.client.VoiceModules.get(message.guild.id);
+        }else {
+            voiceModule = new VoiceModule(this.client, message.guild);
+            this.client.VoiceModules.set(message.guild.id, voiceModule);
         }
         if (args.link.type ==="single") {
-            this.addSingle(ID, message, args, queue);
+            this.addSingle(message, args, voiceModule);
         }
         else {
-            this.addPlaylist(message, args, ID, queue);
+            this.addPlaylist(message, args, voiceModule);
         }
     }
     /**
      *  
-     * @param {*} ID 
      * @param {Message} message
-     * @param {Object} args
-     * @param {Queue} queue
+     * @param {argument} args
+     * @param {VoiceModule} voiceModule
      */
-    async addSingle(ID, message, args, queue) {
-        var song = await getYt.Single(args.link.link, message);
-        if(args.position === 0){
-            queue.add(song);
+    async addSingle(message, args, voiceModule) {
+        try {
+            var song = await this.client.youtube.single(args.link.link, message);
+            if(args.position === 0){
+                voiceModule.player.queue.add(song);
+            }
+            else {
+                voiceModule.player.queue.add(song, args.position);
+            }
+            voiceModule.join(message);
+        } catch (e) {
+            console.log(e);
         }
-        else {
-            queue.add(song, args.position);
-        }
-        if(message.guild.voiceConnection && message.guild.voiceConnection.dispatcher) return;        
-        queue.play(message);
     }
     /**
      * 
      * @param {Message} message 
-     * @param {Object} args 
-     * @param {*} ID 
-     * @param {Queue} queue 
+     * @param {argument} args  
+     * @param {VoiceModule} voiceModule 
      */
-    async addPlaylist(message, args, ID, queue) {
-        var songs = await getYt.Playlist(ID, message);
-        if(args.position === 0){
-            queue.add(songs);
+    async addPlaylist(message, args, voiceModule) {
+        try {
+            var songs = await this.client.youtube.playlist(args.link.id, message);
+            if(args.position === 0){
+                voiceModule.player.queue.add(songs);
+            }
+            else {
+                voiceModule.player.queue.add(songs, args.position);
+            }
+            voiceModule.join(message);
+        } catch (e) {
+            console.log(e);
         }
-        else {
-            queue.add(songs, args.position);
-        }
-        if(message.guild.voiceConnection && message.guild.voiceConnection.dispatcher) return;
-        queue.play(message);
     }
     /**
      * 
@@ -116,15 +128,16 @@ class List extends commando.Command {
      * @returns {boolean}
      */
     hasPermission(message, args){
-        var command = this.client.provider.get(message.guild, this.name, {true:[], false:[], channel: {true: [], false: []}, role:{true: [], false: []}})
-        // if (message.member.hasPermission("ADMINISTRATOR")|| command.true.indexOf(message.author.id) != -1 || command.channel.true.indexOf(message.channel.id)>-1 || role(message, command)){
-        if(message.member.hasPermission("ADMINISTRATOR")){
-            return true;
-        }
-        if(command.false.indexOf(message.author.id)>-1||command.channel.false.indexOf(message.channel.id)>-1||role(message, command)) return false;
-        else {
-            return true;
-        }
+        return true;
+        // var command = this.client.provider.get(message.guild, this.name, {true:[], false:[], channel: {true: [], false: []}, role:{true: [], false: []}})
+        // // if (message.member.hasPermission("ADMINISTRATOR")|| command.true.indexOf(message.author.id) != -1 || command.channel.true.indexOf(message.channel.id)>-1 || role(message, command)){
+        // if(message.member.hasPermission("ADMINISTRATOR")){
+        //     return true;
+        // }
+        // if(command.false.indexOf(message.author.id)>-1||command.channel.false.indexOf(message.channel.id)>-1||role(message, command)) return false;
+        // else {
+        //     return true;
+        // }
     }
 }
 /**

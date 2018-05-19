@@ -1,5 +1,5 @@
 const Song = require("./Song");
-const {Message, Util, Collection, RichEmbed, Client, VoiceConnection, TextChannel, ReactionCollector} = require("discord.js");
+const {Message, Util, Collection, MessageEmbed, Client, VoiceConnection, TextChannel, ReactionCollector, User, GuildMember, MessageStore} = require("discord.js");
 const ytdl = require("ytdl-core");
 const QueueConfig = require("./queueConfig");
 const moment = require("moment");
@@ -7,6 +7,9 @@ const colors = require("colors");
 const util = require("util");
 const {EventEmitter} = require("events");
 const Logger = require("./logger");
+const {spawn} = require("child_process");
+const fs = require("fs");
+
 colors.setTheme({
     info: "green",
     debug: "cyan",
@@ -30,7 +33,9 @@ class Queue extends EventEmitter {
         this.volume = queueConfig.volume;
         this.guildID = queueConfig.guildID;
         if(!this.client.guilds.has(this.guildID)){
-            console.log("huh? No guild found");
+            console.log(this.client.guilds, this.guildID);
+            console.log(this.client.Audioworker.delete(this.guildID));
+            console.debug("Guild not found. Deleting entry".debug);
             return;
         }
         this.guild = this.client.guilds.get(this.guildID);
@@ -217,9 +222,9 @@ class Queue extends EventEmitter {
         }
         this.lastMessage = message;
         if(message.guild.voiceConnection.dispatcher){
-            message.guild.voiceConnection.dispatcher.end("skip");
+            message.guild.voiceConnection.dispatcher.emit("finish", "skip");
         }else{
-            await message.guild.voiceConnection.playStream(ytdl(this.queue.get(0).ID, {filter: "audioonly"}), {volume: this.volume/100});
+            await message.guild.voiceConnection.play(ytdl(this.queue.get(0).ID, {filter: "audioonly"}), {volume: this.volume/100, passes: 2});
             if(this.channel){
                 await this.channel.send(`Now playing: ${this.queue.get(0).title}`);
             }else if(this.lastMessage !== null && this.lastMessage !== message){
@@ -227,7 +232,7 @@ class Queue extends EventEmitter {
             }else{
                 await message.channel.send(`Now playing: ${this.queue.get(0).title}`);
             }
-            await message.guild.voiceConnection.dispatcher.once("end", reason=>{
+            await message.guild.voiceConnection.dispatcher.once("finish", reason=>{
                 if(reason){
                     console.debug("%s".debug, reason);
                     if(reason === "disconnect"){
@@ -251,11 +256,14 @@ class Queue extends EventEmitter {
             this.updateQueueMessage();
             return;
         }
-        await message.guild.voiceConnection.playStream(ytdl(this.queue.get(0).ID, {filter: "audioonly"}), {volume: this.volume/100});
+        if(!message.guild.voiceConnection){
+            this.logger.error(new Error("No voiceConnection"))
+            return;
+        }
+        await message.guild.voiceConnection.play(ytdl(this.queue.get(0).ID, {filter: "audioonly"}), {volume: this.volume/100, passes: 2});
         if(this.qReactionCollector !== null){
             this.updateQueueMessage();
         }
-        console.log(1);
         if(this.channel){
             await this.channel.send(`Now playing: ${this.queue.get(0).title}`);
         }else if(this.lastMessage !== null && this.lastMessage !== message){
@@ -263,8 +271,7 @@ class Queue extends EventEmitter {
         }else{
             await message.channel.send(`Now playing: ${this.queue.get(0).title}`);
         }
-        console.log(2);
-        await message.guild.voiceConnection.dispatcher.once("end", reason => {
+        await message.guild.voiceConnection.dispatcher.once("finish", reason => {
             if (reason) {
                 console.debug("%s".debug, reason);
                 if(reason === "disconnect"){
@@ -389,7 +396,7 @@ class Queue extends EventEmitter {
         if (page >= this.queueMessage.size) page = this.queueMessage.size-1;
         if (this.queueMessage.size === 0 && this.queue.get(0) === null){
             return {
-                embed: new RichEmbed().setTitle("Queue").setDescription("**The queue is empty!**").setTimestamp(new Date()).setColor(666).setFooter(`Requested by ${message.author.username}`, message.author.displayAvatarURL),
+                embed: new MessageEmbed().setTitle("Queue").setDescription("**The queue is empty!**").setTimestamp(new Date()).setColor(666).setFooter(`Requested by ${message.author.username}`, message.author.displayAvatarURL),
                 reactions: reactions
             }
         }
@@ -398,9 +405,9 @@ class Queue extends EventEmitter {
             reactions.push("🔂");
             reactions.push("ℹ");
             if (this.queue.get(0) !== null){
-                var embed = new RichEmbed().setTitle("Queue").setColor(666).addField("Now Playing:", this.queue.get(0).title, false).addField("Channel:", this.queue.get(0).author, true);
+                var embed = new MessageEmbed().setTitle("Queue").setColor(666).addField("Now Playing:", this.queue.get(0).title, false).addField("Channel:", this.queue.get(0).author, true);
                 if (message.guild.voiceConnection && message.guild.voiceConnection.dispatcher) {
-                    embed.addField("Songlength:", `${moment.duration(message.guild.voiceConnection.dispatcher.time, "milliseconds").format()}/${moment.duration(this.queue.get(0).length, "seconds").format()}`, true).setTimestamp(new Date());
+                    embed.addField("Songlength:", `${moment.duration(message.guild.voiceConnection.dispatcher.streamTime, "milliseconds").format()}/${moment.duration(this.queue.get(0).length, "seconds").format()}`, true).setTimestamp(new Date());
                 }else{
                     embed.addField("Songlength:", `0:00/${moment.duration(this.queue.get(0).length, "seconds").format()}`, true);
                 }
@@ -439,15 +446,16 @@ class Queue extends EventEmitter {
         }
         if(last !== null && await message.guild.channels.has(last.channelID)){
             /**
-             * @type {Message}
+             * @type {MessageStore}
              */
-            var lastQueueMessage = await message.guild.channels.get(last.channelID).fetchMessage(last.embedID);
+            var store = await message.guild.channels.get(last.channelID).messages; //fetchMessage(last.embedID);
+            var lastQueueMessage = store.fetch(last.embedID);
             // lastQueueMessage.reactions.clear();
-            await lastQueueMessage.reactions.forEach((val, key, map)=>{
-                val.users.forEach(async (user, ukey, map)=>{
-                    await val.remove(user);
-                });
-            });
+            // await lastQueueMessage.reactions.forEach((val, key, map)=>{
+            //     val.users.forEach(async (user, ukey, map)=>{
+            //         await val.remove(user);
+            //     });
+            // });
         }
         var obj = await this.getQueueEmbed(args.page-1, message);
         var embed = obj.embed;
@@ -461,7 +469,7 @@ class Queue extends EventEmitter {
                 return false;
             }
             var ret = reactions.includes(reaction.emoji.name);
-            reply.reactions.get(reaction.emoji.name).remove(user);
+            reply.reactions.get(reaction.emoji.name).users.remove(user);
             return ret;
         });
         collector.on("collect", async (element, collector)=>{
@@ -487,7 +495,8 @@ class Queue extends EventEmitter {
             }
         });
         collector.once("end", async (collected, reason)=>{
-            await reply.clearReactions();
+            // await reply.clearReactions();
+            await removeAll(reply);
             console.debug("%s".debug, reason);
         });
         collector.on("error", (error)=>{
@@ -499,7 +508,8 @@ class Queue extends EventEmitter {
             reactions = obj.reactions;
             await reply.edit({embed: embed});
             if (reactions.length === 0){
-                await reply.clearReactions();
+                // await reply.clearReactions();
+                await removeAll(reply);
             }else{
                 await reply.reactions.clear();
                 await react(reactions, reply);
@@ -513,6 +523,17 @@ class Queue extends EventEmitter {
             for(var i=0;i<reactions.length;i++){
                 await message.react(reactions[i]);
             }
+        }
+        /**
+         * 
+         * @param {Message} message 
+         */
+        async function removeAll(message){
+            message.reactions.forEach(reaction=>{
+                reaction.users.forEach(user=>{
+                    reaction.users.remove(user);
+                });
+            });
         }
     }
     /**
@@ -570,7 +591,7 @@ class Queue extends EventEmitter {
      * Returns an embed representing the volume and the volume as a number
      */
     getVolume(){
-        return {embed: new RichEmbed().setTitle("Current volume").setColor(666).setDescription(this.volume).setTimestamp(new Date()),
+        return {embed: new MessageEmbed().setTitle("Current volume").setColor(666).setDescription(this.volume).setTimestamp(new Date()),
             volume: this.volume
         }
     }
@@ -645,7 +666,7 @@ class Queue extends EventEmitter {
             position = this.queue.size-1;
         }
         if(this.queue.get(0) === null){
-            return new RichEmbed().setColor(666).setTimestamp(new Date()).setDescription("There are not any songs in the queue. You need add some first!");
+            return new MessageEmbed().setColor(666).setTimestamp(new Date()).setDescription("There are not any songs in the queue. You need add some first!");
         }
         var seconds = 0;
         if (message.guild.voiceConnection && message.guild.voiceConnection.dispatcher){
@@ -663,7 +684,7 @@ class Queue extends EventEmitter {
         var date = new Date();
         var newDate = new Date(date.setTime(date.getTime()+seconds*1000)).toString();
         var description = Util.splitMessage(this.queue.get(position).description, {maxLength: 1000, char: "\n", append: "\n(Description too long)"});
-        var embed = new RichEmbed()
+        var embed = new MessageEmbed()
         .setAuthor(this.queue.get(position).title, null, `https://www.youtube.com/watch?v=${this.queue.get(position).ID}`)
         .setColor(666)
         .setThumbnail(this.queue.get(position).thumbnailURL)
@@ -681,6 +702,73 @@ class Queue extends EventEmitter {
         }
         embed.addField("Thumbnail", this.queue.get(position).thumbnailURL);
         return embed;
+    }
+    /**
+     * 
+     * @param {GuildMember} member
+     * @param {String} name
+     * @param {Message} message
+     */
+    async record(member, name, message){
+        try{
+            if(name.endsWith(".opus")){
+                name = name.split(".opus")[0];
+            }
+            if(!name.match("^[a-zA-Z0-9]{1,20}$")){
+                return new Error("No special characters allowed");
+            }
+            if(!fs.existsSync("./Audio")){
+                fs.mkdirSync("./Audio");
+            }
+            if(!fs.existsSync("./Audio/"+member.guild.id)){
+                fs.mkdirSync("./Audio/"+member.guild.id);
+            }
+            if(fs.existsSync("./Audio/"+member.guild.id+"/"+name+".opus")){
+                let reply = await message.reply("A file with this name does already exist! Do you want to overwrite it?");
+                reply.react("❌");
+                reply.react("✅");
+                let validReactions = ["❌", "✅"];
+                let collector = new ReactionCollector(reply, (reaction, user)=>{
+                    return user.id === member.id && validReactions.includes(reaction.emoji.name);
+                }, {time: 15000, maxEmojis: 1});
+                collector.on("collect", (reaction, user)=>{
+                    reply.delete();
+                    if(reaction.emoji.name === "✅"){
+                        this.transcode(member, name);
+                    }else{
+                        return;
+                    }
+                });
+                collector.on("end", ()=>{
+                    reply.delete();
+                });
+                return;
+            }
+            this.transcode(member, name); 
+        }catch(e){
+            console.log(e);
+        }
+    }
+    /**
+     * 
+     * @param {GuildMember} member 
+     */
+    transcode(member, name){
+        try{
+            let receiver = member.voiceChannel.connection.createReceiver();
+            let stream = receiver.createStream(member, {mode: "pcm"});
+            receiver.on("debug", info=>{
+                console.log(info);
+            });
+
+            let pr = spawn("ffmpeg", ["-y", "-codec", "pcm_s16le", "-i", "pipe:0", "-codec", "opus", "./Audio/"+member.guild.id+"/"+name+".opus"]);
+            pr.on("exit", (code, signal)=>{
+                console.log("finished converting with exitcode "+code+" and signal "+signal);
+            });
+            stream.pipe(pr.stdin);
+        }catch(e){
+            console.log(e);
+        }
     }
 }
 module.exports = Queue;

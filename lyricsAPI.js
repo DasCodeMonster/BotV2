@@ -2,7 +2,6 @@ const {Collection} = require("discord.js");
 const sqlite = require("sqlite");
 const Lyrics = require("./lyrics");
 const Sifter = require("sifter");
-const YT = require("./ytsong");
 const {EventEmitter} = require("events");
 const colors = require("colors");
 colors.setTheme({
@@ -27,15 +26,19 @@ class LyricsAPI extends EventEmitter {
         });
     }
     async init(){
+        try{
         this.db = await sqlite.open("lyrics.sqlite", {promise: Promise});
-        await this.db.run('CREATE TABLE IF NOT EXISTS lyrics (id INTEGER, author TEXT NOT NULL, title TEXT, lyrics TEXT NOT NULL, genre TEXT, ytids TEXT)');
+        await this.db.run('CREATE TABLE IF NOT EXISTS lyrics (id INTEGER, author TEXT NOT NULL, title TEXT NOT NULL, lyrics TEXT NOT NULL, genre TEXT, ytids TEXT)');
         var dataj = await this.db.all("SELECT * FROM lyrics");
         if (dataj.length !== 0){
             dataj.forEach((val, index, array)=>{
-                this.lyrics.set(Number.parseInt(val.id), new Lyrics(Number.parseInt(val.id), val.author, val.title, val.lyrics, val.genre, JSON.parse(val.links)));
+                this.lyrics.set(Number.parseInt(val.id), new Lyrics(Number.parseInt(val.id), val.author, val.title, val.lyrics, val.genre, JSON.parse(val.ytids)));
             });
         }
         this.emit(this.events.ready);
+        }catch(e){
+            console.log(e);
+        }
     }
     /**
      * Adds a song to the database
