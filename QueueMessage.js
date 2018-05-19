@@ -155,7 +155,7 @@ class QueueMessage extends EventEmitter {
             console.log(error);
         }
     }
-    async update(page=1, resetTime=false){
+    async update(page=this.page, resetTime=false){
         try{
             if(!this.created || !this.message) throw new Error("Use #Create() first!");
             this.page = page;
