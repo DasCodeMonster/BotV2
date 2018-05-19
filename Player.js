@@ -78,12 +78,31 @@ class Player extends EventEmitter {
             }
         });
         /**
-         * @type {Song[]}
+         * @typedef {Object} loop
+         * @property {Boolean} list
+         * @property {Boolean} song
          */
-        let _queue = client.provider.get(guild.id, "queue", []);
-        if(_queue.length > 0){
-            this.queue.add(_queue);
+        /**
+         * 
+         * @typedef {Object} saveQueue
+         * @property {loop} loop
+         * @property {Song[]} list
+         */
+        /**
+         * @type {saveQueue}
+         */
+        let _queue = client.provider.get(guild.id, "queue", {
+            loop: {
+                list: false,
+                song: false
+            },
+            list: []
+        });
+        if(_queue.list.length > 0){
+            this.queue.add(_queue.list);
         }
+        this.queue.setLoopList(_queue.loop.list);
+        this.queue.setLoopSong(_queue.loop.song);
         this.guild = guild;
         this.volume = 5;
         this.stopped = true;

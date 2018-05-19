@@ -78,7 +78,10 @@ class Queue extends EventEmitter {
             if(this._queueMessage.created){
                 this._queueMessage.update();
             }
-            this.client.provider.set(this.guild.id, "queue", this.list.array());
+            this.client.provider.set(this.guild.id, "queue", {
+                loop: this.loop,
+                list: this.list.array()
+            });
         } catch (e) {
             console.log(e);
         }
