@@ -103,7 +103,7 @@ class QueueMessage extends EventEmitter {
             .addField("Songlength:", songlengthField, true)
             .addField("Queued by:", this.guild.member(song.queuedBy).user.toString(), true);
             if(this.queue.queueText.get(this.page)){
-                embed.addField("Queue (Page: "+this.page, this.queue.queueText.get(this.page), false)
+                embed.addField("Queue (Page: "+this.page+")", this.queue.queueText.get(this.page), false)
                 .addField("Total pages:", this.queue.queueText.size, true)
                 .addField("Total songs:", this.queue.list.size-1, true)
                 .addField("Total length:", moment.duration(this.queue.length, "seconds").format(customTemplate, {trim: false}));
@@ -133,23 +133,24 @@ class QueueMessage extends EventEmitter {
                 reactions.push("🔀");
             }
             if(this.queue.queueText.size > 1) {
-                if(this.page !== this.queue.queueText.size && this.page !== 1){
-                    reactions.push(["◀", "▶"]);
-                }else if(this.page === this.queue.queueText.size){
+                if(this.page === this.queue.queueText.size){
                     reactions.push("◀");
                 }
                 else if(this.page === 1){
+                    reactions.push("▶");
+                }else{
+                    reactions.push("◀");
                     reactions.push("▶");
                 }
             }
             if(ArrayEqual(reactions, this.reactions)){
                 return;
             }
+            this.reactions = reactions;
             await this.message.reactions.removeAll();
             await asyncForEach(reactions, async name=>{
                 await this.message.react(name);
             });
-            this.reactions = reactions;
         } catch (error) {
             console.log(error);
         }
@@ -182,8 +183,8 @@ class QueueMessage extends EventEmitter {
             this.page = page;
             this.reactions = [];
             this.message = await this.textChannel.send(this.makeEmbed());
+            this.react();
             this.created = true;
-            await this.react();
             this._handle();
         }catch(e){
             console.log(e);
