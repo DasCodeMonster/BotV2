@@ -227,9 +227,9 @@ class Queue extends EventEmitter {
         }
     }
     shuffle(){
-        let before = this.list.filterArray((song, key, coll)=>{
+        let before = this.list.filter((song, key, coll)=>{
             return key > 0
-        });
+        }).array();
         var queue = before;
         var currentIndex = before.length, temporaryValue, randomIndex;
           // While there remain elements to shuffle...
