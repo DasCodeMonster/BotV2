@@ -24,6 +24,7 @@
     "discord.js": "git+https://github.com/discordjs/discord.js.git",
     "discord.js-commando": "git+https://github.com/discordjs/Commando.git",
     "erlpack": "github:hammerandchisel/erlpack",
+    "eslint": "^4.19.1",
     "googleapis": "^29.0.0",
     "libsodium-wrappers": "^0.7.3",
     "moment": "^2.22.1",
