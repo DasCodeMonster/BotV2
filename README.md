@@ -1,3 +1,4 @@
+<a href="https://travis-ci.org/DasCodeMonster/BotV2"><img src="https://travis-ci.org/DasCodeMonster/BotV2.svg?branch=dev" alt="Build status" /></a>
 # BotV2
 ## Info
 This is a Discord-Bot mainly for playing music. This Bot is built with [Discord.js](https://github.com/discordjs/discord.js) (see also [npm](https://www.npmjs.com/package/discord.js) and [docs](https://discord.js.org/#/docs/main/stable/general/welcome))  
