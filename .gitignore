@@ -7,5 +7,4 @@ localToken.json
 .vscode
 Logs/
 tokens.js
-Dockerfile
 docker-compose.yml
