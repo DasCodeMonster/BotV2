@@ -4,7 +4,8 @@
   "description": "A music bot for discord built with Discord.js",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "test": "eslint ./"
   },
   "repository": {
     "type": "git",
