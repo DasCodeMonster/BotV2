@@ -51,4 +51,4 @@ module.exports = {
         give: true,
         points: true
     }
-}
+};
