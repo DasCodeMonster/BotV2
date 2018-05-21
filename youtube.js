@@ -1,4 +1,4 @@
-const {google} = require('googleapis');
+const {google} = require("googleapis");
 const Song = require("./Song");
 const {Message, RichEmbed} = require("discord.js");
 const moment = require("moment");
@@ -42,7 +42,7 @@ class Youtube {
      * @param {String} playlistID The ID of the playlist to fetch
      * @param {Message} message The message the command was invoked from
      */
-   async playlist(playlistID, message){
+    async playlist(playlistID, message){
         try {
             /**
              * @type {Song[]}

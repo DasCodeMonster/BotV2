@@ -62,12 +62,12 @@ class QueueMessage extends EventEmitter {
                 footer = {
                     text: `Edited by ${this.lastEditedFrom}`,
                     icon: this.lastEditedFrom.user.displayAvatarURL()
-                }
+                };
             }else{
                 footer = {
                     text: `Requested by ${this.requestedBy.displayName}`,
                     icon: this.requestedBy.user.displayAvatarURL()
-                }
+                };
             }
             let loopmode;
             if(this.queue.loop.song && this.queue.loop.list){
@@ -96,24 +96,24 @@ class QueueMessage extends EventEmitter {
                 this._resetTime = false;
             }
             let embed = new MessageEmbed()
-            .setTitle("Queue")
-            .setColor(666)
-            .addField("Now Playing:", song.title, false)
-            .addField("Channel:", song.author, true)
-            .addField("Songlength:", songlengthField, true)
-            .addField("Queued by:", this.guild.member(song.queuedBy).user.toString(), true);
+                .setTitle("Queue")
+                .setColor(666)
+                .addField("Now Playing:", song.title, false)
+                .addField("Channel:", song.author, true)
+                .addField("Songlength:", songlengthField, true)
+                .addField("Queued by:", this.guild.member(song.queuedBy).user.toString(), true);
             if(this.queue.queueText.get(this.page)){
                 embed.addField("Queue (Page: "+this.page+")", this.queue.queueText.get(this.page), false)
-                .addField("Total pages:", this.queue.queueText.size, true)
-                .addField("Total songs:", this.queue.list.size-1, true)
-                .addField("Total length:", moment.duration(this.queue.length, "seconds").format(customTemplate, {trim: false}));
+                    .addField("Total pages:", this.queue.queueText.size, true)
+                    .addField("Total songs:", this.queue.list.size-1, true)
+                    .addField("Total length:", moment.duration(this.queue.length, "seconds").format(customTemplate, {trim: false}));
             }
-            embed.setFooter(footer.text, footer.icon)
+            embed.setFooter(footer.text, footer.icon);
             if(loopmode !== null){
                 embed.addField("Loop mode:", loopmode, true);
             }
             embed.setTimestamp(new Date());
-            return embed
+            return embed;
         }catch(e){
             console.log(e);
         }
@@ -204,7 +204,7 @@ class QueueMessage extends EventEmitter {
                     reaction.users.remove(user);
                     if(!this.reactions.includes(reaction.emoji.name)) return false;
                     return true;
-            });
+                });
             this.Collector.on("collect", (reaction, user)=>{
                 this.emit(reaction.emoji.name, user);
             });
@@ -224,7 +224,7 @@ class QueueMessage extends EventEmitter {
      */
     async _stop(reason){
         await this.message.reactions.removeAll();
-        this.Collector.stop(reason)
+        this.Collector.stop(reason);
     }
     _update(){
 
@@ -238,12 +238,12 @@ module.exports = QueueMessage;
  * @param {Array} arr2 
  */
 function ArrayEqual(arr1, arr2) {
-    let length = arr1.length
-    if (length !== arr2.length) return false
+    let length = arr1.length;
+    if (length !== arr2.length) return false;
     for (var i = 0; i < length; i++)
-      if (arr1[i] !== arr2[i])
-        return false
-    return true
+        if (arr1[i] !== arr2[i])
+            return false;
+    return true;
 }
 
 /**
@@ -253,6 +253,6 @@ function ArrayEqual(arr1, arr2) {
  */
 async function asyncForEach(array, callback) {
     for (let index = 0; index < array.length; index++) {
-      await callback(array[index], index, array)
+        await callback(array[index], index, array);
     }
 }

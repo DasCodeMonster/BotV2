@@ -15,7 +15,7 @@ class Playlist extends EventEmitter {
         this.loop = {
             song: false,
             list: false
-        }
+        };
         this._listMessage = new Collection();
         this.length = 0;
     }

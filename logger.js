@@ -22,7 +22,7 @@ class Logger extends Console{
             fs.mkdirSync(`./Logs/${guildID}`);
         }
         super(fs.createWriteStream(`./Logs/${guildID}/${new Date().toLocaleDateString()}.log`, {flags: "a+"}),
-        fs.createWriteStream(`./Logs/${guildID}/${new Date().toLocaleDateString()}_errors.log`, {flags: "a+"}));
+            fs.createWriteStream(`./Logs/${guildID}/${new Date().toLocaleDateString()}_errors.log`, {flags: "a+"}));
     }
     log(...params){
         super.log(new Date().toLocaleString()+": " + util.format.apply(null, params));

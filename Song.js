@@ -13,7 +13,7 @@ class Song {
         this.title = title,
         this.description = description,
         this.author = author;
-        this.channelID = channelID
+        this.channelID = channelID;
         this.length = length;
         this.thumbnailURL = thumbnailURL;
         // this.tWidth = tWidth;

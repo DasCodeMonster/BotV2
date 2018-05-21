@@ -30,52 +30,52 @@ class Webhookcommand extends commando.Command {
     run(message, args){
         console.log("not available");
         return;
-        if(this.client.loggers.has(message.guild.id)){
-            /**
-             * @type {Logger}
-             */
-            var logger = this.client.loggers.get(message.guild.id);
-        }else{
-            var logger = new Logger(message.guild.id);
-            this.client.loggers.set(message.guild.id, logger);
-        }
-        logger.log(message.author.username+"#"+message.author.discriminator, "("+message.author.id+")", "used", this.name, "command in channel:", message.channel.name, "("+message.channel.id+")\nArguments:", util.inspect(args));
-        curl.getJSON("https://api.twitch.tv/helix/users?login="+args.TwitchUsername, {headers:{"Client-ID": Tokens.TwitchClientID}}, async(err, response)=>{
-            if (err) {
-                console.log(err);
-                var sry = await message.reply("An Error occurred! Please try again!");
-                await sry.react(":x:");
-            }
-            else{
-                var tojson = JSON.parse(response.body);
-                if(tojson.data.length === 0){
-                    message.reply("You provided an invalid TwitchUsername! Please try again!");
-                    return;
-                }
-                var id = tojson.data[0].id;
-                var displayName = tojson.data[0].display_name;
-                var login = tojson.data[0].login;
-                var webhooks = await message.guild.fetchWebhooks();
-                webhooks.first().send(id);
-                curl.getJSON("https://api.twitch.tv/helix/streams?user_id="+id, {headers:{"Client-ID":Tokens.TwitchClientID}}, async(error, res)=>{
-                    if(error){
-                        console.log(error);
-                        var sry = await message.reply("An Error occurred! Please try again!");
-                        await sry.react(":x:");
-                    }
-                    else{
-                        var resjson = JSON.parse(res.body);
-                        console.log(resjson);
-                        if (resjson.data.length === 0){
-                            webhooks.first().send(displayName+" is currently Offline!");
-                            return;
-                        }
-                        var url = "https://www.twitch.tv/"+login;
-                        webhooks.first().send(displayName+" is live! Go check out the stream at "+url);
-                    }
-                })
-            }
-        });
+        // if(this.client.loggers.has(message.guild.id)){
+        //     /**
+        //      * @type {Logger}
+        //      */
+        //     var logger = this.client.loggers.get(message.guild.id);
+        // }else{
+        //     var logger = new Logger(message.guild.id);
+        //     this.client.loggers.set(message.guild.id, logger);
+        // }
+        // logger.log(message.author.username+"#"+message.author.discriminator, "("+message.author.id+")", "used", this.name, "command in channel:", message.channel.name, "("+message.channel.id+")\nArguments:", util.inspect(args));
+        // curl.getJSON("https://api.twitch.tv/helix/users?login="+args.TwitchUsername, {headers:{"Client-ID": Tokens.TwitchClientID}}, async(err, response)=>{
+        //     if (err) {
+        //         console.log(err);
+        //         var sry = await message.reply("An Error occurred! Please try again!");
+        //         await sry.react(":x:");
+        //     }
+        //     else{
+        //         var tojson = JSON.parse(response.body);
+        //         if(tojson.data.length === 0){
+        //             message.reply("You provided an invalid TwitchUsername! Please try again!");
+        //             return;
+        //         }
+        //         var id = tojson.data[0].id;
+        //         var displayName = tojson.data[0].display_name;
+        //         var login = tojson.data[0].login;
+        //         var webhooks = await message.guild.fetchWebhooks();
+        //         webhooks.first().send(id);
+        //         curl.getJSON("https://api.twitch.tv/helix/streams?user_id="+id, {headers:{"Client-ID":Tokens.TwitchClientID}}, async(error, res)=>{
+        //             if(error){
+        //                 console.log(error);
+        //                 var sry = await message.reply("An Error occurred! Please try again!");
+        //                 await sry.react(":x:");
+        //             }
+        //             else{
+        //                 var resjson = JSON.parse(res.body);
+        //                 console.log(resjson);
+        //                 if (resjson.data.length === 0){
+        //                     webhooks.first().send(displayName+" is currently Offline!");
+        //                     return;
+        //                 }
+        //                 var url = "https://www.twitch.tv/"+login;
+        //                 webhooks.first().send(displayName+" is live! Go check out the stream at "+url);
+        //             }
+        //         })
+        //     }
+        // });
     }
     hasPermission(){
         return true;

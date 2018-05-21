@@ -1,9 +1,9 @@
 const {Collection, Client} = require("discord.js");
-const {CommandoClient, SQLiteProvider} = require('discord.js-commando');
+const {CommandoClient, SQLiteProvider} = require("discord.js-commando");
 // const time = require("node-datetime");
-const path = require('path');
-const sqlite = require('sqlite');
-const keys = require('./Token&Keys');
+const path = require("path");
+const sqlite = require("sqlite");
+const keys = require("./Token&Keys");
 const Lyrics = require("./lyrics");
 const util = require("util");
 const Audioworker = require("./audioworker");
@@ -11,7 +11,43 @@ const LyricsAPI = require("./lyricsAPI");
 const colors = require("colors");
 const Logger = require("./logger");
 const PermissionManager = require("./permissionManager");
-const {BotToken, OwnerID, YoutubeAPIKey} = require("./tokens");
+let obj = {
+    /**
+     * @type {String}
+     */
+    BotToken: null,
+    /**
+     * @type {String}
+     */
+    OwnerID: null,
+    /**
+     * @type {String}
+     */
+    YoutubeAPIKey: null
+};
+if(!process.env.BotToken){
+    const {BotToken} = require("./tokens");
+    obj.BotToken = BotToken;
+}else{
+    const {BotToken} = process.env;
+    obj.BotToken = BotToken;
+}
+if(!process.env.OwnerID){
+    const {OwnerID} = require("./tokens");
+    obj.OwnerID = OwnerID;
+}else{
+    const {OwnerID} = process.env;
+    obj.OwnerID = OwnerID;
+}
+if(!process.env.YoutubeAPIKey){
+    const {YoutubeAPIKey} = require("./tokens");
+    obj.YoutubeAPIKey = YoutubeAPIKey;
+}else{
+    const {YoutubeAPIKey} = process.env;
+    obj.YoutubeAPIKey = YoutubeAPIKey;
+}
+const {BotToken, OwnerID, YoutubeAPIKey} = obj;
+if(!BotToken) throw new Error("BotToken is missing");
 const VoiceClient = require("./VoiceClient");
 colors.setTheme({
     info: "green",
@@ -44,9 +80,9 @@ client.registry.registerDefaults();
 // client.registry.registerType("command");
 // client.registry.registerType("ytlink");
 client.registry.registerTypesIn(path.join(__dirname, "Types"));
-client.registry.registerCommandsIn(path.join(__dirname, 'commands'));
+client.registry.registerCommandsIn(path.join(__dirname, "commands"));
 client.setProvider(
-    sqlite.open(path.join(__dirname, 'settings.sqlite3')).then(db => new SQLiteProvider(db))
+    sqlite.open(path.join(__dirname, "settings.sqlite3")).then(db => new SQLiteProvider(db))
 ).catch(console.error);
 client.dispatcher.addInhibitor(msg=>{
     // if(msg.author.id === "221047590681051152") return "Test!"
@@ -213,7 +249,7 @@ console.info(colors.info("bot is logging in..."));
 client.login(BotToken).catch(console.error);
 console.info(colors.info("bot is logged in"));
 
-process.once('SIGINT', () => {
+process.once("SIGINT", () => {
     console.info(colors.info("exiting now"));
     // client.Audioworker.close();
     // client.LyricsAPI.close();
@@ -223,13 +259,13 @@ process.once('SIGINT', () => {
 process.on("uncaughtException", (error)=>{
     console.error(error);
 });
-process.on('unhandledRejection', (reason, p) => {
+process.on("unhandledRejection", (reason, p) => {
     console.error("Unhandled Rejection at:".error);
     console.error("%s".error, util.inspect(p));
     console.error("reason:".error);
     console.error("%s".error, util.inspect(reason));
-  });
-process.on('warning', (warning) => {
+});
+process.on("warning", (warning) => {
     console.warn(colors.warn(warning.name));    // Print the warning name
     console.warn(colors.warn(warning.message)); // Print the warning message
     console.warn(colors.warn(warning.stack));   // Print the stack trace

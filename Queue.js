@@ -30,7 +30,7 @@ class Queue extends EventEmitter {
         this.loop = {
             song: false,
             list: false
-        }
+        };
         this.length = 0;
         this._queueMessage = new QueueMessage(client, guild, this);
     }
@@ -228,11 +228,11 @@ class Queue extends EventEmitter {
     }
     shuffle(){
         let before = this.list.filter((song, key, coll)=>{
-            return key > 0
+            return key > 0;
         }).array();
         var queue = before;
         var currentIndex = before.length, temporaryValue, randomIndex;
-          // While there remain elements to shuffle...
+        // While there remain elements to shuffle...
         while (0 !== currentIndex) {
         
             // Pick a remaining element...
@@ -307,11 +307,11 @@ class Queue extends EventEmitter {
             text += "The queue is not looped";
         }
         let embed = new MessageEmbed()
-        .setTitle("Loop Mode")
-        .setColor(666)
-        .setDescription(text)
-        .setFooter(`Requested by ${message.member.displayName}`)
-        .setTimestamp(new Date());
+            .setTitle("Loop Mode")
+            .setColor(666)
+            .setDescription(text)
+            .setFooter(`Requested by ${message.member.displayName}`)
+            .setTimestamp(new Date());
         return embed;
     }
     /**
@@ -342,16 +342,16 @@ class Queue extends EventEmitter {
         var newDate = new Date(date.setTime(date.getTime()+seconds*1000)).toString();
         var description = Util.splitMessage(this.list.get(position).description, {maxLength: 1000, char: "\n", append: "\n(Description too long)"});
         var embed = new MessageEmbed()
-        .setAuthor(this.list.get(position).title, null, `https://www.youtube.com/watch?v=${this.list.get(position).ID}`)
-        .setColor(666)
-        .setThumbnail(this.list.get(position).thumbnailURL)
-        .setTimestamp(new Date())
-        .setImage(this.list.get(position).thumbnailURL)
-        .addField("Channel", `[${this.list.get(position).author}](https://www.youtube.com/channel/${this.list.get(position).channelID})`, true)
-        .addField("Length", moment.duration(this.list.get(position).length, "seconds").format(), true)
-        .addField("Description", util.isArray(description)? description[0] : description, false)
-        .addField("queued by", this.guild.member(this.list.get(position).queuedBy).user.toString(), true)
-        .addField("queued at", this.list.get(position).queuedAt, true);
+            .setAuthor(this.list.get(position).title, null, `https://www.youtube.com/watch?v=${this.list.get(position).ID}`)
+            .setColor(666)
+            .setThumbnail(this.list.get(position).thumbnailURL)
+            .setTimestamp(new Date())
+            .setImage(this.list.get(position).thumbnailURL)
+            .addField("Channel", `[${this.list.get(position).author}](https://www.youtube.com/channel/${this.list.get(position).channelID})`, true)
+            .addField("Length", moment.duration(this.list.get(position).length, "seconds").format(), true)
+            .addField("Description", util.isArray(description)? description[0] : description, false)
+            .addField("queued by", this.guild.member(this.list.get(position).queuedBy).user.toString(), true)
+            .addField("queued at", this.list.get(position).queuedAt, true);
         if(position === 0){
             embed.addField("ETA:", "Now playing!");
         }else{

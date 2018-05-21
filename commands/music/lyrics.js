@@ -41,31 +41,32 @@ class LyricsCommand extends commando.Command {
      * @param {*} args 
      */
     async run(message, args){
+        let logger;
         if(this.client.loggers.has(message.guild.id)){
             /**
              * @type {Logger}
              */
-            var logger = this.client.loggers.get(message.guild.id);
+            logger = this.client.loggers.get(message.guild.id);
         }else{
-            var logger = new Logger(message.guild.id);
+            logger = new Logger(message.guild.id);
             this.client.loggers.set(message.guild.id, logger);
         }
         logger.log(message.author.username+"#"+message.author.discriminator, "("+message.author.id+")", "used", this.name, "command in channel:", message.channel.name, "("+message.channel.id+")\nArguments:", util.inspect(args));
         if(args.q === 0){
-            /** 
-             * @type {Audioworker}
-             */
-            var audioworker = this.client.Audioworker;
-            if(!audioworker.queues.has(message.guild.id)){
-                var queue = audioworker.add(message.guild);
-            }
-            else{
-                var queue = audioworker.queues.get(message.guild.id);
-            }
-            /**
-             * @type {Lyrics[]}
-             */
-            var lyrics = await this.client.LyricsAPI.searchYTID(queue.nowPlaying.ID);
+            // /** 
+            //  * @type {Audioworker}
+            //  */
+            // var audioworker = this.client.Audioworker;
+            // if(!audioworker.queues.has(message.guild.id)){
+            //     var queue = audioworker.add(message.guild);
+            // }
+            // else{
+            //     var queue = audioworker.queues.get(message.guild.id);
+            // }
+            // /**
+            //  * @type {Lyrics[]}
+            //  */
+            // var lyrics = await this.client.LyricsAPI.searchYTID(queue.nowPlaying.ID);
         }
         else{
             /** 
@@ -77,7 +78,7 @@ class LyricsCommand extends commando.Command {
             var embed = new MessageEmbed({
                 title: "Search result:"
             }).setTimestamp(new Date()).setDescription("Type the number of the lyrics you want to display")
-            .setColor(666);
+                .setColor(666);
             lyrics.some((lyric, index)=>{
                 embed.addField(`${index+1} ${lyric.title}`, `Titel: ${lyric.title}\nAuthor: ${lyric.author}`);
                 if(index === 4) return true;

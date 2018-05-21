@@ -49,7 +49,7 @@ class PermissionManager {
                         members: {},
                         roles: {},
                         channels: {}
-                    }
+                    };
                     if(groupPerms !== null){
                         let memberKeys = Object.keys(groupPerms[group.id].members).filter(value=>{
                             return guild.members.has(value);
@@ -305,12 +305,12 @@ class PermissionManager {
 
             return this.standards[command.name];
 
-            if(!rolePerm){
-                let groupPerm = this.permissions[command.group.id].permissions[member.guild.id].members[member.id];
-                if(groupPerm === null){
-                    let sth;
-                }
-            }
+            // if(!rolePerm){
+            //     let groupPerm = this.permissions[command.group.id].permissions[member.guild.id].members[member.id];
+            //     if(groupPerm === null){
+            //         let sth;
+            //     }
+            // }
         }else {
             return true;
         }

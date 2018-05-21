@@ -44,13 +44,14 @@ class Loop extends commando.Command {
      * @param {Argument} args 
      */
     async run(message, args) {
+        let logger;
         if(this.client.loggers.has(message.guild.id)){
             /**
              * @type {Logger}
              */
-            var logger = this.client.loggers.get(message.guild.id);
+            logger = this.client.loggers.get(message.guild.id);
         }else{
-            var logger = new Logger(message.guild.id);
+            logger = new Logger(message.guild.id);
             this.client.loggers.set(message.guild.id, logger);
         }
         logger.log(message.author.username+"#"+message.author.discriminator, "("+message.author.id+")", "used", this.name, "command in channel:", message.channel.name, "("+message.channel.id+")\nArguments:", util.inspect(args));
@@ -69,9 +70,9 @@ class Loop extends commando.Command {
         }else if(args.songorlist === "list" && util.isBoolean(args.boolean)){
             voiceModule.player.queue.setLoopList(args.boolean, message);
         }else if(util.isString(args.boolean) && args.songorlist === "default"){
-            message.channel.send(voiceModule.player.queue.getLoop(message))
+            message.channel.send(voiceModule.player.queue.getLoop(message));
         }else {
-            message.channel.send(voiceModule.player.queue.getLoop(message))
+            message.channel.send(voiceModule.player.queue.getLoop(message));
             //message.reply("Unknown combination! Please try again!");
         }
     }

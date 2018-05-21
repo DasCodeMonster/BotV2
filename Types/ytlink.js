@@ -1,7 +1,7 @@
 const {ArgumentType} = require("discord.js-commando");
 const ytdl = require("ytdl-core");
-const keys = require('./../tokens');
-const {google} = require('googleapis');
+const keys = require("./../tokens");
+const {google} = require("googleapis");
 const youtubeV3 = google.youtube({version: "v3", auth: keys.YoutubeAPIKey});
 // const Q = require("q")
 
@@ -27,12 +27,12 @@ class YTlink extends ArgumentType {
             let ID = value.split(/(v=)+/)[2];
             ID = ID.split(/([&])+/)[0];
             // return [ID, "single"];
-            return {type: "single", id: ID, link: value}
+            return {type: "single", id: ID, link: value};
         } 
         else {
             let ID = value.split(/(list=)+/)[2];
             // return [ID, "list"];
-            return {type: "list", id: ID, link: value}
+            return {type: "list", id: ID, link: value};
         }
     }
 }

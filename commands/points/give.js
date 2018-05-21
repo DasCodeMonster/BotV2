@@ -22,16 +22,17 @@ class Give extends commando.Command {
                 prompt: "how many points do you want to transfer?",
                 type: "integer"
             }]
-        })
+        });
     }
     async run(message, args) {
+        let logger;
         if(this.client.loggers.has(message.guild.id)){
             /**
              * @type {Logger}
              */
-            var logger = this.client.loggers.get(message.guild.id);
+            logger = this.client.loggers.get(message.guild.id);
         }else{
-            var logger = new Logger(message.guild.id);
+            logger = new Logger(message.guild.id);
             this.client.loggers.set(message.guild.id, logger);
         }
         logger.log(message.author.username+"#"+message.author.discriminator, "("+message.author.id+")", "used", this.name, "command in channel:", message.channel.name, "("+message.channel.id+")\nArguments:", util.inspect(args));
@@ -48,11 +49,12 @@ class Give extends commando.Command {
         }
         message.reply(args.number+" points successfully transfered to "+args.user);
         this.client.provider.set(message.guild, message.member.id, points-args.number);
+        let friendPoints;
         if (this.client.provider.get(message.guild, args.id)) {
-            var friendPoints = this.client.provider.get(message.guild, args.user.id);
+            friendPoints = this.client.provider.get(message.guild, args.user.id);
         }
         else {
-            var friendPoints = 0;
+            friendPoints = 0;
         }
         this.client.provider.set(message.guild, args.user.id, friendPoints+args.number);
     }

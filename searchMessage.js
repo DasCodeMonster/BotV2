@@ -31,9 +31,9 @@ class SearchMessage extends EventEmitter {
         try {
             let result = await this.client.youtube.search(message, query);
             let embed = new MessageEmbed()
-            .setColor(666)
-            .setTitle("Search result")
-            .setDescription("React with the number of the song you want to play **NOW**. To **ADD** it react with ↩ first. To cancel react with ❌");
+                .setColor(666)
+                .setTitle("Search result")
+                .setDescription("React with the number of the song you want to play **NOW**. To **ADD** it react with ↩ first. To cancel react with ❌");
             result.forEach((song, index)=>{
                 embed.addField(`${index+1} ${song.title}`, `Titel: [${song.title}](https://www.youtube.com/watch?v=${song.ID})\nChannel: [${song.author}](https://www.youtube.com/channel/${song.channelID})\n`);
             });
@@ -81,7 +81,7 @@ class SearchMessage extends EventEmitter {
                 }
                 let ends = ["1⃣", "2⃣", "3⃣", "4⃣", "5⃣"];
                 if(ends.includes(reaction.emoji.name)){
-                    this.Collector.stop("User chose song")
+                    this.Collector.stop("User chose song");
                 }
             });
             this.Collector.on("end", (collected, reason)=>{
@@ -116,6 +116,6 @@ module.exports = SearchMessage;
  */
 async function asyncForEach(array, callback) {
     for (let index = 0; index < array.length; index++) {
-      await callback(array[index], index, array)
+        await callback(array[index], index, array);
     }
 }

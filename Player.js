@@ -123,7 +123,7 @@ class Player extends EventEmitter {
                     return true;
                 }else{
                     message.reply("You need to join a voicechannel first!");
-                    return false
+                    return false;
                 }
             }else {
                 return true;
@@ -143,7 +143,7 @@ class Player extends EventEmitter {
             let joined = await this.join(message);
             if(!joined) {
                 throw new Error("Could not join VoiceChannel");
-            };
+            }
             if(songs){
                 await this.queue.add(songs, 1);
                 if(songs instanceof Song && this.queue.get(0) !== songs){
@@ -212,7 +212,7 @@ class Player extends EventEmitter {
             }
             await this.voiceConnection.dispatcher.once("finish", () => {
                 if(this.stopped){
-            if(this.voiceConnection && tthis.voiceConnection.play){
+                    if(this.voiceConnection && this.voiceConnection.play){
                         this.voiceConnection.player.destroy();
                     }
                     return;
@@ -235,7 +235,7 @@ class Player extends EventEmitter {
                 this.stop();
                 return;
             }
-            this.play(message)
+            this.play(message);
         }catch(e){
             console.log(e);
         }
@@ -275,9 +275,10 @@ class Player extends EventEmitter {
      */
     getVolume(){
         try{
-            return {embed: new MessageEmbed().setTitle("Current volume").setColor(666).setDescription(this.volume).setTimestamp(new Date()),
+            return {
+                embed: new MessageEmbed().setTitle("Current volume").setColor(666).setDescription(this.volume).setTimestamp(new Date()),
                 volume: this.volume
-            }
+            };
         }catch(e){
             console.log(e);
         }

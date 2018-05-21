@@ -257,7 +257,7 @@ class Queue extends EventEmitter {
             return;
         }
         if(!message.guild.voiceConnection){
-            this.logger.error(new Error("No voiceConnection"))
+            this.logger.error(new Error("No voiceConnection"));
             return;
         }
         await message.guild.voiceConnection.play(ytdl(this.queue.get(0).ID, {filter: "audioonly"}), {volume: this.volume/100, passes: 2});
@@ -286,11 +286,11 @@ class Queue extends EventEmitter {
      */
     shuffle(){
         let before = this.queue.filterArray((song, key, coll)=>{
-            return key > 0
+            return key > 0;
         });
         var queue = before;
         var currentIndex = before.length, temporaryValue, randomIndex;
-          // While there remain elements to shuffle...
+        // While there remain elements to shuffle...
         while (0 !== currentIndex) {
         
             // Pick a remaining element...
@@ -398,7 +398,7 @@ class Queue extends EventEmitter {
             return {
                 embed: new MessageEmbed().setTitle("Queue").setDescription("**The queue is empty!**").setTimestamp(new Date()).setColor(666).setFooter(`Requested by ${message.author.username}`, message.author.displayAvatarURL),
                 reactions: reactions
-            }
+            };
         }
         else if((page<this.queueMessage.size) || (this.queueMessage.size === 0 && this.queue.get(0) !== null)){
             reactions.push("🔁");
@@ -416,9 +416,9 @@ class Queue extends EventEmitter {
             if(this.queueMessage.size !== 0){
                 this.updateLength();
                 embed.addField(`Queue (Page: ${page+1})`, this.queueMessage.get(page), false)
-                .addField("Total pages:", this.queueMessage.size, true)
-                .addField("Total songs in queue:", this.queue.size-1, true)
-                .addField("Total queue length:", moment.duration(this.length, "seconds").format() , true);
+                    .addField("Total pages:", this.queueMessage.size, true)
+                    .addField("Total songs in queue:", this.queue.size-1, true)
+                    .addField("Total queue length:", moment.duration(this.length, "seconds").format() , true);
                 if(this.queue.size > 2) reactions.push("🔀");
             }
             if(!embed) throw new Error("Queuemessage unavailable");
@@ -432,7 +432,7 @@ class Queue extends EventEmitter {
             return {
                 embed: embed,
                 reactions: reactions
-            }
+            };
         }
     }
     /**
@@ -473,7 +473,7 @@ class Queue extends EventEmitter {
             return ret;
         });
         collector.on("collect", async (element, collector)=>{
-            var name = element.emoji.name
+            var name = element.emoji.name;
             if(name === "🔁"){
                 if (this.loop.list) await this.setLoopList(false);
                 else await this.setLoopList(true);
@@ -545,11 +545,11 @@ class Queue extends EventEmitter {
         this.lastQueueEmbedID = {
             embedID: embedMessage.id,
             channelID: embedMessage.channel.id 
-        }
+        };
         this.qReactionCollector = collector;
     }
     getLastQueueEmbedID(){
-        return this.lastQueueEmbedID
+        return this.lastQueueEmbedID;
     }
     /**
      * Updates the intern Collection which holds all the pages of the queue in message form
@@ -593,7 +593,7 @@ class Queue extends EventEmitter {
     getVolume(){
         return {embed: new MessageEmbed().setTitle("Current volume").setColor(666).setDescription(this.volume).setTimestamp(new Date()),
             volume: this.volume
-        }
+        };
     }
     save(){
         return new QueueConfig(this.guildID, this.queue.array(), this.loop.song, this.loop.list, this.volume);        
@@ -648,7 +648,7 @@ class Queue extends EventEmitter {
     updateLength(){
         var length = 0;
         var queue = this.queue.filterArray((song, key, coll)=>{
-            return key>0
+            return key>0;
         });
         queue.forEach((song, index, array)=>{
             length += song.length;
@@ -685,16 +685,16 @@ class Queue extends EventEmitter {
         var newDate = new Date(date.setTime(date.getTime()+seconds*1000)).toString();
         var description = Util.splitMessage(this.queue.get(position).description, {maxLength: 1000, char: "\n", append: "\n(Description too long)"});
         var embed = new MessageEmbed()
-        .setAuthor(this.queue.get(position).title, null, `https://www.youtube.com/watch?v=${this.queue.get(position).ID}`)
-        .setColor(666)
-        .setThumbnail(this.queue.get(position).thumbnailURL)
-        .setTimestamp(new Date())
-        .setImage(this.queue.get(position).thumbnailURL)
-        .addField("Channel", `[${this.queue.get(position).author}](https://www.youtube.com/channel/${this.queue.get(position).channelID})`, true)
-        .addField("Length", moment.duration(this.queue.get(position).length, "seconds").format(), true)
-        .addField("Description", util.isArray(description)? description[0] : description, false)
-        .addField("Queued by", message.guild.member(this.queue.get(position).queuedBy).user.toString(), true)
-        .addField("Queued at", this.queue.get(position).queuedAt, true);
+            .setAuthor(this.queue.get(position).title, null, `https://www.youtube.com/watch?v=${this.queue.get(position).ID}`)
+            .setColor(666)
+            .setThumbnail(this.queue.get(position).thumbnailURL)
+            .setTimestamp(new Date())
+            .setImage(this.queue.get(position).thumbnailURL)
+            .addField("Channel", `[${this.queue.get(position).author}](https://www.youtube.com/channel/${this.queue.get(position).channelID})`, true)
+            .addField("Length", moment.duration(this.queue.get(position).length, "seconds").format(), true)
+            .addField("Description", util.isArray(description)? description[0] : description, false)
+            .addField("Queued by", message.guild.member(this.queue.get(position).queuedBy).user.toString(), true)
+            .addField("Queued at", this.queue.get(position).queuedAt, true);
         if(position === 0){
             embed.addField("ETA:", newDate+"\n"+moment.duration(seconds, "seconds").format());
         }else{

@@ -19,7 +19,7 @@ class LyricsAPI extends EventEmitter {
          */
         this.lyrics = new Collection();
         this.db;
-        this.events = {ready: "ready"}
+        this.events = {ready: "ready"};
         this.init();
         this.on("error", error=>{
             console.error("%s".error, error);
@@ -27,15 +27,15 @@ class LyricsAPI extends EventEmitter {
     }
     async init(){
         try{
-        this.db = await sqlite.open("lyrics.sqlite", {promise: Promise});
-        await this.db.run('CREATE TABLE IF NOT EXISTS lyrics (id INTEGER, author TEXT NOT NULL, title TEXT NOT NULL, lyrics TEXT NOT NULL, genre TEXT, ytids TEXT)');
-        var dataj = await this.db.all("SELECT * FROM lyrics");
-        if (dataj.length !== 0){
-            dataj.forEach((val, index, array)=>{
-                this.lyrics.set(Number.parseInt(val.id), new Lyrics(Number.parseInt(val.id), val.author, val.title, val.lyrics, val.genre, JSON.parse(val.ytids)));
-            });
-        }
-        this.emit(this.events.ready);
+            this.db = await sqlite.open("lyrics.sqlite", {promise: Promise});
+            await this.db.run("CREATE TABLE IF NOT EXISTS lyrics (id INTEGER, author TEXT NOT NULL, title TEXT NOT NULL, lyrics TEXT NOT NULL, genre TEXT, ytids TEXT)");
+            var dataj = await this.db.all("SELECT * FROM lyrics");
+            if (dataj.length !== 0){
+                dataj.forEach((val, index, array)=>{
+                    this.lyrics.set(Number.parseInt(val.id), new Lyrics(Number.parseInt(val.id), val.author, val.title, val.lyrics, val.genre, JSON.parse(val.ytids)));
+                });
+            }
+            this.emit(this.events.ready);
         }catch(e){
             console.log(e);
         }
@@ -49,11 +49,11 @@ class LyricsAPI extends EventEmitter {
      * @param {String[]} ytids Youtube Links of the song
      */
     async add(author, title, lyrics, genre=null, ytids=[]){
-        await this.db.run('INSERT OR REPLACE INTO lyrics(id, author, title, lyrics, genre, ytids) VALUES(?, ?, ?, ?, ?, ?)', this.lyrics.size+1, author, title, lyrics, genre, JSON.stringify(ytids));
+        await this.db.run("INSERT OR REPLACE INTO lyrics(id, author, title, lyrics, genre, ytids) VALUES(?, ?, ?, ?, ?, ?)", this.lyrics.size+1, author, title, lyrics, genre, JSON.stringify(ytids));
         this.lyrics.set(this.lyrics.size+1, new Lyrics(this.lyrics.size+1, author, title, lyrics, genre, ytids));
     }
     async remove(id){
-        await this.db.run('DELETE FROM lyrics WHERE id=?', id);
+        await this.db.run("DELETE FROM lyrics WHERE id=?", id);
         this.lyrics.delete(id);
         /**
          * @type {Collection<Number,Lyrics>}
@@ -102,7 +102,7 @@ class LyricsAPI extends EventEmitter {
         var result = searchArray.search(author, {
             fields: ["author"],
             sort: [{field: "author", direction: "asc"}],
-        limit: 5});
+            limit: 5});
         var resArr = [];
         result.items.forEach((val, index, array)=>{
             resArr.push(this.lyrics.get(val.id+1));
@@ -118,7 +118,7 @@ class LyricsAPI extends EventEmitter {
         var result = searchArray.search(genre, {
             fields: ["genre"],
             sort: [{field: "genre", direction: "asc"}],
-        limit: 5});
+            limit: 5});
         var resArr = [];
         result.items.forEach((val, index, array)=>{
             resArr.push(this.lyrics.get(val.id+1));
@@ -139,7 +139,7 @@ class LyricsAPI extends EventEmitter {
         var result = searchArray.search(text, {
             fields: ["lyrics"],
             sort: [{field: "lyrics", direction: "asc"}],
-        limit: 5});
+            limit: 5});
         var resArr = [];
         result.items.forEach((val, index, array)=>{
             resArr.push(this.lyrics.get(val.id+1));

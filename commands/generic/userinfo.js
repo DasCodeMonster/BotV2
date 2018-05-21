@@ -27,21 +27,23 @@ class Userinfo extends commando.Command {
      * @param {*} args 
      */
     async run(message, args) {
+        let logger;
         if(this.client.loggers.has(message.guild.id)){
             /**
              * @type {Logger}
              */
-            var logger = this.client.loggers.get(message.guild.id);
+            logger = this.client.loggers.get(message.guild.id);
         }else{
-            var logger = new Logger(message.guild.id);
+            logger = new Logger(message.guild.id);
             this.client.loggers.set(message.guild.id, logger);
         }
         logger.log(message.author.username+"#"+message.author.discriminator, "("+message.author.id+")", "used", this.name, "command in channel:", message.channel.name, "("+message.channel.id+")\nArguments:", util.inspect(args));
+        let user;
         if(args.user === "self"){
-            var user = message.member.user;
+            user = message.member.user;
         }
         else {
-            var user = args.user;
+            user = args.user;
         }
         var points = this.client.provider.get(message.guild, user.id, 0);
         var roles = message.guild.roles.filterArray((role, key, colection)=>{
@@ -52,15 +54,15 @@ class Userinfo extends commando.Command {
             roleString += role.toString()+"\n";
         });
         var embed = new MessageEmbed()
-        .setAuthor(user.username+"#"+user.discriminator, user.displayAvatarURL)
-        .setColor(666)
-        .setThumbnail(user.displayAvatarURL)
-        .setTimestamp(new Date())
-        .addField("ID:", user.id)
-        .addField("Bot:", user.bot?":white_check_mark:":":x:", true)
-        .addField("Points:", points, true)
-        .addField("Roles:", roleString, true)
-        .setFooter(`Requested by ${message.author.username}`, message.author.displayAvatarURL);
+            .setAuthor(user.username+"#"+user.discriminator, user.displayAvatarURL)
+            .setColor(666)
+            .setThumbnail(user.displayAvatarURL)
+            .setTimestamp(new Date())
+            .addField("ID:", user.id)
+            .addField("Bot:", user.bot?":white_check_mark:":":x:", true)
+            .addField("Points:", points, true)
+            .addField("Roles:", roleString, true)
+            .setFooter(`Requested by ${message.author.username}`, message.author.displayAvatarURL);
         await message.channel.send({embed: embed});
     }
     /**

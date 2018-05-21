@@ -3,23 +3,35 @@
         "es6": true,
         "node": true
     },
+    "extends": "eslint:recommended",
     "parserOptions": {
+        "sourceType": "module",
+        "ecmaVersion": 9,
         "ecmaFeatures": {
             "arrowFunctions": true,
             "classes": true,
-            "defaultParams": true,
-            "modules": true
-        },
-        "sourceType": "module",
-        "ecmaVersion": 8
+            "destructuring": true,
+            "defaultParams": true
+        }
     },
     "rules": {
-        "no-const-assign": "warn",
-        "no-this-before-super": "warn",
-        "no-undef": "warn",
-        "no-unreachable": "warn",
-        "no-unused-vars": "warn",
-        "constructor-super": "warn",
-        "valid-typeof": "warn"
+        "indent": [
+            "error",
+            4
+        ],
+        "linebreak-style": [
+            "error",
+            "windows"
+        ],
+        "quotes": [
+            "warn",
+            "double"
+        ],
+        "semi": [
+            "error",
+            "always"
+        ],
+        "no-console":"off",
+        "no-unused-vars": "warn"
     }
 }

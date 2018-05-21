@@ -29,7 +29,7 @@ class Audioworker extends EventEmitter{
             console.error("%s".error, error);
         });
         this.init().catch(reason=>{
-          this.emit("error", reason);  
+            this.emit("error", reason);  
         });
     }
     /**
@@ -58,7 +58,7 @@ class Audioworker extends EventEmitter{
      */
     async init(){
         this.db = await sqlite.open("audio.sqlite", {promise: Promise});
-        await this.db.run('CREATE TABLE IF NOT EXISTS audio (id INTEGER PRIMARY KEY, settings TEXT)');
+        await this.db.run("CREATE TABLE IF NOT EXISTS audio (id INTEGER PRIMARY KEY, settings TEXT)");
         var dataj = await this.db.all("SELECT settings FROM audio");
         if (dataj.length !== 0){
             var data = JSON.parse(dataj[0].settings);
@@ -92,7 +92,7 @@ class Audioworker extends EventEmitter{
             savedata.push([key, config]);
         });
         var savedataj = JSON.stringify(savedata);
-        await db.run('INSERT OR REPLACE INTO audio VALUES(?, ?)', 1, savedataj);
+        await db.run("INSERT OR REPLACE INTO audio VALUES(?, ?)", 1, savedataj);
     }
     async close(){
         await this.save();

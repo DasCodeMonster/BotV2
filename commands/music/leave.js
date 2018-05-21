@@ -1,5 +1,5 @@
 const VoiceModule = require("../../VoiceModule");
-const commando = require('discord.js-commando');
+const commando = require("discord.js-commando");
 const {Message} = require("discord.js");
 const Audioworker = require("../../audioworker");
 const Logger = require("../../logger");
@@ -8,11 +8,11 @@ const util = require("util");
 class LeaveVoiceCommand extends commando.Command {
     constructor(client) {
         super(client, {
-            name: 'leave',
-            group: 'music',
-            memberName: 'leave',
+            name: "leave",
+            group: "music",
+            memberName: "leave",
             guildOnly: true,
-            description: 'Let the Bot leave the VoiceChannel.'
+            description: "Let the Bot leave the VoiceChannel."
         });
     }
     /**
@@ -21,13 +21,14 @@ class LeaveVoiceCommand extends commando.Command {
      * @param {*} args 
      */
     async run(message, args) {
+        let logger;
         if(this.client.loggers.has(message.guild.id)){
             /**
              * @type {Logger}
              */
-            var logger = this.client.loggers.get(message.guild.id);
+            logger = this.client.loggers.get(message.guild.id);
         }else{
-            var logger = new Logger(message.guild.id);
+            logger = new Logger(message.guild.id);
             this.client.loggers.set(message.guild.id, logger);
         }
         logger.log(message.author.username+"#"+message.author.discriminator, "("+message.author.id+")", "used", this.name, "command in channel:", message.channel.name, "("+message.channel.id+")\nArguments:", util.inspect(args));

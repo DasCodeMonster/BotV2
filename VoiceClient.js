@@ -64,13 +64,13 @@ class VoiceClient extends CommandoClient {
          * @type {Collection<String,VoiceModule>}
          */
         this.VoiceModules = new Collection();
-        this.PermissionManager = null //in development
+        this.PermissionManager = null; //in development
         /**
          * @type {Collection<String,Logger>}
          */
         this.loggers = new Collection();
         this.guilds.forEach((guild, id)=>{
-            	this.loggers.set(id, new Logger(id));
+            this.loggers.set(id, new Logger(id));
         });
     }
 }

@@ -19,7 +19,7 @@ class VoiceModule extends EventEmitter {
         this.voiceConnection = guild.voiceConnection || undefined;
         if(this.voiceConnection){
             this.voiceConnection.once("disconnect", reason=>{
-                this.voiceConnection = undefined
+                this.voiceConnection = undefined;
             });
         }
         this.searchMessage = new SearchMessage(this.client, this.guild, this.player, this.voiceConnection);
@@ -37,7 +37,7 @@ class VoiceModule extends EventEmitter {
      * @param {String} query
      */
     async youtubeSearch(message, query){
-        await this.searchMessage.create(message, query)
+        await this.searchMessage.create(message, query);
     }
     /**
      * Joins a voicechannel and starts playing music

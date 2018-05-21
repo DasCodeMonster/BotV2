@@ -7,7 +7,7 @@ class MyCommandArgument extends ArgumentType {
     validate(value, msg) {
         if (value.split(":").length === 2 &&value.split(":")[0] !== value && value.split(":")[1] !== value) {
             var group = value.split(":")[0];
-            var commandname = value.split(":")[1]
+            var commandname = value.split(":")[1];
             if (group === "*" && commandname !== "*") return false;
             if (group === "*" && commandname === "*") return true;
             if (this.validateGroup(group, msg) && commandname === "*") return true;
