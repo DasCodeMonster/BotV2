@@ -1,7 +1,5 @@
 dist: trusty
 sudo: required
-services:
-  - docker
 addons:
   apt:
     update: true
@@ -9,10 +7,12 @@ addons:
       - git-core
     packages:
       - git
-      - docker-ce
 language: node_js
 node_js:
   - '10'
 install: npm install
+cache:
+  directories:
+    - "node_modules"
 script:
-  - bash ./deploy/deploy.sh
+  - bash ./deploy/test.sh
