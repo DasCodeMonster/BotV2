@@ -1,4 +1,4 @@
-FROM node:9-alpine
+FROM node:10-alpine
 LABEL maintainer="DasCodeMonster <pl.lkw.01@gmail.com>"
 
 WORKDIR /usr/src/MyBotV2
