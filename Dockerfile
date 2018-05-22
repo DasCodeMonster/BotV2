@@ -10,7 +10,7 @@ RUN apk add --update \
 && npm install \
 && apk del .build-deps
 
-RUN chmod -R a+rwx /
+RUN chmod -R a+rwx /usr
 
 COPY . .
 
