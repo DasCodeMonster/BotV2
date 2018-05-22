@@ -23,14 +23,14 @@ if [ -n "$TRAVIS_TAG" ]; then
     test
     docker login --username="$DOCKER_USERNAME" --password="$DOCKER_PASSWORD"
     docker build -t mybotv2 .
-    docker tag mybotv2:latest dascodemonster/mybotv2:"$DOCKER_RELEASE"
-    docker push dascodemonster/mybotv2:"$DOCKER_RELEASE"
+    docker tag mybotv2:latest dascodemonster/mybotv2:"$TRAVIS_BRANCH"-"$DOCKER_RELEASE"
+    docker push dascodemonster/mybotv2:"$TRAVIS_BRANCH"-"$DOCKER_RELEASE"
 else
     echo -e "\e[36m\e[1mBuild triggered for branch \"${TRAVIS_BRANCH}\"."
     DOCKER_RELEASE="latest"
     test
     docker login --username="$DOCKER_USERNAME" --password="$DOCKER_PASSWORD"
     docker build -t mybotv2 .
-    docker tag mybotv2:latest dascodemonster/mybotv2:"$DOCKER_RELEASE"
-    docker push dascodemonster/mybotv2:"$DOCKER_RELEASE"
+    docker tag mybotv2:latest dascodemonster/mybotv2:"$TRAVIS_BRANCH"-"$DOCKER_RELEASE"
+    docker push dascodemonster/mybotv2:"$TRAVIS_BRANCH"-"$DOCKER_RELEASE"
 fi
