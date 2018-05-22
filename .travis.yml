@@ -12,7 +12,7 @@ addons:
       - docker-ce
 language: node_js
 node_js:
-  - '10'
+  - '9'
 install: npm install
 script:
   - bash ./deploy/deploy.sh
