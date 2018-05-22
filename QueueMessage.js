@@ -183,8 +183,8 @@ class QueueMessage extends EventEmitter {
             this.page = page;
             this.reactions = [];
             this.message = await this.textChannel.send(this.makeEmbed());
-            this.react();
             this.created = true;
+            this.react();
             this._handle();
         }catch(e){
             console.log(e);
