@@ -1,7 +1,7 @@
 const commando = require("discord.js-commando");
 const Queue = require("../../myQueue");
-const {Message, GuildMember, User} = require("discord.js");
-const Audioworker = require("../../audioworker");
+const {Message, GuildMember} = require("discord.js");
+const VoiceModule = require("../../VoiceModule");
 const Logger = require("../../logger");
 const util = require("util");
 const fs = require("fs");
@@ -15,10 +15,10 @@ class Record extends commando.Command {
             description: "records voicedata from a user",
             guildOnly: true,
             args: [{
-                key: "user",
-                label: "user",
+                key: "member",
+                label: "member",
                 prompt: "Which user would you like to record? Just mention him!",
-                type: "user"
+                type: "member"
             }, {
                 key: "name",
                 label: "name",
@@ -29,7 +29,7 @@ class Record extends commando.Command {
     }
     /**
      * @typedef {Object} argument
-     * @property {User} user
+     * @property {GuildMember} member
      * @property {string} name
      */
     /**
@@ -49,20 +49,17 @@ class Record extends commando.Command {
             this.client.loggers.set(message.guild.id, logger);
         }
         logger.log(message.author.username+"#"+message.author.discriminator, "("+message.author.id+")", "used", this.name, "command in channel:", message.channel.name, "("+message.channel.id+")\nArguments:", util.inspect(args));
-        // /** 
-        //  * @type {Audioworker}
-        //  */
-        // var audioworker = this.client.Audioworker;
-        // if(!audioworker.queues.has(message.guild.id)){
-        //     var queue = audioworker.add(message.guild);
-        // }
-        // else{
-        //     var queue = audioworker.queues.get(message.guild.id);
-        // }
-        // let err = await queue.record(message.guild.member(args.user), args.name, message);
-        // if(err){
-        //     logger.error(err);
-        // }
+        /**
+         * @type {VoiceModule}
+         */
+        let voiceModule;
+        if(this.client.VoiceModules.has(message.guild.id)){
+            voiceModule = this.client.VoiceModules.get(message.guild.id);
+        }else {
+            voiceModule = new VoiceModule(this.client, message.guild);
+            this.client.VoiceModules.set(message.guild.id, voiceModule);
+        }
+        voiceModule.record(args.member, args.name);
     }
     hasPermission(){
         return true;
