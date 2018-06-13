@@ -1,9 +1,11 @@
-const {Guild, Message, VoiceChannel} = require("discord.js");
+const {Guild, Message, VoiceChannel, GuildMember} = require("discord.js");
 const {CommandoClient} = require("discord.js-commando");
 const VoiceClient = require("./VoiceClient");
 const {EventEmitter} = require("events");
 const Player = require("./Player");
 const SearchMessage = require("./searchMessage");
+const {spawn} = require("child_process");
+const Filehandler = require("./filehandler");
 
 class VoiceModule extends EventEmitter {
     /**
@@ -30,6 +32,7 @@ class VoiceModule extends EventEmitter {
             console.log(song);
             this.player.play(message, song);
         });
+        this.filehandler = new Filehandler("Audio", "./");
     }
     /**
      * 
@@ -74,6 +77,59 @@ class VoiceModule extends EventEmitter {
                 }
             }
         }catch(e){
+            console.log(e);
+        }
+    }
+    /**
+     * 
+     * @param {GuildMember} member 
+     */
+    async record(member, name){
+        try {
+            if(!member.voiceChannel || !member.guild.voiceConnection || (member.voiceChannelID !== member.guild.voiceConnection.channel.id)) throw new Error("Cannot record!");
+            let stream2 = receiver.createStream(member.id, {mode: "opus", end: "silence"});
+            stream2.on("data", data=>{
+                console.log("opus data");
+            });
+            const receiver = member.guild.voiceConnection.createReceiver();
+            let stream = receiver.createStream(member.id, {mode: "pcm", end: "silence"});
+            stream.on("data", data=>{
+                console.log("received packet");
+            });
+            stream.on("error", err=>{
+                console.log("input error: ", err);
+            });
+            let child = spawn("ffmpeg", [
+                "-y",
+                "-f", "s16le",
+                "-i", "pipe:0",
+                "-f", "opus",
+                "pipe:1"
+            ]);
+            stream.pipe(child.stdin);
+            child.stdin.on("error", err=>{
+                console.log(err);
+            });
+            child.stdout.on("data", data=>{
+                console.log("transcoded packet");
+            });
+            child.stderr.on("data", data=>{
+                console.log(data.toString());
+            });
+            this.filehandler.write(member.guild.id, name, "opus", child.stdout);
+
+            // let pr = spawn("ffmpeg", ["-y", "-codec", "pcm_s16le", "-i", "pipe:0", "-codec", "opus", "./test.opus"]);
+            // this.filehandler.write(member.guild.id, name, "opus", pr.stdout);
+            // pr.stdout.on("data", data=>{
+            //     console.log(data);
+            // });
+            // pr.on("exit", (code, signal)=>{
+            //     console.log("Exit with code: ", code);
+            // });
+            // pr.on("error", error=>{
+            //     console.log(error);
+            // });
+        } catch (e) {
             console.log(e);
         }
     }

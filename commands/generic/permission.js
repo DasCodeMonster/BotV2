@@ -57,7 +57,8 @@ class Permission extends commando.Command {
                 prompt:"true or false?",
                 type: "boolean"
             }],
-            guarded: true
+            guarded: true,
+            userPermissions: ["ADMINISTRATOR"]
             //argsSingleQuotes: true
         });
     }

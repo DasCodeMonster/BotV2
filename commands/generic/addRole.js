@@ -18,7 +18,9 @@ class AddRole extends commando.Command {
                 prompt: "which role would you like to add to the joinable roles?",
                 type: "role"
             }],
-            argsCount: 1
+            argsCount: 1,
+            clientPermissions: ["MANAGE_ROLES"],
+            userPermissions: ["MANAGE_ROLES"]
         });
         this.roles = [];
     }

@@ -1,7 +1,7 @@
 const sqlite = require("sqlite");
 const fs = require("fs");
 const fsp = fs.promises;
-const {Writable, Readable} = require("stream");
+const {Readable} = require("stream");
 const util = require("util");
 
 class Filehandler {
@@ -163,7 +163,7 @@ class Filehandler {
      * @param {string} fileExtension
      * @param {Readable} stream
      */
-    async write(id, name, fileExtension, stream){
+    async write(id, name, fileExtension, stream=null){
         try {
             if(this.database === null) await this.open();
             if(!this.writeSTMT){
@@ -173,8 +173,8 @@ class Filehandler {
             if(name.includes(".")){
                 name = name.split(".")[0];
             }
-            this.makeDir(`${this.basePath}/${this.name}`);
-            this.makeDir(`${this.basePath}/${this.name}/${id}`);
+            await this.makeDir(`${this.basePath}/${this.name}`);
+            await this.makeDir(`${this.basePath}/${this.name}/${id}`);
             let ext = fileExtension;
             if(fileExtension.includes(".")){
                 ext = fileExtension.split(".", 1)[1];
@@ -185,9 +185,9 @@ class Filehandler {
              */
             let finished = new Promise((res, rej)=>{
                 writeStream.on("close", ()=>res(true));
-                stream.on("error", err=>rej(err));
+                if(stream) stream.on("error", err=>rej(err));
             });
-            stream.pipe(writeStream);
+            if(stream) stream.pipe(writeStream);
             await this.writeSTMT.run(name, `${path}.${ext}`);
             if(!this.objs.has(id)){
                 await this.get(id, name);
@@ -202,7 +202,9 @@ class Filehandler {
                 enumerable: false,
                 writable: true
             });
-            return finished;
+            return {finished: finished,
+                stream: writeStream
+            };
         } catch (e) {
             console.log(e);
         }

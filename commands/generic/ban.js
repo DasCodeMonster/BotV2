@@ -1,9 +1,9 @@
-const commando = require("discord.js-commando");
+const {Command} = require("discord.js-commando");
 const {Message} = require("discord.js");
 const Logger = require("../../logger");
 const util = require("util");
 
-class BanCommand extends commando.Command {
+class BanCommand extends Command {
     constructor(client) {
         super(client, {
             name: "ban",
@@ -25,7 +25,9 @@ class BanCommand extends commando.Command {
                 label: "days",
                 prompt: "How many days should the user be banned?",
                 type: "integer"
-            }]
+            }],
+            clientPermissions: ["BAN_MEMBERS"],
+            userPermissions: ["BAN_MEMBERS"]
         });
     }
     /**

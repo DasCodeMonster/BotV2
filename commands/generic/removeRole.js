@@ -17,7 +17,9 @@ class RemoveRole extends commando.Command {
                 prompt: "which role would you like to remove from the ``joinable roles``?",
                 type: "role"
             }],
-            argsCount: 1
+            argsCount: 1,
+            userPermissions: ["MANAGE_ROLES"],
+            clientPermissions: ["MANAGE_ROLES"]
         });
         this.roles = [];
     }
