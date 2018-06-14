@@ -24,13 +24,24 @@ class Record extends commando.Command {
                 label: "name",
                 prompt: "How should I name your record?",
                 type: "string"
-            }]
+            }, {
+                key: "duration",
+                label: "maxduration",
+                infinite: false,
+                type: "integer",
+                min: 1,
+                max: 300,
+                default: 300,
+                prompt: "How long in seconds should i record the user at maximum?"
+            }],
+            argsSingleQuotes: true
         });
     }
     /**
      * @typedef {Object} argument
      * @property {GuildMember} member
      * @property {string} name
+     * @property {number} duration
      */
     /**
      * 
@@ -59,7 +70,9 @@ class Record extends commando.Command {
             voiceModule = new VoiceModule(this.client, message.guild);
             this.client.VoiceModules.set(message.guild.id, voiceModule);
         }
-        voiceModule.record(args.member, args.name);
+        message.reply(`Recording ${args.member.toString()} now!`);
+        let finished = await voiceModule.record(args.member, args.name, args.duration);
+        message.reply("Finished recording");
     }
     hasPermission(){
         return true;

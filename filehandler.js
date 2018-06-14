@@ -202,9 +202,7 @@ class Filehandler {
                 enumerable: false,
                 writable: true
             });
-            return {finished: finished,
-                stream: writeStream
-            };
+            return finished;
         } catch (e) {
             console.log(e);
         }
