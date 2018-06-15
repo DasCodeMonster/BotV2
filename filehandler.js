@@ -31,7 +31,7 @@ class Filehandler {
         try {
             if(this.database !== null) return this.database;
             this.database = await sqlite.open(`${this.name}.sqlite3`, {promise: Promise});
-            let create = await this.database.prepare(`CREATE TABLE IF NOT EXISTS ${this.name} (id VARCHAR(255) PRIMARY KEY, fileobject TEXT)`);
+            let create = await this.database.prepare(`CREATE TABLE IF NOT EXISTS ${this.name} (id VARCHAR(255) PRIMARY KEY, fileobject TEXT, author VARCHAR(255), timestamp TEXT, guildid VARCHAR(255))`);
             await create.run();
             await create.finalize();
             await this._checkExistingDir();
@@ -57,9 +57,9 @@ class Filehandler {
                                         let exists = await this.get(name, _name);
                                         if(exists === null){
                                             if(!this.writeSTMT){
-                                                this.writeSTMT = await this.database.prepare(`INSERT OR REPLACE INTO ${this.name} VALUES (?, ?)`);
+                                                this.writeSTMT = await this.database.prepare(`INSERT OR REPLACE INTO ${this.name} VALUES (?, ?, ?, datetime(?), ?)`);
                                             }
-                                            await this.writeSTMT.run(_name, `${this.basePath}/${this.name}/${name}/${rawname}`);
+                                            await this.writeSTMT.run(_name, `${this.basePath}/${this.name}/${name}/${rawname}`, undefined, "now", name);
                                         }
                                     }else{
                                         if(_name.includes(".")) _name = _name.split(".")[0];
@@ -68,6 +68,7 @@ class Filehandler {
                                             if(!this.deleteSTMT){
                                                 this.deleteSTMT = await this.database.prepare(`DELETE FROM ${this.name} WHERE id=?`);
                                             }
+                                            console.log(_name, " l.71");
                                             this.deleteSTMT.run(_name);
                                         }
                                     }
@@ -82,17 +83,19 @@ class Filehandler {
                                 }else if(!fs.statSync(`${this.basePath}/${this.name}/${name}/${innername}`).isFile()){
                                     fs.unlinkSync(`${this.basePath}/${this.name}/${name}/${innername}`);
                                 }else{
-                                    Object.defineProperty(this.existing, `${this.basePath}/${this.name}/${name}/${innername}`.replace("/", "_"), {
-                                        value: true
-                                    });
+                                    this.existing[`${this.basePath}/${this.name}/${name}/${innername}`.replace("/", "_")] = true;
+                                    // Object.defineProperty(this.existing, `${this.basePath}/${this.name}/${name}/${innername}`.replace("/", "_"), {
+                                    //     value: true
+                                    // });
                                     let _innername = innername;
                                     if(_innername.includes(".")) _innername = _innername.split(".")[0];
                                     let exist = await this.get(name, _innername);
                                     if(exist === null){
                                         if(!this.writeSTMT){
-                                            this.writeSTMT = await this.database.prepare(`INSERT OR REPLACE INTO ${this.name} VALUES (?, ?)`);
+                                            this.writeSTMT = await this.database.prepare(`INSERT OR REPLACE INTO ${this.name} VALUES (?, ?, ?, datetime(?), ?)`);
                                         }
-                                        await this.writeSTMT.run(_innername, `${this.basePath}/${this.name}/${name}/${innername}`);
+                                        await this.writeSTMT.run(_innername, `${this.basePath}/${this.name}/${name}/${innername}`, undefined, "now", name);
+                                        // this.objs.set()
                                     }
                                 }
                             });
@@ -114,9 +117,10 @@ class Filehandler {
         try {
             if(this.existing[path.replace("/", "_")]) return;
             if(fs.existsSync(path)){
-                Object.defineProperty(this.existing, path.replace("/", "_"), {
-                    value: true
-                }); 
+                this.existing[path.replace("/", "_")] = true;
+                // Object.defineProperty(this.existing, path.replace("/", "_"), {
+                //     value: true
+                // }); 
             }else{
                 await fsp.mkdir(path);
             }
@@ -133,9 +137,9 @@ class Filehandler {
                             let exists = await this.get(id, name);
                             if(exists === null){
                                 if(!this.writeSTMT){
-                                    this.writeSTMT = await this.database.prepare(`INSERT OR REPLACE INTO ${this.name} VALUES (?, ?)`);
+                                    this.writeSTMT = await this.database.prepare(`INSERT OR REPLACE INTO ${this.name} VALUES (?, ?, ?, datetime(?))`);
                                 }
-                                await this.writeSTMT.run(name, `${path}/${rawname}`);
+                                await this.writeSTMT.run(name, `${path}/${rawname}`, undefined, "now", id);
                             }
                         }else{
                             if(name.includes(".")) name = name.split(".")[0];
@@ -144,6 +148,7 @@ class Filehandler {
                                 if(!this.deleteSTMT){
                                     this.deleteSTMT = await this.database.prepare(`DELETE FROM ${this.name} WHERE id=?`);
                                 }
+                                console.log(name, " l.148");
                                 this.deleteSTMT.run(name);
                             }
                         }
@@ -162,19 +167,20 @@ class Filehandler {
      * @param {String} name
      * @param {string} fileExtension
      * @param {Readable} stream
+     * @param {string} authorID
      */
-    async write(id, name, fileExtension, stream=null){
+    async write(id, name, fileExtension, stream, authorID){
         try {
             if(this.database === null) await this.open();
             if(!this.writeSTMT){
-                this.writeSTMT = await this.database.prepare(`INSERT OR REPLACE INTO ${this.name} VALUES (?, ?)`);
+                this.writeSTMT = await this.database.prepare(`INSERT OR REPLACE INTO ${this.name} VALUES (?, ?, ?, datetime(?))`);
             }   
             let path = `${this.basePath}/${this.name}/${id}/${name}`;
             if(name.includes(".")){
                 name = name.split(".")[0];
             }
-            await this.makeDir(`${this.basePath}/${this.name}`);
-            await this.makeDir(`${this.basePath}/${this.name}/${id}`);
+            await this.makeDir(`${this.basePath}/${this.name}`, "global");
+            await this.makeDir(`${this.basePath}/${this.name}/${id}`, id);
             let ext = fileExtension;
             if(fileExtension.includes(".")){
                 ext = fileExtension.split(".", 1)[1];
@@ -188,7 +194,7 @@ class Filehandler {
                 if(stream) stream.on("error", err=>rej(err));
             });
             if(stream) stream.pipe(writeStream);
-            await this.writeSTMT.run(name, `${path}.${ext}`);
+            await this.writeSTMT.run(name, `${path}.${ext}`, authorID, "now", id);
             if(!this.objs.has(id)){
                 await this.get(id, name);
             }
@@ -196,12 +202,14 @@ class Filehandler {
             if(!obj){
                 obj = {};
             }
-            Object.defineProperty(obj, name, {
-                value: `${path}.${ext}`,
-                configurable: true,
-                enumerable: false,
-                writable: true
-            });
+            obj[name] = `${path}.${ext}`;
+            this.objs.set(id, obj);
+            // Object.defineProperty(obj, name, {
+            //     value: `${path}.${ext}`,
+            //     configurable: true,
+            //     enumerable: false,
+            //     writable: true
+            // });
             return finished;
         } catch (e) {
             console.log(e);
@@ -215,25 +223,54 @@ class Filehandler {
     async get(id, name){
         try {
             if(this.database === null) await this.open();
-            if(!this.objs.has(id)){
-                if(!this.getSTMT){
-                    this.getSTMT = await this.database.prepare(`SELECT fileobject FROM ${this.name} WHERE id=?`);
-                }
-                let obj = await this.getSTMT.get(name);
-                if(!obj) return null;
-                let save = new Object();
-                Object.defineProperty(save, name, {
-                    value: obj.fileobject,
-                    writable: true,
-                    configurable: true,
-                    enumerable: false
-                });
-                this.objs.set(id, save);
+            if(!this.getSTMT){
+                this.getSTMT = await this.database.prepare(`SELECT * FROM ${this.name} WHERE id=? AND guildid=?`);
             }
-            let obj = this.objs.get(id);
-            let keys = Object.getOwnPropertyNames(obj);
-            if(!keys.includes(name)) return null;
-            return obj[name];
+            return await this.getSTMT.get(name, id);
+            // console.log(this.objs, " l.226", this.objs.has(name));
+            // if(!this.objs.has(id)){
+            //     if(!this.getSTMT){
+            //         this.getSTMT = await this.database.prepare(`SELECT * FROM ${this.name} WHERE guildid=?`);
+            //     }
+            //     let guildEntries = await this.getSTMT.get(id);
+            //     console.log(guildEntries, " l.232");
+            //     if(!guildEntries) return null;
+            //     let save = {};
+            //     if(Array.isArray(guildEntries)){
+            //         guildEntries.forEach(entry=>{
+            //             save[entry.id] = entry;
+            //         });
+            //     }else{
+            //         save[guildEntries.id] = guildEntries;
+            //     }
+            //     // Object.defineProperty(save, name, {
+            //     //     value: obj.fileobject,
+            //     //     writable: true
+            //     // });
+            //     // console.log(save, " l.236 ", save[name], huh);
+            //     this.objs.set(id, save);
+            // }else if(this.objs.get(id)[name]){
+            //     if(!this.getSTMT){
+            //         this.getSTMT = await this.database.prepare(`SELECT * FROM ${this.name} WHERE guildid=?`);
+            //     }
+            //     let guildEntries = await this.getSTMT.get(id);
+            //     console.log(guildEntries, " l.253");
+            //     if(!guildEntries) return null;
+            //     let save = {};
+            //     if(Array.isArray(guildEntries)){
+            //         guildEntries.forEach(entry=>{
+            //             save[entry.id] = entry;
+            //         });
+            //     }else{
+            //         save[guildEntries.id] = guildEntries;
+            //     }
+            //     this.objs.set(id, save);
+            // }
+            // let obj = this.objs.get(id);
+            // let keys = Object.getOwnPropertyNames(obj);
+            // console.log(keys, " l.239", keys.includes(name), name);
+            // if(!keys.includes(name)) return null;
+            // return obj[name];
         } catch (e) {
             console.log(e);
         }
@@ -279,17 +316,22 @@ class Filehandler {
             console.log(e);
         }
     }
-    async getAll(){
+    async getAll(id){
         try {
+            if(this.database === null) await this.open();
             if(!this.allSTMT){
-                this.allSTMT = await this.database.prepare(`SELECT * FROM ${this.name}`);
+                this.allSTMT = await this.database.prepare(`SELECT * FROM ${this.name} WHERE guildid=? OR guildid=? ORDER BY timestamp, id`);
             }
-            let all = await this.allSTMT.all();
-            console.log(all);
-            let entries = [];
-            all.forEach(entry=>{
-                entries.push(entry.id);
-            });
+            let all = await this.allSTMT.all(id, "global");
+            // console.log(all);
+            // /**
+            //  * @type {string[]}
+            //  */
+            // let entries = [];
+            // all.forEach(entry=>{
+            //     entries.push(entry.id);
+            // });
+            return all;
         } catch (e) {
             console.log(e);
         }

@@ -9,3 +9,5 @@ Logs/
 tokens.js
 docker-compose.yml
 README.md
+Audio/
+Audio.sqlite3

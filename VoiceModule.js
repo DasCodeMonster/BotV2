@@ -7,6 +7,7 @@ const SearchMessage = require("./searchMessage");
 const {spawn} = require("child_process");
 const Filehandler = require("./filehandler");
 const {Readable} = require("stream");
+const Soundboard = require("./soundboard");
 
 class VoiceModule extends EventEmitter {
     /**
@@ -34,6 +35,7 @@ class VoiceModule extends EventEmitter {
             this.player.play(message, song);
         });
         this.filehandler = new Filehandler("Audio", "./");
+        this.soundboard = new Soundboard(this.filehandler);
     }
     /**
      * 
@@ -85,10 +87,11 @@ class VoiceModule extends EventEmitter {
      * 
      * @param {GuildMember} member 
      * @param {string} name
-     * @param {number} duration
+     * @param {GuildMember} author
      */
-    async record(member, name, duration){
+    async record(member, name, author){
         try {
+            const duration = 300;
             if(duration > 300) throw new Error("Duration was too big");
             if(!member.voiceChannel || !member.guild.voiceConnection || (member.voiceChannelID !== member.guild.voiceConnection.channel.id)) throw new Error("Cannot record!");
             /**
@@ -139,10 +142,13 @@ class VoiceModule extends EventEmitter {
             child.stderr.on("data", data=>{
                 console.log(data.toString());
             });
-            return this.filehandler.write(member.guild.id, name, "opus", child.stdout);
+            return this.filehandler.write(member.guild.id, name, "opus", child.stdout, author.id);
         } catch (e) {
             console.log(e);
         }
+    }
+    async board(){
+        await this.soundboard._load();
     }
 }
 module.exports = VoiceModule;
