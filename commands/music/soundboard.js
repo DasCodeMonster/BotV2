@@ -1,4 +1,4 @@
-const {Command} = require("discord.js-commando");
+const {Command, CommandMessage} = require("discord.js-commando");
 const VoiceModule = require("../../VoiceModule");
 
 class SoundBoardCommand extends Command {
@@ -16,6 +16,12 @@ class SoundBoardCommand extends Command {
             guildOnly: true
         });
     }
+    /**
+     * 
+     * @param {CommandMessage} message 
+     * @param {*} args 
+     * @param {boolean} fromPattern 
+     */
     async run(message, args, fromPattern){
         /**
          * @type {VoiceModule}
@@ -27,7 +33,7 @@ class SoundBoardCommand extends Command {
             voiceModule = new VoiceModule(this.client, message.guild);
             this.client.VoiceModules.set(message.guild.id, voiceModule);
         }
-        await voiceModule.board();
+        await voiceModule.board(message.channel);
     }
     hasPermission(message){
         return true;

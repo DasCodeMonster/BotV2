@@ -3,13 +3,15 @@ const fs = require("fs");
 const fsp = fs.promises;
 const {Readable} = require("stream");
 const util = require("util");
+const {EventEmitter} = require("events");
 
-class Filehandler {
+class Filehandler extends EventEmitter {
     /**
      * @param {string} name
      * @param {string} base
      */
     constructor(name, base){
+        super();
         if(!util.isString(name) || !util.isString(base)) throw new Error("Must be String");
         if(!fs.existsSync(base)) throw new Error("base must exist!");
         if(!fs.statSync(base).isDirectory()) throw new Error("must be directory");
@@ -60,6 +62,7 @@ class Filehandler {
                                                 this.writeSTMT = await this.database.prepare(`INSERT OR REPLACE INTO ${this.name} VALUES (?, ?, ?, datetime(?), ?)`);
                                             }
                                             await this.writeSTMT.run(_name, `${this.basePath}/${this.name}/${name}/${rawname}`, undefined, "now", name);
+                                            this.emit("update");
                                         }
                                     }else{
                                         if(_name.includes(".")) _name = _name.split(".")[0];
@@ -69,7 +72,8 @@ class Filehandler {
                                                 this.deleteSTMT = await this.database.prepare(`DELETE FROM ${this.name} WHERE id=?`);
                                             }
                                             console.log(_name, " l.71");
-                                            this.deleteSTMT.run(_name);
+                                            await this.deleteSTMT.run(_name);
+                                            this.emit("update");
                                         }
                                     }
                                 }
@@ -95,6 +99,7 @@ class Filehandler {
                                             this.writeSTMT = await this.database.prepare(`INSERT OR REPLACE INTO ${this.name} VALUES (?, ?, ?, datetime(?), ?)`);
                                         }
                                         await this.writeSTMT.run(_innername, `${this.basePath}/${this.name}/${name}/${innername}`, undefined, "now", name);
+                                        this.emit("update");
                                         // this.objs.set()
                                     }
                                 }
@@ -140,6 +145,7 @@ class Filehandler {
                                     this.writeSTMT = await this.database.prepare(`INSERT OR REPLACE INTO ${this.name} VALUES (?, ?, ?, datetime(?))`);
                                 }
                                 await this.writeSTMT.run(name, `${path}/${rawname}`, undefined, "now", id);
+                                this.emit("update");
                             }
                         }else{
                             if(name.includes(".")) name = name.split(".")[0];
@@ -150,6 +156,7 @@ class Filehandler {
                                 }
                                 console.log(name, " l.148");
                                 this.deleteSTMT.run(name);
+                                this.emit("update");
                             }
                         }
                     }
@@ -168,14 +175,16 @@ class Filehandler {
      * @param {string} fileExtension
      * @param {Readable} stream
      * @param {string} authorID
+     * @param {Promise<string>} duration
      */
-    async write(id, name, fileExtension, stream, authorID){
+    async write(id, name, fileExtension, stream, authorID, duration){
         try {
             if(this.database === null) await this.open();
             if(!this.writeSTMT){
-                this.writeSTMT = await this.database.prepare(`INSERT OR REPLACE INTO ${this.name} VALUES (?, ?, ?, datetime(?))`);
+                this.writeSTMT = await this.database.prepare(`INSERT OR REPLACE INTO ${this.name} VALUES (?, ?, ?, datetime(?), ?)`);
             }   
             let path = `${this.basePath}/${this.name}/${id}/${name}`;
+            console.log(path);
             if(name.includes(".")){
                 name = name.split(".")[0];
             }
@@ -193,23 +202,26 @@ class Filehandler {
                 writeStream.on("close", ()=>res(true));
                 if(stream) stream.on("error", err=>rej(err));
             });
-            if(stream) stream.pipe(writeStream);
-            await this.writeSTMT.run(name, `${path}.${ext}`, authorID, "now", id);
-            if(!this.objs.has(id)){
-                await this.get(id, name);
-            }
-            let obj = this.objs.get(id);
-            if(!obj){
-                obj = {};
-            }
-            obj[name] = `${path}.${ext}`;
-            this.objs.set(id, obj);
+            stream.pipe(writeStream);
+            // if(!this.objs.has(id)){
+            //     await this.get(id, name);
+            // }
+            // let obj = this.objs.get(id);
+            // if(!obj){
+            //     obj = {};
+            // }
+            // obj[name] = `${path}.${ext}`;
+            // this.objs.set(id, obj);
             // Object.defineProperty(obj, name, {
             //     value: `${path}.${ext}`,
             //     configurable: true,
             //     enumerable: false,
             //     writable: true
             // });
+            finished.then(async ()=>{
+                this.emit("update");
+                await this.writeSTMT.run(name, `${path}.${ext}`, authorID, "now", id);
+            });
             return finished;
         } catch (e) {
             console.log(e);
@@ -297,6 +309,10 @@ class Filehandler {
                 await this.getSTMT.finalize();
                 this.getSTMT = null;
             }
+            if(this.allByIDSTMT) {
+                await this.allByIDSTMT.finalize();
+                this.allByIDSTMT = null;
+            }
             if(this.allSTMT) {
                 await this.allSTMT.finalize();
                 this.allSTMT = null;
@@ -316,13 +332,13 @@ class Filehandler {
             console.log(e);
         }
     }
-    async getAll(id){
+    async getAllByID(id){
         try {
             if(this.database === null) await this.open();
-            if(!this.allSTMT){
-                this.allSTMT = await this.database.prepare(`SELECT * FROM ${this.name} WHERE guildid=? OR guildid=? ORDER BY timestamp, id`);
+            if(!this.allByIDSTMT){
+                this.allByIDSTMT = await this.database.prepare(`SELECT * FROM ${this.name} WHERE guildid=? OR guildid=? ORDER BY timestamp, id`);
             }
-            let all = await this.allSTMT.all(id, "global");
+            let all = await this.allByIDSTMT.all(id, "global");
             // console.log(all);
             // /**
             //  * @type {string[]}
@@ -335,6 +351,18 @@ class Filehandler {
         } catch (e) {
             console.log(e);
         }
+    }
+    async getAll(){
+        try {
+            if(this.database === null) await this.open();
+            if(!this.allSTMT){
+                this.allSTMT = await this.database.prepare(`SELECT * FROM ${this.name} ORDER BY timestamp, id`);
+            }
+            let all = await this.allSTMT.all();
+            return all;
+        } catch (e) {
+            console.log(e);
+        }  
     }
 }
 module.exports = Filehandler;

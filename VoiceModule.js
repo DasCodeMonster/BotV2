@@ -1,4 +1,4 @@
-const {Guild, Message, VoiceChannel, GuildMember, VoiceReceiver} = require("discord.js");
+const {Guild, Message, VoiceChannel, GuildMember, VoiceReceiver, TextChannel, GuildChannel} = require("discord.js");
 const {CommandoClient} = require("discord.js-commando");
 const VoiceClient = require("./VoiceClient");
 const {EventEmitter} = require("events");
@@ -35,7 +35,13 @@ class VoiceModule extends EventEmitter {
             this.player.play(message, song);
         });
         this.filehandler = new Filehandler("Audio", "./");
-        this.soundboard = new Soundboard(this.filehandler);
+        /**
+         * @type {Map<string, Soundboard>}
+         */
+        this.soundboards = new Map();
+        client.guilds.forEach(guild=>{
+            this.soundboards.set(guild.id, new Soundboard(this.filehandler, client, guild.id));
+        });
     }
     /**
      * 
@@ -134,21 +140,35 @@ class VoiceModule extends EventEmitter {
                 "-f", "opus",
                 // "-codec", "opus",
                 "pipe:1"
-            ]);
+            ]); // size=    2874kB time=00:04:59.77 bitrate=  78.5kbits/s speed=   1x
             stream.pipe(child.stdin);
             child.stdin.on("error", err=>{
                 console.log(err);
             });
+            let _time = "00:00";
             child.stderr.on("data", data=>{
                 console.log(data.toString());
+                if(data.toString().match("time=")){
+                    _time = data.toString().substr(data.toString().search("time=")+8, 5);
+                    console.log("next:", _time);
+                }
             });
-            return this.filehandler.write(member.guild.id, name, "opus", child.stdout, author.id);
+            const time = new Promise((res, rej)=>{
+                stream.on("close", ()=>{
+                    res(_time);
+                });
+            });
+            return this.filehandler.write(member.guild.id, name, "opus", child.stdout, author.id, time);
         } catch (e) {
             console.log(e);
         }
     }
-    async board(){
-        await this.soundboard._load();
+    /**
+     * 
+     * @param {TextChannel & GuildChannel} channel 
+     */
+    async board(channel){
+        await this.soundboards.get(channel.guild.id).sendMessage(channel);
     }
 }
 module.exports = VoiceModule;

@@ -23,7 +23,8 @@ class Record extends commando.Command {
                 key: "name",
                 label: "name",
                 prompt: "How should I name your record?",
-                type: "string"
+                type: "string",
+                max: 16
             }],
             argsSingleQuotes: true
         });
